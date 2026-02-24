@@ -1,24 +1,22 @@
 // Fallback for using MaterialIcons on Android and web.
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { SymbolView, SymbolWeight } from "expo-symbols";
+import { ComponentProps } from "react";
+import { ColorValue, Platform, StyleProp, TextStyle } from "react-native";
 
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
-import { ComponentProps } from 'react';
-import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
-
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
+type IconMapping = Record<string, ComponentProps<typeof MaterialIcons>["name"]>;
 type IconSymbolName = keyof typeof MAPPING;
 
 /**
  * Add your SF Symbols to Material Icons mappings here.
- * - see Material Icons in the [Icons Directory](https://icons.expo.fyi).
- * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
+ * Extend as needed for more icons.
  */
-const MAPPING = {
-  'house.fill': 'home',
-  'paperplane.fill': 'send',
-  'chevron.left.forwardslash.chevron.right': 'code',
-  'chevron.right': 'chevron-right',
-} as IconMapping;
+const MAPPING: IconMapping = {
+  "house.fill": "home",
+  "paperplane.fill": "send",
+  "chevron.left.forwardslash.chevron.right": "code",
+  "chevron.right": "chevron-right",
+};
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
@@ -30,12 +28,28 @@ export function IconSymbol({
   size = 24,
   color,
   style,
+  weight = "regular",
 }: {
-  name: IconSymbolName;
+  name: IconSymbolName | string;
   size?: number;
-  color: string | OpaqueColorValue;
+  color: ColorValue;
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  if (Platform.OS === "ios") {
+    return (
+      <SymbolView
+        name={name as any}
+        size={size}
+        tintColor={color}
+        weight={weight}
+      />
+    );
+  }
+
+  const mappedName = MAPPING[name as IconSymbolName] || name;
+
+  return (
+    <MaterialIcons name={mappedName} size={size} color={color} style={style} />
+  );
 }
