@@ -1,53 +1,38 @@
-// /**
-//  * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
-//  * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
-//  */
+export type AppColorScheme = "light" | "dark";
 
-// import { Platform } from 'react-native';
+type ThemeColors = {
+  background: string;
+  foreground: string;
+  card: string;
+  cardForeground: string;
+  border: string;
+  primary: string;
+  primaryForeground: string;
+  muted: string;
+  mutedForeground: string;
+};
 
-// const tintColorLight = '#0a7ea4';
-// const tintColorDark = '#fff';
-
-// export const Colors = {
-//   light: {
-//     text: '#11181C',
-//     background: '#fff',
-//     tint: tintColorLight,
-//     icon: '#687076',
-//     tabIconDefault: '#687076',
-//     tabIconSelected: tintColorLight,
-//   },
-//   dark: {
-//     text: '#ECEDEE',
-//     background: '#151718',
-//     tint: tintColorDark,
-//     icon: '#9BA1A6',
-//     tabIconDefault: '#9BA1A6',
-//     tabIconSelected: tintColorDark,
-//   },
-// };
-
-// export const Fonts = Platform.select({
-//   ios: {
-//     /** iOS `UIFontDescriptorSystemDesignDefault` */
-//     sans: 'system-ui',
-//     /** iOS `UIFontDescriptorSystemDesignSerif` */
-//     serif: 'ui-serif',
-//     /** iOS `UIFontDescriptorSystemDesignRounded` */
-//     rounded: 'ui-rounded',
-//     /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-//     mono: 'ui-monospace',
-//   },
-//   default: {
-//     sans: 'normal',
-//     serif: 'serif',
-//     rounded: 'normal',
-//     mono: 'monospace',
-//   },
-//   web: {
-//     sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-//     serif: "Georgia, 'Times New Roman', serif",
-//     rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-//     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-//   },
-// });
+export const Colors: Record<AppColorScheme, ThemeColors> = {
+  light: {
+    background: "hsl(0, 0%, 100%)",
+    foreground: "hsl(0, 0%, 9%)",
+    card: "hsl(0, 0%, 100%)",
+    cardForeground: "hsl(0, 0%, 9%)",
+    border: "hsl(0, 0%, 90%)",
+    primary: "hsl(240, 100%, 1%)",
+    primaryForeground: "hsl(0, 0%, 100%)",
+    muted: "hsl(240, 10%, 93%)",
+    mutedForeground: "hsl(240, 5%, 45%)",
+  },
+  dark: {
+    background: "hsl(0, 0%, 9%)",
+    foreground: "hsl(0, 0%, 98%)",
+    card: "hsl(0, 0%, 9%)",
+    cardForeground: "hsl(0, 0%, 98%)",
+    border: "hsl(0, 0%, 17%)",
+    primary: "hsl(0, 0%, 98%)",
+    primaryForeground: "hsl(0, 0%, 13%)",
+    muted: "hsl(0, 0%, 17%)",
+    mutedForeground: "hsl(0, 0%, 44%)",
+  },
+};

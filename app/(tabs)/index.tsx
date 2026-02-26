@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   return (
-    <SafeAreaView className="flex-1 bg-green-500">
+    <SafeAreaView className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
@@ -12,7 +12,7 @@ export default function HomeScreen() {
           alignItems: "center",
         }}
       >
-        <View className="items-center justify-center p-8 w-full bg-green-500">
+        <View className="items-center justify-center p-8 w-full bg-background">
           <Text className="text-foreground text-4xl font-bold mb-8 text-center">
             Welcome to Your Mental Health Support App
           </Text>
