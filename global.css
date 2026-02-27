@@ -22,6 +22,16 @@
     --destructive-foreground: 0 0% 100%;
     --border: 0 0% 90%; /* rgba(0,0,0,0.1) ≈ light gray */
     --ring: 0 0% 44%; /* oklch(0.708 0 0) ≈ medium gray */
+
+    /* Brand + status colors (used in auth screens) */
+    --brand: 262 64% 42%; /* #5B21B6 ≈ deep violet */
+    --brand-soft: 251 92% 95%; /* #EDE9FE ≈ soft violet */
+    --success: 160 84% 39%; /* #10B981 */
+    --success-soft: 152 76% 88%; /* #D1FAE5 */
+    --error: 0 84% 63%; /* #EF4444 */
+    --error-soft: 0 93% 94%; /* #FEE2E2 */
+    --warning: 36 92% 51%; /* #F59E0B */
+    --info: 217 91% 56%; /* #3B82F6 */
     --radius: 0.625rem;
 
     /* Chart colors – approximated */
@@ -65,6 +75,16 @@
     --destructive-foreground: 25 70% 75%;
     --border: 0 0% 17%;
     --ring: 0 0% 27%; /* oklch(0.439 0 0) */
+
+    /* Brand + status colors (dark variants) */
+    --brand: 262 90% 72%; /* lighter violet on dark */
+    --brand-soft: 262 40% 26%;
+    --success: 152 76% 52%;
+    --success-soft: 152 40% 20%;
+    --error: 0 84% 70%;
+    --error-soft: 0 40% 25%;
+    --warning: 36 92% 60%;
+    --info: 217 91% 65%;
 
     /* Charts in dark mode */
     --chart-1: 264 70% 40%;

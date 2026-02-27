@@ -36,3 +36,27 @@ export const Colors: Record<AppColorScheme, ThemeColors> = {
     mutedForeground: "hsl(0, 0%, 44%)",
   },
 };
+
+// Design tokens specific to auth flows and status chips.
+// Keeping them here (instead of scattered hex codes) makes it easy
+// to tweak the visual identity in one place.
+export const AuthPalette = {
+  // Brand
+  brand: "#5B21B6",
+  brandSoft: "#EDE9FE",
+
+  // Status / feedback
+  error: "#EF4444",
+  errorSoft: "#FEE2E2",
+  success: "#10B981",
+  successSoft: "#D1FAE5",
+  successNoteBg: "#F0FDF4",
+  successNoteBorder: "#BBF7D0",
+  warning: "#F59E0B",
+  info: "#3B82F6",
+
+  // Social brand colors
+  socialGoogle: "#EA4335",
+  socialFacebook: "#1877F2",
+};
+
