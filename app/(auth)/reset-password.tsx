@@ -84,7 +84,6 @@ export default function ResetPasswordScreen() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
         >
-          {/* ── Header (hidden on success) ── */}
           {!resetSuccess && (
             <View
               style={{

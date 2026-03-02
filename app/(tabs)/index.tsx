@@ -97,12 +97,11 @@ export default function HomePage() {
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: bg }]}
-      edges={["top", "bottom"]} // ← This is the key fix — applies insets to top & bottom only
+      edges={["top", "bottom"]}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor={bg}
-        // translucent={true}   // Uncomment only if you want content under status bar (then adjust header bg)
       />
 
       {/* ── Header ── */}
@@ -116,7 +115,7 @@ export default function HomePage() {
           },
         ]}
       >
-        {/* Left: logo + title — flex: 1 so it never overflows */}
+        {/* Left: logo  */}
         <View style={styles.headerLeft}>
           <View
             style={[
@@ -147,7 +146,7 @@ export default function HomePage() {
           </Text>
         </View>
 
-        {/* Right: avatar — fixed size, never shrinks */}
+        {/* Right: avatar */}
         <View
           style={[
             styles.avatar,
@@ -236,7 +235,7 @@ export default function HomePage() {
         <TouchableOpacity
           style={[styles.ctaButton, { backgroundColor: brand }]}
           activeOpacity={0.85}
-          onPress={() => navigation.navigate("Chat")}
+          onPress={() => navigation.navigate("chat")}
         >
           <MessageCircleIcon size={22} color="#ffffff" />
           <Text style={[styles.ctaButtonText, { color: "#ffffff" }]}>
@@ -368,39 +367,39 @@ export default function HomePage() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+//Styles
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  // Header — key fix: flex row with no overflow
+
   header: {
     borderBottomWidth: 1,
     paddingVertical: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    // Ensure header never overflows its container
+
     width: "100%",
   },
-  // Left side takes remaining space but never squeezes the avatar out
+
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1, // takes all available space
-    marginRight: 12, // guarantees gap before avatar
-    overflow: "hidden", // clips title if screen is tiny
+    flex: 1,
+    marginRight: 12,
+    overflow: "hidden",
   },
   headerTitle: {
     fontWeight: "700",
     marginLeft: 8,
-    flexShrink: 1, // shrinks title text before squeezing avatar off screen
+    flexShrink: 1,
   },
-  // Avatar never shrinks — fixed size always fully visible
+
   avatar: {
     alignItems: "center",
     justifyContent: "center",
-    flexShrink: 0, // critical: prevents avatar being squeezed off-screen
+    flexShrink: 0,
   },
   avatarText: {
     color: "#FFFFFF",
@@ -409,7 +408,7 @@ const styles = StyleSheet.create({
   logoCircle: {
     alignItems: "center",
     justifyContent: "center",
-    flexShrink: 0, // logo never shrinks
+    flexShrink: 0,
   },
   // Scroll
   scrollContent: {
@@ -453,7 +452,7 @@ const styles = StyleSheet.create({
   },
   messageText: {
     flex: 1,
-    minWidth: 0, // prevents text overflowing flex container
+    minWidth: 0,
   },
   messageTitle: {
     fontSize: 15,
@@ -502,7 +501,7 @@ const styles = StyleSheet.create({
   },
   featureCardWrapper: {
     flex: 1,
-    minWidth: 0, // allows flex children to shrink properly
+    minWidth: 0,
   },
   featureCard: {
     padding: 14,

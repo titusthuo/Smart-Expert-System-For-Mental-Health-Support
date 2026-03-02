@@ -1,5 +1,5 @@
 import { HapticTab } from "@/components/haptic-tab";
-import { IconSymbol } from "@/components/ui/icon-symbol"; // assuming this supports SF Symbols style names
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { AuthPalette, Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Tabs } from "expo-router";
@@ -30,9 +30,8 @@ export default function TabLayout() {
         },
       }}
     >
-      {/* Home - already exists */}
       <Tabs.Screen
-        name="index" // or "home" depending on your file name
+        name="index"
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => (
@@ -74,7 +73,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Profile (added as bonus – common in such apps) */}
       <Tabs.Screen
         name="profile"
         options={{
