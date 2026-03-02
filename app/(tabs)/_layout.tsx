@@ -1,9 +1,9 @@
 import { HapticTab } from "@/components/haptic-tab";
-import { IconSymbol } from "@/components/ui/icon-symbol";
+import { IconSymbol } from "@/components/ui/icon-symbol"; // assuming this supports SF Symbols style names
+import { AuthPalette, Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Tabs } from "expo-router";
 import React from "react";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme() ?? "light";
@@ -15,7 +15,7 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarActiveTintColor: theme.primary,
+        tabBarActiveTintColor: AuthPalette.brand,
         tabBarInactiveTintColor: theme.mutedForeground,
         tabBarStyle: {
           backgroundColor: theme.card,
@@ -30,12 +30,57 @@ export default function TabLayout() {
         },
       }}
     >
+      {/* Home - already exists */}
       <Tabs.Screen
-        name="index"
+        name="index" // or "home" depending on your file name
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="house.fill" color={color} />
+          ),
+        }}
+      />
+
+      {/* Chat */}
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: "Chat",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="chatbubble.fill" color={color} />
+          ),
+        }}
+      />
+
+      {/* Therapists */}
+      <Tabs.Screen
+        name="therapists"
+        options={{
+          title: "Therapists",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="people.fill" color={color} />
+          ),
+        }}
+      />
+
+      {/* Education */}
+      <Tabs.Screen
+        name="education"
+        options={{
+          title: "Education",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="book.fill" color={color} />
+          ),
+        }}
+      />
+
+      {/* Profile (added as bonus – common in such apps) */}
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="person.fill" color={color} />
           ),
         }}
       />

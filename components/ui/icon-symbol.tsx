@@ -16,6 +16,10 @@ const MAPPING: IconMapping = {
   "paperplane.fill": "send",
   "chevron.left.forwardslash.chevron.right": "code",
   "chevron.right": "chevron-right",
+  "chatbubble.fill": "chat",
+  "people.fill": "group",
+  "book.fill": "book",
+  "person.fill": "person",
 };
 
 /**
