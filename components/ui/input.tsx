@@ -7,23 +7,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-export type InputColors = {
-  border: string;
-  surface: string;
-  text: string;
-  subtle: string;
-  error: string;
-  errorSoft: string;
-};
+import { useAuthTheme } from "@/hooks/use-auth-theme";
 
 type InputProps = TextInputProps & {
   label?: string;
   hint?: string;
   error?: string;
   iconName?: keyof typeof Ionicons.glyphMap;
-  brand: string;
-  colors: InputColors;
+  className?: string;
 };
 
 export function Input({
@@ -32,8 +23,7 @@ export function Input({
   error: errorMsg,
   iconName,
   secureTextEntry,
-  brand,
-  colors,
+  className,
   ...rest
 }: InputProps) {
   const [focused, setFocused] = useState(false);
@@ -42,49 +32,37 @@ export function Input({
   const isPassword = !!secureTextEntry;
   const hasError = !!errorMsg;
 
-  const borderColor = hasError ? colors.error : focused ? brand : colors.border;
-  const bg = hasError ? colors.errorSoft : colors.surface;
-  const iconColor = hasError ? colors.error : focused ? brand : colors.subtle;
+  const { brand, subtle, error } = useAuthTheme();
+  const iconColor = hasError ? error : focused ? brand : subtle;
+  const placeholderColor = subtle;
 
   return (
-    <View style={{ gap: 6 }}>
+    <View className={["w-full", className].filter(Boolean).join(" ")}>
       {label && (
-        <Text
-          style={{
-            color: colors.text,
-            fontSize: 13,
-            fontWeight: "600",
-            letterSpacing: 0.1,
-          }}
-        >
+        <Text className="text-foreground text-[13px] font-semibold tracking-[0.1px] mb-1">
           {label}
         </Text>
       )}
 
       <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          borderWidth: 1.5,
-          borderRadius: 12,
-          paddingHorizontal: 13,
-          height: 50,
-          borderColor,
-          backgroundColor: bg,
-        }}
+        className={[
+          "flex-row items-center rounded-xl px-3 h-12 border-2",
+          hasError
+            ? "border-error bg-errorSoft"
+            : focused
+              ? "border-brand bg-card"
+              : "border-border bg-card",
+        ].join(" ")}
       >
         {iconName && (
-          <Ionicons
-            name={iconName}
-            size={17}
-            color={iconColor}
-            style={{ marginRight: 9 }}
-          />
+          <View className="mr-2">
+            <Ionicons name={iconName} size={17} color={iconColor} />
+          </View>
         )}
 
         <TextInput
-          style={{ flex: 1, fontSize: 15, color: colors.text }}
-          placeholderTextColor={colors.subtle}
+          className="flex-1 text-[15px] text-foreground"
+          placeholderTextColor={placeholderColor}
           secureTextEntry={isPassword && !visible}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
@@ -94,37 +72,28 @@ export function Input({
         {isPassword && (
           <TouchableOpacity
             onPress={() => setVisible((v) => !v)}
-            style={{ padding: 4 }}
+            className="p-1"
           >
             <Ionicons
               name={visible ? "eye-outline" : "eye-off-outline"}
               size={17}
-              color={colors.subtle}
+              color={subtle}
             />
           </TouchableOpacity>
         )}
       </View>
 
       {hasError && (
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 5,
-            marginTop: 2,
-          }}
-        >
-          <Ionicons name="close-circle" size={13} color={colors.error} />
-          <Text
-            style={{ color: colors.error, fontSize: 12, fontWeight: "500" }}
-          >
+        <View className="flex-row items-center mt-2">
+          <Ionicons name="close-circle" size={13} color={error} />
+          <Text className="text-error text-[12px] font-medium ml-1.5">
             {errorMsg}
           </Text>
         </View>
       )}
 
       {hint && !hasError && (
-        <Text style={{ color: colors.subtle, fontSize: 11, lineHeight: 15 }}>
+        <Text className="text-muted-foreground text-[11px] leading-[15px] mt-1">
           {hint}
         </Text>
       )}

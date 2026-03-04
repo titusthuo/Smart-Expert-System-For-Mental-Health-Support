@@ -15,12 +15,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   AppText,
   Button,
+  Card,
   Input,
   PasswordRequirements,
   PasswordStrength,
   TabStrip,
 } from "@/components/ui";
-import { useAuthTheme } from "@/hooks/use-auth-theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 type FormData = {
   firstName: string;
@@ -38,21 +39,8 @@ type AuthTabsProps = {
 
 export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
   const router = useRouter();
-  const {
-    isDark,
-    bg,
-    surface,
-    border,
-    text,
-    subtle,
-    brand,
-    brandSoft,
-    error,
-    errorSoft,
-    success,
-    warning,
-    info,
-  } = useAuthTheme();
+  const scheme = useColorScheme() ?? "light";
+  const isDark = scheme === "dark";
 
   const logoImage = require("../../assets/logos/brain.jpg");
 
@@ -79,8 +67,6 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
 
   const setField = (k: keyof FormData, v: string) =>
     setForm((p) => ({ ...p, [k]: v }));
-
-  const inputColors = { border, surface, text, subtle, error, errorSoft };
 
   const pwdMatch =
     form.confirmPassword.length > 0 && form.password === form.confirmPassword;
@@ -149,76 +135,47 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
+    <View className="flex-1 bg-background">
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView className="flex-1">
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
+          className="flex-1"
         >
           <ScrollView
-            contentContainerStyle={{
-              flexGrow: 1,
-              paddingHorizontal: 24,
-              paddingTop: 20,
-              paddingBottom: 40,
-            }}
+            contentContainerClassName="flex-grow px-6 pt-5 pb-10"
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
             {/* ── Brand ── */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 36,
-              }}
-            >
-              <View
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
-                  backgroundColor: brandSoft,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+            <View className="flex-row items-center gap-3 mb-9">
+              <View className="w-11 h-11 rounded-full items-center justify-center">
                 <Image
                   source={logoImage}
-                  style={{ width: 28, height: 28, borderRadius: 14 }}
+                  className="w-7 h-7 rounded-full"
                   resizeMode="contain"
                   accessibilityLabel="Mentally logo"
                 />
               </View>
               <View>
-                <AppText variant="brandName" color={text}>
-                  Mentally
-                </AppText>
-                <AppText variant="brandSub" color={subtle}>
-                  Mental Wellness Platform
-                </AppText>
+                <AppText variant="brandName">Mentally</AppText>
+                <AppText variant="brandSub">Mental Wellness Platform</AppText>
               </View>
             </View>
 
             {/* ── Heading ── */}
-            <View style={{ marginBottom: 28 }}>
+            <View className="mb-7">
               {activeTab === "signIn" ? (
                 <>
-                  <AppText variant="heading" color={text}>
-                    Welcome back
-                  </AppText>
-                  <AppText variant="subheading" color={subtle}>
+                  <AppText variant="heading">Welcome back</AppText>
+                  <AppText variant="subheading">
                     Sign in to continue your wellness journey
                   </AppText>
                 </>
               ) : (
                 <>
-                  <AppText variant="heading" color={text}>
-                    Create account
-                  </AppText>
-                  <AppText variant="subheading" color={subtle}>
+                  <AppText variant="heading">Create account</AppText>
+                  <AppText variant="subheading">
                     Join thousands finding better mental health
                   </AppText>
                 </>
@@ -226,20 +183,7 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
             </View>
 
             {/* ── Card ── */}
-            <View
-              style={{
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: border,
-                backgroundColor: surface,
-                overflow: "hidden",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.06,
-                shadowRadius: 16,
-                elevation: 4,
-              }}
-            >
+            <Card>
               <TabStrip
                 activeKey={activeTab}
                 tabs={[
@@ -254,11 +198,10 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                     onPress: () => setActiveTab("signUp"),
                   },
                 ]}
-                colors={{ border, subtle, brand }}
               />
 
               {activeTab === "signIn" ? (
-                <View style={{ padding: 20, gap: 16 }}>
+                <View className="p-5 gap-4">
                   <Input
                     label="Username"
                     iconName="person-outline"
@@ -267,8 +210,6 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                     onChangeText={setUsername}
                     autoCapitalize="none"
                     autoCorrect={false}
-                    brand={brand}
-                    colors={inputColors}
                   />
 
                   <Input
@@ -278,13 +219,10 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
-                    brand={brand}
-                    colors={inputColors}
                   />
 
                   <AppText
                     variant="link"
-                    color={brand}
                     style={{ textAlign: "right", marginTop: -4 }}
                     onPress={() => router.push("/(auth)/forgot-password")}
                   >
@@ -294,50 +232,36 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                   <Button
                     text="Sign In"
                     rightIcon="arrow-forward"
-                    brand={brand}
                     loading={signInLoading}
                     onPress={handleSignIn}
-                    style={{ marginTop: 8 }}
+                    className="mt-2"
                   />
                 </View>
               ) : (
-                <View style={{ padding: 20, gap: 14 }}>
+                <View className="p-5 gap-3.5">
                   {/* ── Personal Info ── */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 6,
-                      marginBottom: 2,
-                    }}
-                  >
-                    <AppText variant="sectionLabel" color={subtle}>
-                      Personal Info
-                    </AppText>
+                  <View className="flex-row items-center gap-1.5 mb-1">
+                    <AppText variant="sectionLabel">Personal Info</AppText>
                   </View>
 
                   {/* Name row */}
-                  <View style={{ flexDirection: "row", gap: 10 }}>
-                    <View style={{ flex: 1 }}>
+                  <View className="flex-row gap-2.5">
+                    <View className="flex-1">
                       <Input
                         label="First Name"
                         placeholder="John"
                         value={form.firstName}
                         onChangeText={(v) => setField("firstName", v)}
                         autoCapitalize="words"
-                        brand={brand}
-                        colors={inputColors}
                       />
                     </View>
-                    <View style={{ flex: 1 }}>
+                    <View className="flex-1">
                       <Input
                         label="Last Name"
                         placeholder="Doe"
                         value={form.lastName}
                         onChangeText={(v) => setField("lastName", v)}
                         autoCapitalize="words"
-                        brand={brand}
-                        colors={inputColors}
                       />
                     </View>
                   </View>
@@ -351,8 +275,6 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                     onChangeText={(v) => setField("username", v)}
                     autoCapitalize="none"
                     autoCorrect={false}
-                    brand={brand}
-                    colors={inputColors}
                   />
 
                   <Input
@@ -364,8 +286,6 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
-                    brand={brand}
-                    colors={inputColors}
                   />
 
                   <Input
@@ -375,26 +295,14 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                     value={form.country}
                     onChangeText={(v) => setField("country", v)}
                     autoCapitalize="words"
-                    brand={brand}
-                    colors={inputColors}
                   />
 
                   {/* ── Account Security ── */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 6,
-                      marginTop: 6,
-                      marginBottom: 2,
-                    }}
-                  >
-                    <AppText variant="sectionLabel" color={subtle}>
-                      Account Security
-                    </AppText>
+                  <View className="flex-row items-center gap-1.5 mt-2 mb-1">
+                    <AppText variant="sectionLabel">Account Security</AppText>
                   </View>
 
-                  <View style={{ gap: 6 }}>
+                  <View className="gap-1.5">
                     <Input
                       label="Password"
                       iconName="lock-closed-outline"
@@ -402,16 +310,11 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                       value={form.password}
                       onChangeText={(v) => setField("password", v)}
                       secureTextEntry
-                      brand={brand}
-                      colors={inputColors}
                     />
-                    <PasswordStrength
-                      password={form.password}
-                      colors={{ border, error, success, warning, info }}
-                    />
+                    <PasswordStrength password={form.password} />
                   </View>
 
-                  <View style={{ gap: 6 }}>
+                  <View className="gap-1.5">
                     <Input
                       label="Confirm Password"
                       iconName="lock-closed-outline"
@@ -420,11 +323,9 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                       onChangeText={(v) => setField("confirmPassword", v)}
                       secureTextEntry
                       error={pwdMismatch ? "Passwords do not match" : undefined}
-                      brand={brand}
-                      colors={inputColors}
                     />
                     {pwdMatch && (
-                      <AppText variant="hint" color={success}>
+                      <AppText variant="hint" className="text-success">
                         Passwords match
                       </AppText>
                     )}
@@ -432,7 +333,6 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
 
                   <PasswordRequirements
                     password={form.password}
-                    colors={{ border, surface, subtle, success }}
                     onAllMet={setCanSubmit}
                   />
 
@@ -440,78 +340,52 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                   <TouchableOpacity
                     onPress={() => setTerms(!terms)}
                     activeOpacity={0.7}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "flex-start",
-                      gap: 10,
-                    }}
+                    className="flex-row items-start gap-2.5"
                   >
                     <View
-                      style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: 6,
-                        borderWidth: 1.5,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginTop: 1,
-                        flexShrink: 0,
-                        backgroundColor: terms ? brand : surface,
-                        borderColor: terms ? brand : border,
-                      }}
+                      className={[
+                        "w-5 h-5 rounded-md border-2 items-center justify-center mt-[1px] flex-shrink-0",
+                        terms
+                          ? "bg-brand border-brand"
+                          : "bg-card border-border",
+                      ].join(" ")}
                     >
                       {terms && (
-                        <AppText variant="hint" color="#fff">
+                        <AppText variant="hint" className="text-white">
                           ✓
                         </AppText>
                       )}
                     </View>
                     <AppText
                       variant="body"
-                      color={subtle}
-                      style={{ flex: 1, fontSize: 13, lineHeight: 20 }}
+                      className="flex-1 text-[13px] leading-[20px] text-muted-foreground"
                     >
                       I agree to the{" "}
-                      <AppText variant="link" color={brand}>
-                        Terms of Service
-                      </AppText>{" "}
-                      and{" "}
-                      <AppText variant="link" color={brand}>
-                        Privacy Policy
-                      </AppText>
+                      <AppText variant="link">Terms of Service</AppText> and{" "}
+                      <AppText variant="link">Privacy Policy</AppText>
                     </AppText>
                   </TouchableOpacity>
 
                   <Button
                     text="Create Account"
                     rightIcon="arrow-forward"
-                    brand={brand}
                     loading={signUpLoading}
                     onPress={handleSignUp}
-                    style={{ marginTop: 12 }}
+                    className="mt-3"
                   />
                 </View>
               )}
-            </View>
+            </Card>
 
             {/* ── Footer ─*/}
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 4,
-                marginTop: 24,
-              }}
-            >
+            <View className="flex-row justify-center items-center gap-1 mt-6">
               {activeTab === "signIn" ? (
                 <>
-                  <AppText variant="body" color={subtle}>
+                  <AppText variant="body" className="text-muted-foreground">
                     New to Mentally?
                   </AppText>
                   <AppText
                     variant="link"
-                    color={brand}
                     onPress={() => setActiveTab("signUp")}
                   >
                     Create account
@@ -519,12 +393,11 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                 </>
               ) : (
                 <>
-                  <AppText variant="body" color={subtle}>
+                  <AppText variant="body" className="text-muted-foreground">
                     Already have an account?
                   </AppText>
                   <AppText
                     variant="link"
-                    color={brand}
                     onPress={() => setActiveTab("signIn")}
                   >
                     Sign In
@@ -538,4 +411,3 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
     </View>
   );
 }
-

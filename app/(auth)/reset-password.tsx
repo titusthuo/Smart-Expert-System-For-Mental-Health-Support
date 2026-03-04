@@ -32,14 +32,10 @@ export default function ResetPasswordScreen() {
     subtle,
     brand,
     brandSoft,
-    error,
-    errorSoft,
     success,
     successSoft,
     successNoteBg,
     successNoteBorder,
-    warning,
-    info,
   } = useAuthTheme();
 
   const [newPwd, setNewPwd] = useState("");
@@ -47,8 +43,6 @@ export default function ResetPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [canSubmit, setCanSubmit] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
-
-  const inputColors = { border, surface, text, subtle, error, errorSoft };
 
   const pwdMatch = confirmPwd.length > 0 && newPwd === confirmPwd;
   const pwdMismatch = confirmPwd.length > 0 && newPwd !== confirmPwd;
@@ -77,49 +71,36 @@ export default function ResetPasswordScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
+    <View className="flex-1" style={{ backgroundColor: bg }}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-      <SafeAreaView style={{ flex: 1 }}>
+
+      <SafeAreaView className="flex-1">
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
+          className="flex-1"
         >
           {!resetSuccess && (
             <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                paddingHorizontal: 20,
-                paddingVertical: 12,
-                borderBottomWidth: 1,
-                borderBottomColor: border,
-              }}
+              className={`flex-row items-center justify-between px-5 py-3 border-b border-[${border}] bg-[${bg}]`}
             >
               <TouchableOpacity
                 onPress={() => router.back()}
                 activeOpacity={0.7}
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: border,
-                  backgroundColor: surface,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+                className={`w-10 h-10 rounded-xl border border-[${border}] bg-[${surface}] items-center justify-center`}
               >
                 <Ionicons name="arrow-back" size={20} color={text} />
               </TouchableOpacity>
-              <AppText variant="label" color={text} style={{ fontSize: 16 }}>
+
+              <AppText variant="label" color={text} className="text-base">
                 New Password
               </AppText>
-              <View style={{ width: 40 }} />
+
+              <View className="w-10" />
             </View>
           )}
 
           <ScrollView
+            className="flex-1"
             contentContainerStyle={{
               flexGrow: 1,
               paddingHorizontal: 24,
@@ -132,15 +113,7 @@ export default function ResetPasswordScreen() {
             {!resetSuccess ? (
               <>
                 <View
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: 22,
-                    backgroundColor: brandSoft,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 24,
-                  }}
+                  className={`w-[72px] h-[72px] rounded-2xl bg-[${brandSoft}] items-center justify-center mb-6`}
                 >
                   <Ionicons
                     name="shield-checkmark-outline"
@@ -149,39 +122,21 @@ export default function ResetPasswordScreen() {
                   />
                 </View>
 
-                <AppText
-                  variant="heading"
-                  color={text}
-                  style={{ fontSize: 26 }}
-                >
+                <AppText variant="heading" color={text} className="text-[26px]">
                   Create new password
                 </AppText>
-                <AppText
-                  variant="body"
-                  color={subtle}
-                  style={{ marginTop: 10, marginBottom: 28 }}
-                >
+
+                <AppText variant="body" color={subtle} className="mt-2.5 mb-7">
                   Your new password must be different from any previously used
                   passwords.
                 </AppText>
 
                 <View
-                  style={{
-                    borderRadius: 20,
-                    borderWidth: 1,
-                    borderColor: border,
-                    backgroundColor: surface,
-                    padding: 20,
-                    gap: 16,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.06,
-                    shadowRadius: 16,
-                    elevation: 4,
-                  }}
+                  className={`rounded-2xl border border-[${border}] bg-[${surface}] p-5 gap-4 shadow-sm`}
+                  // shadow-sm ≈ shadowColor + offset + opacity + radius + elevation
                 >
                   {/* New Password */}
-                  <View style={{ gap: 6 }}>
+                  <View className="gap-1.5">
                     <Input
                       label="New Password"
                       iconName="lock-closed-outline"
@@ -189,17 +144,12 @@ export default function ResetPasswordScreen() {
                       value={newPwd}
                       onChangeText={setNewPwd}
                       secureTextEntry
-                      brand={brand}
-                      colors={inputColors}
                     />
-                    <PasswordStrength
-                      password={newPwd}
-                      colors={{ border, error, success, warning, info }}
-                    />
+                    <PasswordStrength password={newPwd} />
                   </View>
 
                   {/* Confirm Password */}
-                  <View style={{ gap: 6 }}>
+                  <View className="gap-1.5">
                     <Input
                       label="Confirm Password"
                       iconName="lock-closed-outline"
@@ -208,17 +158,10 @@ export default function ResetPasswordScreen() {
                       onChangeText={setConfirmPwd}
                       secureTextEntry
                       error={pwdMismatch ? "Passwords do not match" : undefined}
-                      brand={brand}
-                      colors={inputColors}
                     />
+
                     {pwdMatch && (
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 5,
-                        }}
-                      >
+                      <View className="flex-row items-center gap-1.5">
                         <Ionicons
                           name="checkmark-circle"
                           size={13}
@@ -233,14 +176,12 @@ export default function ResetPasswordScreen() {
 
                   <PasswordRequirements
                     password={newPwd}
-                    colors={{ border, surface, subtle, success }}
                     onAllMet={setCanSubmit}
                   />
 
                   <Button
                     text="Reset Password"
                     rightIcon="checkmark-circle-outline"
-                    brand={brand}
                     loading={loading}
                     disabled={!canSubmit || !pwdMatch}
                     onPress={handleReset}
@@ -250,62 +191,26 @@ export default function ResetPasswordScreen() {
             ) : (
               <>
                 <View
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: 22,
-                    backgroundColor: successSoft,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 24,
-                  }}
+                  className={`w-[72px] h-[72px] rounded-2xl bg-[${successSoft}] items-center justify-center mb-6`}
                 >
                   <Ionicons name="checkmark-circle" size={36} color={success} />
                 </View>
 
-                <AppText
-                  variant="heading"
-                  color={text}
-                  style={{ fontSize: 26 }}
-                >
+                <AppText variant="heading" color={text} className="text-[26px]">
                   Password updated!
                 </AppText>
-                <AppText
-                  variant="body"
-                  color={subtle}
-                  style={{ marginTop: 10, marginBottom: 28 }}
-                >
+
+                <AppText variant="body" color={subtle} className="mt-2.5 mb-7">
                   Your password has been changed successfully. You can now sign
                   in with your new password.
                 </AppText>
 
                 <View
-                  style={{
-                    borderRadius: 20,
-                    borderWidth: 1,
-                    borderColor: border,
-                    backgroundColor: surface,
-                    padding: 20,
-                    gap: 16,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.06,
-                    shadowRadius: 16,
-                    elevation: 4,
-                  }}
+                  className={`rounded-2xl border border-[${border}] bg-[${surface}] p-5 gap-4 shadow-sm`}
                 >
                   {/* Security note */}
                   <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "flex-start",
-                      gap: 10,
-                      borderWidth: 1,
-                      borderRadius: 12,
-                      padding: 14,
-                      backgroundColor: successNoteBg,
-                      borderColor: successNoteBorder,
-                    }}
+                    className={`flex-row items-start gap-2.5 border border-[${successNoteBorder}] rounded-xl p-3.5 bg-[${successNoteBg}]`}
                   >
                     <Ionicons
                       name="shield-checkmark"
@@ -315,12 +220,7 @@ export default function ResetPasswordScreen() {
                     <AppText
                       variant="body"
                       color={success}
-                      style={{
-                        flex: 1,
-                        fontSize: 13,
-                        lineHeight: 19,
-                        fontWeight: "500",
-                      }}
+                      className="flex-1 text-[13px] leading-[19px] font-medium"
                     >
                       All other sessions have been signed out for your security.
                     </AppText>
@@ -329,7 +229,6 @@ export default function ResetPasswordScreen() {
                   <Button
                     text="Sign In Now"
                     rightIcon="arrow-forward"
-                    brand={brand}
                     onPress={() => router.replace("/(auth)/sign-in")}
                   />
                 </View>

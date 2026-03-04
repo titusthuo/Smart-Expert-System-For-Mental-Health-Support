@@ -1,11 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -23,50 +23,97 @@ interface Message {
   showTherapistRecommendation?: boolean;
 }
 
+// ─── Default greeting (no mood selected) ─────────────────────────────────────
+const DEFAULT_GREETING =
+  "Hello! I'm here to support you. How are you feeling today?";
+
+// ─── Mood-unaware AI response fallback ───────────────────────────────────────
+const getAIResponse = (input: string): string => {
+  const lower = input.toLowerCase();
+  if (lower.includes("anxious") || lower.includes("anxiety")) {
+    return "I understand that anxiety can feel overwhelming. Try this breathing exercise: Breathe in slowly for 4 counts, hold for 4, then exhale for 4. This can help calm your nervous system. Would you like to talk more about what's causing your anxiety?";
+  }
+  if (lower.includes("stress") || lower.includes("stressed")) {
+    return "Stress is a common experience, and it's good that you're recognizing it. Some helpful techniques include taking short breaks, practicing mindfulness, or going for a walk. What specific situations are causing you stress?";
+  }
+  if (lower.includes("sleep") || lower.includes("insomnia")) {
+    return "Sleep is crucial for mental health. Try establishing a consistent bedtime routine, avoiding screens an hour before bed, and creating a calm environment. How long have you been experiencing sleep difficulties?";
+  }
+  if (lower.includes("sad") || lower.includes("depressed")) {
+    return "I'm sorry you're feeling this way. It's important to acknowledge these feelings. Activities like exercise, connecting with friends, or engaging in hobbies can help. How long have you been feeling like this?";
+  }
+  return "Thank you for sharing that with me. I'm here to listen and support you. Can you tell me more about what you're experiencing? Remember, you're not alone in this journey.";
+};
+
 export default function ChatScreen() {
   const router = useRouter();
-  const {
-    bg,
-    surface,
-    border,
-    text,
-    subtle,
-    brand,
-    brandSoft,
-    warning,
-    info,
-    isDark,
-  } = useAuthTheme();
+  const { isDark } = useAuthTheme();
+
+  // ── Read mood params passed from the home screen ─────────────────────────
+  // `mood`       → e.g. "Anxious"
+  // `aiGreeting` → the tailored opening message for that mood
+  const { mood, aiGreeting } = useLocalSearchParams<{
+    mood?: string;
+    aiGreeting?: string;
+  }>();
+
+  const openingMessage = aiGreeting ?? DEFAULT_GREETING;
 
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: "Hello! I'm here to support you. How are you feeling today?",
+      text: openingMessage,
       sender: "ai",
       timestamp: new Date(),
     },
   ]);
   const [inputValue, setInputValue] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const scrollToBottom = () => {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    }, 120);
   };
+
+  // If the user arrived via a mood pill, show the "AI is typing" indicator
+  // briefly before the greeting appears — makes it feel more alive.
+  useEffect(() => {
+    if (mood) {
+      // Reset to empty first, show typing, then show the greeting
+      setMessages([]);
+      setIsTyping(true);
+      const timer = setTimeout(() => {
+        setIsTyping(false);
+        setMessages([
+          {
+            id: "1",
+            text: openingMessage,
+            sender: "ai",
+            timestamp: new Date(),
+          },
+        ]);
+        scrollToBottom();
+      }, 1200); // 1.2 s typing indicator
+      return () => clearTimeout(timer);
+    }
+  }, []); // run once on mount
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputValue,
+      text: inputValue.trim(),
       sender: "user",
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
+    setIsTyping(true);
+    scrollToBottom();
 
     setTimeout(() => {
       const lower = inputValue.toLowerCase();
@@ -74,144 +121,151 @@ export default function ChatScreen() {
         lower.includes("suicid") ||
         lower.includes("harm") ||
         lower.includes("very depressed") ||
-        lower.includes("can't go on");
+        lower.includes("can't go on") ||
+        lower.includes("kill myself");
 
       const aiText = isCritical
-        ? "I'm really concerned about what you're sharing. It sounds like you're going through a very difficult time. While I'm here to listen, I think it would be really helpful for you to speak with a professional therapist who can provide the support you need."
+        ? "I'm really concerned about what you're sharing. It sounds like you're in a lot of pain right now. While I'm here to listen, I strongly recommend speaking with a trained professional who can support you right away."
         : getAIResponse(inputValue);
 
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: aiText,
-        sender: "ai",
-        timestamp: new Date(),
-        showTherapistRecommendation: isCritical,
-      };
-
-      setMessages((prev) => [...prev, aiResponse]);
+      setIsTyping(false);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          text: aiText,
+          sender: "ai",
+          timestamp: new Date(),
+          showTherapistRecommendation: isCritical,
+        },
+      ]);
       scrollToBottom();
     }, 1000);
   };
 
-  const getAIResponse = (input: string): string => {
-    const lower = input.toLowerCase();
-
-    if (lower.includes("anxious") || lower.includes("anxiety")) {
-      return "I understand that anxiety can feel overwhelming. Try this breathing exercise: Breathe in slowly for 4 counts, hold for 4, then exhale for 4. This can help calm your nervous system. Would you like to talk more about what's causing your anxiety?";
-    }
-    if (lower.includes("stress") || lower.includes("stressed")) {
-      return "Stress is a common experience, and it's good that you're recognizing it. Some helpful techniques include taking short breaks, practicing mindfulness, or going for a walk. What specific situations are causing you stress?";
-    }
-    if (lower.includes("sleep") || lower.includes("insomnia")) {
-      return "Sleep is crucial for mental health. Try establishing a consistent bedtime routine, avoiding screens an hour before bed, and creating a calm environment. How long have you been experiencing sleep difficulties?";
-    }
-    if (lower.includes("sad") || lower.includes("depressed")) {
-      return "I'm sorry you're feeling this way. It's important to acknowledge these feelings. Activities like exercise, connecting with friends, or engaging in hobbies can help. How long have you been feeling like this?";
-    }
-    return "Thank you for sharing that with me. I'm here to listen and support you. Can you tell me more about what you're experiencing? Remember, you're not alone in this journey.";
-  };
+  const iconColor = isDark ? "#A78BFA" : "#7C3AED";
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={["top"]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: brand }]}>
-        <View style={styles.headerRow}>
-          <View
-            style={[
-              styles.headerAvatar,
-              { backgroundColor: brandSoft },
-            ]}
-          >
-            <Text style={[styles.headerAvatarText, { color: brand }]}>AI</Text>
-          </View>
-          <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>Mental Health AI Assistant</Text>
-            <Text style={[styles.headerSubtitle, { color: brandSoft }]}>
-              Always here to listen
-            </Text>
-          </View>
-        </View>
-      </View>
+    <>
+      <StatusBar style={isDark ? "light" : "dark"} />
 
-      {/* Messages */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-      >
-        <ScrollView
-          ref={scrollViewRef}
-          style={[styles.scrollView, { backgroundColor: bg }]}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={scrollToBottom}
+      <SafeAreaView className="flex-1 bg-background">
+        {/* ── Header ── */}
+        <View className="flex-row items-center justify-between px-5 py-3 bg-card border-b border-border">
+          <View className="flex-row items-center">
+            {/* AI Avatar with online dot */}
+            <View className="relative">
+              <View className="w-11 h-11 rounded-full bg-brand items-center justify-center">
+                <Text className="text-white font-bold text-sm">AI</Text>
+              </View>
+              <View className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-card" />
+            </View>
+
+            <View className="ml-3">
+              <Text className="text-foreground font-bold text-base tracking-tight">
+                Mental Health Assistant
+              </Text>
+              {/* If the user arrived with a mood, show it in the subtitle */}
+              {mood ? (
+                <Text className="text-brand text-xs font-semibold mt-0.5">
+                  Chatting about feeling {mood.toLowerCase()}
+                </Text>
+              ) : (
+                <Text className="text-green-500 text-xs font-medium mt-0.5">
+                  Online • Confidential
+                </Text>
+              )}
+            </View>
+          </View>
+
+          <TouchableOpacity className="w-9 h-9 rounded-full bg-muted items-center justify-center">
+            <Ionicons
+              name="information-circle-outline"
+              size={20}
+              color={isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.45)"}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Mood context banner (shown when arriving from a mood pill) ── */}
+        {mood && (
+          <View className="mx-4 mt-3 px-4 py-2.5 rounded-xl bg-brand/10 border border-brand/20 flex-row items-center gap-2">
+            <Ionicons name="happy-outline" size={16} color={iconColor} />
+            <Text className="text-brand text-xs font-semibold flex-1">
+              You selected "{mood}" — our AI will support you through this
+            </Text>
+            {/* Let the user dismiss the banner */}
+            <TouchableOpacity
+              onPress={() => router.setParams({ mood: undefined })}
+            >
+              <Ionicons
+                name="close-circle"
+                size={16}
+                color={
+                  isDark ? "rgba(167,139,250,0.6)" : "rgba(124,58,237,0.5)"
+                }
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
         >
-          {messages.map((msg) => (
-            <View key={msg.id} style={styles.messageWrapper}>
-              <View
-                style={[
-                  styles.messageRow,
-                  msg.sender === "user" ? styles.messageRowEnd : styles.messageRowStart,
-                ]}
-              >
+          {/* ── Messages list ── */}
+          <ScrollView
+            ref={scrollViewRef}
+            className="flex-1 bg-background"
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingTop: 24,
+              paddingBottom: 140,
+            }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={scrollToBottom}
+          >
+            {messages.map((msg) => (
+              <View key={msg.id} className="mb-5">
                 <View
-                  style={[
-                    styles.bubbleRow,
-                    msg.sender === "user" ? styles.bubbleRowReverse : null,
-                  ]}
+                  className={`flex-row items-end ${
+                    msg.sender === "user" ? "justify-end" : "justify-start"
+                  }`}
                 >
-                  <View
-                    style={[
-                      styles.avatar,
-                      {
-                        backgroundColor:
-                          msg.sender === "ai"
-                            ? brandSoft
-                            : isDark
-                              ? "hsl(217, 50%, 28%)"
-                              : "hsl(217, 90%, 92%)",
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.avatarText,
-                        { color: msg.sender === "ai" ? brand : info },
-                      ]}
-                    >
-                      {msg.sender === "ai" ? "AI" : "You"}
-                    </Text>
-                  </View>
-                  <View style={styles.bubbleContainer}>
+                  {/* AI avatar */}
+                  {msg.sender === "ai" && (
+                    <View className="w-8 h-8 rounded-full bg-brand items-center justify-center mr-2 mb-1 shrink-0">
+                      <Text className="text-white font-bold text-[10px]">
+                        AI
+                      </Text>
+                    </View>
+                  )}
+
+                  <View className="max-w-[76%]">
                     <View
-                      style={[
-                        styles.bubble,
+                      className={
                         msg.sender === "user"
-                          ? { backgroundColor: brand }
-                          : {
-                              backgroundColor: surface,
-                              borderColor: border,
-                              borderWidth: 1,
-                            },
-                      ]}
+                          ? "bg-brand rounded-3xl rounded-br-sm px-4 py-3"
+                          : "bg-card border border-border rounded-3xl rounded-bl-sm px-4 py-3"
+                      }
                     >
                       <Text
-                        style={[
-                          styles.bubbleText,
-                          {
-                            color: msg.sender === "user" ? "#FFFFFF" : text,
-                          },
-                        ]}
+                        className={
+                          msg.sender === "user"
+                            ? "text-white text-[15px] leading-6"
+                            : "text-foreground text-[15px] leading-6"
+                        }
                       >
                         {msg.text}
                       </Text>
                     </View>
+
                     <Text
-                      style={[
-                        styles.timestamp,
-                        { color: subtle },
-                        msg.sender === "user" ? styles.timestampRight : styles.timestampLeft,
-                      ]}
+                      className={`text-xs text-muted-foreground mt-1.5 px-1 ${
+                        msg.sender === "user" ? "text-right" : "text-left"
+                      }`}
                     >
                       {msg.timestamp.toLocaleTimeString([], {
                         hour: "2-digit",
@@ -219,260 +273,101 @@ export default function ChatScreen() {
                       })}
                     </Text>
                   </View>
-                </View>
-              </View>
 
-              {msg.showTherapistRecommendation && (
-                <View
-                  style={[
-                    styles.warningBanner,
-                    { backgroundColor: brandSoft, borderColor: warning },
-                  ]}
-                >
-                  <View style={styles.warningRow}>
-                    <Ionicons
-                      name="warning-outline"
-                      size={20}
-                      color={warning}
-                      style={styles.warningIcon}
-                    />
-                    <View style={styles.warningContent}>
-                      <Text style={[styles.warningTitle, { color: text }]}>
-                        This seems serious — would you like professional support?
+                  {/* User avatar */}
+                  {msg.sender === "user" && (
+                    <View className="w-8 h-8 rounded-full bg-brand/60 items-center justify-center ml-2 mb-1 shrink-0">
+                      <Text className="text-white font-bold text-[10px]">
+                        You
                       </Text>
-                      <Text style={[styles.warningBody, { color: subtle }]}>
-                        A licensed therapist can provide personalized care and support.
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => router.replace("/(tabs)/therapists")}
-                        style={[styles.therapistButton, { backgroundColor: warning }]}
-                      >
-                        <Text style={styles.therapistButtonText}>
-                          Book Appointment with Therapist
+                    </View>
+                  )}
+                </View>
+
+                {/* Critical warning banner */}
+                {msg.showTherapistRecommendation && (
+                  <View className="mt-4 mx-1 p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/30">
+                    <View className="flex-row items-start gap-3">
+                      <Ionicons name="alert-circle" size={24} color="#EAB308" />
+                      <View className="flex-1">
+                        <Text className="text-foreground font-bold text-[15px] mb-1.5">
+                          This sounds serious
                         </Text>
-                      </TouchableOpacity>
+                        <Text className="text-muted-foreground text-sm leading-5 mb-4">
+                          I'm worried about what you're going through. While I'm
+                          here to listen, I strongly recommend connecting with a
+                          professional who can offer immediate support.
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => router.replace("/(tabs)/therapists")}
+                          className="bg-yellow-500 py-3 px-5 rounded-xl items-center"
+                          activeOpacity={0.8}
+                        >
+                          <Text className="text-black font-bold text-sm">
+                            Find a Therapist Now
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   </View>
-                </View>
-              )}
-            </View>
-          ))}
-        </ScrollView>
+                )}
+              </View>
+            ))}
 
-        {/* Input area */}
-        <View
-          style={[
-            styles.inputArea,
-            { backgroundColor: surface, borderTopColor: border },
-          ]}
-        >
-          <View style={styles.inputRow}>
-            <TextInput
-              value={inputValue}
-              onChangeText={setInputValue}
-              placeholder="Type your message..."
-              placeholderTextColor={subtle}
-              style={[
-                styles.input,
-                {
-                  backgroundColor: bg,
-                  borderColor: border,
-                  color: text,
-                },
-              ]}
-              multiline
-              onSubmitEditing={handleSendMessage}
-              blurOnSubmit={false}
-            />
-            <TouchableOpacity
-              onPress={handleSendMessage}
-              style={[styles.sendButton, { backgroundColor: brand }]}
-              disabled={!inputValue.trim()}
-            >
-              <Ionicons name="send" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
+            {/* ── Typing indicator ── */}
+            {isTyping && (
+              <View className="flex-row items-end mb-5">
+                <View className="w-8 h-8 rounded-full bg-brand items-center justify-center mr-2 mb-1 shrink-0">
+                  <Text className="text-white font-bold text-[10px]">AI</Text>
+                </View>
+                <View className="bg-card border border-border rounded-3xl rounded-bl-sm px-4 py-3.5">
+                  <View className="flex-row items-center gap-1.5">
+                    {/* Three animated dots — pure layout trick using opacity classes */}
+                    <View className="w-2 h-2 rounded-full bg-muted-foreground opacity-40" />
+                    <View className="w-2 h-2 rounded-full bg-muted-foreground opacity-70" />
+                    <View className="w-2 h-2 rounded-full bg-muted-foreground opacity-100" />
+                  </View>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+
+          {/* ── Input area ── */}
+          <View className="border-t border-border bg-card px-4 pt-3 pb-6">
+            <View className="flex-row items-end">
+              <TextInput
+                value={inputValue}
+                onChangeText={setInputValue}
+                placeholder="Type your message..."
+                placeholderTextColor={
+                  isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)"
+                }
+                className="flex-1 bg-muted border border-border rounded-3xl px-5 py-3 text-[15px] text-foreground max-h-36"
+                multiline
+                textAlignVertical="top"
+                onSubmitEditing={handleSendMessage}
+                blurOnSubmit={false}
+              />
+
+              <TouchableOpacity
+                onPress={handleSendMessage}
+                disabled={!inputValue.trim()}
+                className={`ml-3 mb-1 w-12 h-12 rounded-full bg-brand items-center justify-center ${
+                  !inputValue.trim() ? "opacity-40" : "active:opacity-80"
+                }`}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="send" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+
+            <Text className="text-center text-xs text-muted-foreground mt-3 opacity-70">
+              This AI provides general wellness support. For urgent help,
+              contact emergency services.
+            </Text>
           </View>
-          <Text style={[styles.disclaimer, { color: subtle }]}>
-            This AI provides general wellness support. For urgent help, contact
-            emergency services.
-          </Text>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerAvatarText: {
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  headerText: {
-    marginLeft: 12,
-  },
-  headerTitle: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 100,
-  },
-  messageWrapper: {
-    marginBottom: 16,
-  },
-  messageRow: {
-    flexDirection: "row",
-  },
-  messageRowStart: {
-    justifyContent: "flex-start",
-  },
-  messageRowEnd: {
-    justifyContent: "flex-end",
-  },
-  bubbleRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    maxWidth: "80%",
-  },
-  bubbleRowReverse: {
-    flexDirection: "row-reverse",
-  },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  bubbleContainer: {
-    marginHorizontal: 8,
-  },
-  bubble: {
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  bubbleText: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  timestamp: {
-    fontSize: 11,
-    marginTop: 4,
-  },
-  timestampLeft: {
-    textAlign: "left",
-  },
-  timestampRight: {
-    textAlign: "right",
-  },
-  warningBanner: {
-    marginTop: 16,
-    marginHorizontal: 8,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  warningRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
-  warningIcon: {
-    marginRight: 12,
-    marginTop: 2,
-  },
-  warningContent: {
-    flex: 1,
-  },
-  warningTitle: {
-    fontWeight: "600",
-    fontSize: 15,
-    marginBottom: 4,
-  },
-  warningBody: {
-    fontSize: 14,
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  therapistButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  therapistButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  inputArea: {
-    borderTopWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  input: {
-    flex: 1,
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    fontSize: 16,
-    maxHeight: 100,
-    borderWidth: 1,
-  },
-  sendButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 8,
-  },
-  disclaimer: {
-    fontSize: 11,
-    textAlign: "center",
-    marginTop: 8,
-  },
-});

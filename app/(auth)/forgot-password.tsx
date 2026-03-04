@@ -26,8 +26,6 @@ export default function ForgotPasswordScreen() {
     subtle,
     brand,
     brandSoft,
-    error,
-    errorSoft,
     success,
     successSoft,
   } = useAuthTheme();
@@ -36,14 +34,12 @@ export default function ForgotPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const inputColors = { border, surface, text, subtle, error, errorSoft };
-
   const handleSubmit = () => {
-    if (!email) {
+    if (!email.trim()) {
       Alert.alert("Required", "Please enter your email address.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       Alert.alert("Invalid email", "Please enter a valid email address.");
       return;
     }
@@ -51,271 +47,169 @@ export default function ForgotPasswordScreen() {
     setTimeout(() => {
       setLoading(false);
       setSent(true);
-    }, 1500);
+    }, 1400);
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
+    <View className="flex-1" style={{ backgroundColor: bg }}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-      <SafeAreaView style={{ flex: 1 }}>
+
+      <SafeAreaView className="flex-1">
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
+          className="flex-1"
+          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
         >
-          {/* ── Header ── */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingHorizontal: 20,
-              paddingVertical: 12,
-              borderBottomWidth: 1,
-              borderBottomColor: border,
-            }}
-          >
+          {/* Header */}
+          <View className="flex-row items-center justify-between px-5 py-4 border-b border-border/60 bg-surface/80 backdrop-blur-sm">
             <TouchableOpacity
               onPress={() => router.back()}
               activeOpacity={0.7}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: border,
-                backgroundColor: surface,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+              className="w-10 h-10 rounded-xl border border-border/50 bg-surface items-center justify-center shadow-sm"
             >
-              <Ionicons name="arrow-back" size={20} color={text} />
+              <Ionicons name="arrow-back" size={22} color={text} />
             </TouchableOpacity>
-            <AppText variant="label" color={text} style={{ fontSize: 16 }}>
-              {sent ? "Check Email" : "Reset Password"}
+
+            <AppText variant="label" className="text-lg font-semibold">
+              {sent ? "Check your email" : "Reset password"}
             </AppText>
-            <View style={{ width: 40 }} />
+
+            <View className="w-10" />
           </View>
 
           <ScrollView
+            className="flex-1"
             contentContainerStyle={{
               flexGrow: 1,
               paddingHorizontal: 24,
-              paddingTop: 32,
-              paddingBottom: 40,
+              paddingTop: 40,
+              paddingBottom: 60,
             }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
+            <View className="items-center mb-10">
+              <View
+                className={`w-20 h-20 rounded-2xl items-center justify-center mb-5 shadow-md ${
+                  sent ? `bg-${successSoft}` : `bg-${brandSoft}`
+                }`}
+              >
+                <Ionicons
+                  name={sent ? "mail-open-outline" : "lock-open-outline"}
+                  size={40}
+                  color={sent ? success : brand}
+                />
+              </View>
+
+              <AppText
+                variant="heading"
+                className="text-3xl font-bold text-center mb-3"
+              >
+                {sent ? "Reset link sent!" : "Forgot password?"}
+              </AppText>
+
+              <AppText
+                variant="body"
+                className="text-center leading-6 max-w-[320px]"
+              >
+                {sent ? (
+                  <>
+                    We sent a password reset link to{" "}
+                    <AppText variant="link" className="font-medium">
+                      {email}
+                    </AppText>
+                    . Please check your inbox (and spam folder).
+                  </>
+                ) : (
+                  "No worries. Enter your email and we'll send you a secure link to reset your password."
+                )}
+              </AppText>
+            </View>
+
             {!sent ? (
-              <>
-                <View
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: 22,
-                    backgroundColor: brandSoft,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 24,
-                  }}
-                >
-                  <Ionicons name="lock-open-outline" size={32} color={brand} />
-                </View>
+              <View
+                className={`bg-surface rounded-2xl border border-border/40 p-6 shadow-md gap-6`}
+              >
+                <Input
+                  label="Email address"
+                  iconName="mail-outline"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="send"
+                  onSubmitEditing={handleSubmit}
+                />
 
-                <AppText
-                  variant="heading"
-                  color={text}
-                  style={{ fontSize: 26 }}
-                >
-                  Forgot your password?
-                </AppText>
-                <AppText
-                  variant="body"
-                  color={subtle}
-                  style={{ marginTop: 10, marginBottom: 28 }}
-                >
-                  No worries. Enter the email address linked to your account and
-                  we will send you a secure reset link.
-                </AppText>
-
-                <View
-                  style={{
-                    borderRadius: 20,
-                    borderWidth: 1,
-                    borderColor: border,
-                    backgroundColor: surface,
-                    padding: 20,
-                    gap: 16,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.06,
-                    shadowRadius: 16,
-                    elevation: 4,
-                  }}
-                >
-                  <Input
-                    label="Email Address"
-                    iconName="mail-outline"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    brand={brand}
-                    colors={inputColors}
-                  />
-                  <Button
-                    text="Send Reset Link"
-                    rightIcon="send-outline"
-                    brand={brand}
-                    loading={loading}
-                    onPress={handleSubmit}
-                  />
-                </View>
-              </>
+                <Button
+                  text="Send Reset Link"
+                  rightIcon="send-outline"
+                  brand={brand}
+                  loading={loading}
+                  onPress={handleSubmit}
+                  className="h-14 rounded-xl text-base font-semibold"
+                  disabled={loading || !email.trim()}
+                />
+              </View>
             ) : (
-              <>
-                <View
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: 22,
-                    backgroundColor: successSoft,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 24,
-                  }}
-                >
-                  <Ionicons
-                    name="checkmark-circle-outline"
-                    size={32}
-                    color={success}
-                  />
-                </View>
-
-                <AppText
-                  variant="heading"
-                  color={text}
-                  style={{ fontSize: 26 }}
-                >
-                  Email sent!
-                </AppText>
-                <AppText
-                  variant="body"
-                  color={subtle}
-                  style={{ marginTop: 10, marginBottom: 28 }}
-                >
-                  We have sent a reset link to{" "}
-                  <AppText variant="link" color={text}>
-                    {email}
-                  </AppText>
-                  . Check your inbox and follow the instructions.
-                </AppText>
-
-                <View
-                  style={{
-                    borderRadius: 20,
-                    borderWidth: 1,
-                    borderColor: border,
-                    backgroundColor: surface,
-                    padding: 20,
-                    gap: 16,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.06,
-                    shadowRadius: 16,
-                    elevation: 4,
-                  }}
-                >
+              <View className="bg-surface rounded-2xl border border-border/40 p-6 shadow-md gap-6">
+                <View className="gap-4">
                   {[
                     { n: "1", t: "Open the email from Mentally" },
-                    { n: "2", t: "Tap the reset link in the email" },
-                    { n: "3", t: "Choose a new secure password" },
-                  ].map((s) => (
-                    <View
-                      key={s.n}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 12,
-                      }}
-                    >
+                    { n: "2", t: "Tap the password reset link" },
+                    { n: "3", t: "Create your new secure password" },
+                  ].map((step) => (
+                    <View key={step.n} className="flex-row items-start gap-3">
                       <View
-                        style={{
-                          width: 30,
-                          height: 30,
-                          borderRadius: 15,
-                          backgroundColor: brandSoft,
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}
+                        className={`w-9 h-9 rounded-full bg-${brandSoft}/30 items-center justify-center flex-shrink-0 mt-0.5`}
                       >
-                        <AppText variant="stepNum" color={brand}>
-                          {s.n}
+                        <AppText
+                          variant="stepNum"
+                          className="text-base font-bold"
+                        >
+                          {step.n}
                         </AppText>
                       </View>
-                      <AppText
-                        variant="stepText"
-                        color={text}
-                        style={{ flex: 1 }}
-                      >
-                        {s.t}
+                      <AppText variant="stepText" className="flex-1 leading-6">
+                        {step.t}
                       </AppText>
                     </View>
                   ))}
-
-                  <Button
-                    text="Enter New Password"
-                    rightIcon="arrow-forward"
-                    brand={brand}
-                    onPress={() =>
-                      router.push({ pathname: "/(auth)/reset-password" as any })
-                    }
-                  />
-
-                  <TouchableOpacity
-                    style={{ alignItems: "center", paddingVertical: 4 }}
-                  >
-                    <AppText
-                      variant="body"
-                      color={subtle}
-                      style={{ fontSize: 13 }}
-                    >
-                      Wrong email?{" "}
-                      <AppText
-                        variant="link"
-                        color={brand}
-                        onPress={() => {
-                          setSent(false);
-                          setEmail("");
-                        }}
-                      >
-                        Try again
-                      </AppText>
-                    </AppText>
-                  </TouchableOpacity>
                 </View>
-              </>
+
+                <Button
+                  text="Enter New Password"
+                  rightIcon="arrow-forward"
+                  brand={brand}
+                  onPress={() => router.push("/(auth)/reset-password")}
+                  className="h-14 rounded-xl text-base font-semibold mt-2"
+                />
+
+                <TouchableOpacity
+                  onPress={() => {
+                    setSent(false);
+                    setEmail("");
+                  }}
+                  className="items-center py-2"
+                >
+                  <AppText variant="body" className="text-sm">
+                    Wrong email?{" "}
+                    <AppText variant="link" className="font-medium">
+                      Try again
+                    </AppText>
+                  </AppText>
+                </TouchableOpacity>
+              </View>
             )}
 
             <TouchableOpacity
               onPress={() => router.push("/(auth)/sign-in")}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                marginTop: 28,
-              }}
+              className="flex-row items-center justify-center gap-2 mt-10 opacity-80 active:opacity-100"
             >
-              <Ionicons name="arrow-back-outline" size={15} color={subtle} />
-              <AppText
-                variant="hint"
-                color={subtle}
-                style={{ fontWeight: "500" }}
-              >
+              <Ionicons name="arrow-back-outline" size={16} color={subtle} />
+              <AppText variant="hint" className="font-medium">
                 Back to Sign In
               </AppText>
             </TouchableOpacity>

@@ -1,17 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect } from "react";
 import { Text, View } from "react-native";
+import { useAuthTheme } from "@/hooks/use-auth-theme";
 
 export type Requirement = {
   label: string;
   test: (pwd: string) => boolean;
-};
-
-export type PasswordRequirementsColors = {
-  border: string;
-  surface: string;
-  subtle: string;
-  success: string;
 };
 
 const DEFAULT_REQUIREMENTS: Requirement[] = [
@@ -23,7 +17,6 @@ const DEFAULT_REQUIREMENTS: Requirement[] = [
 
 type Props = {
   password: string;
-  colors: PasswordRequirementsColors;
   requirements?: Requirement[];
   title?: string;
   onAllMet?: (allMet: boolean) => void;
@@ -31,59 +24,39 @@ type Props = {
 
 export function PasswordRequirements({
   password,
-  colors,
   requirements = DEFAULT_REQUIREMENTS,
   title = "PASSWORD REQUIREMENTS",
   onAllMet,
 }: Props) {
+  const { success, subtle } = useAuthTheme();
   const evaluated = requirements.map((r) => ({ ...r, met: r.test(password) }));
   const allMet = evaluated.every((r) => r.met);
 
   useEffect(() => {
     onAllMet?.(allMet);
-  }, [allMet]);
+  }, [allMet, onAllMet]);
 
   return (
-    <View
-      style={{
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: 12,
-        padding: 14,
-        gap: 8,
-        backgroundColor: colors.surface,
-      }}
-    >
+    <View className="border border-border rounded-xl p-3.5 bg-card">
       {title && (
         <Text
-          style={{
-            fontSize: 10,
-            fontWeight: "800",
-            letterSpacing: 0.8,
-            textTransform: "uppercase",
-            color: colors.subtle,
-            marginBottom: 2,
-          }}
+          className="text-[10px] font-extrabold tracking-[0.8px] uppercase text-muted-foreground mb-1"
         >
           {title}
         </Text>
       )}
       {evaluated.map((r, i) => (
-        <View
-          key={i}
-          style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-        >
+        <View key={i} className="flex-row items-center mt-2">
           <Ionicons
             name={r.met ? "checkmark-circle" : "ellipse-outline"}
             size={14}
-            color={r.met ? colors.success : colors.subtle}
+            color={r.met ? success : subtle}
           />
           <Text
-            style={{
-              fontSize: 12,
-              color: r.met ? colors.success : colors.subtle,
-              fontWeight: r.met ? "600" : "400",
-            }}
+            className={[
+              "text-[12px] ml-2",
+              r.met ? "text-success font-semibold" : "text-muted-foreground",
+            ].join(" ")}
           >
             {r.label}
           </Text>

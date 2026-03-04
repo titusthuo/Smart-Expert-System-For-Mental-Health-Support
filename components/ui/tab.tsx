@@ -1,12 +1,6 @@
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-export type TabStripColors = {
-  border: string;
-  subtle: string;
-  brand: string;
-};
-
 export type TabItem = {
   key: string;
   label: string;
@@ -16,17 +10,15 @@ export type TabItem = {
 type TabStripProps = {
   tabs: [TabItem, TabItem];
   activeKey: string;
-  colors: TabStripColors;
+  className?: string;
 };
 
-export function TabStrip({ tabs, activeKey, colors }: TabStripProps) {
+export function TabStrip({ tabs, activeKey, className }: TabStripProps) {
   return (
     <View
-      style={{
-        flexDirection: "row",
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-      }}
+      className={["flex-row border-b border-border", className]
+        .filter(Boolean)
+        .join(" ")}
     >
       {tabs.map((tab) => {
         const isActive = tab.key === activeKey;
@@ -35,35 +27,21 @@ export function TabStrip({ tabs, activeKey, colors }: TabStripProps) {
             key={tab.key}
             onPress={tab.onPress}
             activeOpacity={isActive ? 1 : 0.7}
-            style={{
-              flex: 1,
-              alignItems: "center",
-              paddingVertical: 14,
-              position: "relative",
-            }}
+            className="flex-1 items-center py-3.5 relative"
           >
             <Text
-              style={{
-                fontSize: 14,
-                fontWeight: isActive ? "700" : "500",
-                color: isActive ? colors.brand : colors.subtle,
-              }}
+              className={[
+                "text-[14px]",
+                isActive
+                  ? "font-bold text-brand"
+                  : "font-medium text-muted-foreground",
+              ].join(" ")}
             >
               {tab.label}
             </Text>
 
             {isActive && (
-              <View
-                style={{
-                  position: "absolute",
-                  bottom: -1,
-                  left: "20%",
-                  right: "20%",
-                  height: 2,
-                  borderRadius: 1,
-                  backgroundColor: colors.brand,
-                }}
-              />
+              <View className="absolute -bottom-[1px] left-[20%] right-[20%] h-0.5 rounded bg-brand" />
             )}
           </TouchableOpacity>
         );

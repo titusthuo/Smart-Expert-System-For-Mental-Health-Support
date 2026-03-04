@@ -18,51 +18,40 @@ type Variant =
 
 type AppTextProps = TextProps & {
   variant?: Variant;
-  color?: string;
+  color?: string; // legacy (prefer className)
+  className?: string;
   children: React.ReactNode;
 };
 
-const variantStyles: Record<Variant, object> = {
-  heading: {
-    fontSize: 30,
-    fontWeight: "800",
-    letterSpacing: -0.8,
-    lineHeight: 36,
-  },
-  subheading: { fontSize: 14, fontWeight: "400", lineHeight: 20, marginTop: 6 },
-  label: { fontSize: 13, fontWeight: "600", letterSpacing: 0.1 },
-  hint: { fontSize: 11, fontWeight: "400", lineHeight: 15 },
-  body: { fontSize: 14, fontWeight: "400", lineHeight: 22 },
-  link: { fontSize: 13, fontWeight: "700" },
-  brandName: { fontSize: 18, fontWeight: "700", letterSpacing: -0.3 },
-  brandSub: {
-    fontSize: 11,
-    fontWeight: "400",
-    marginTop: 1,
-    letterSpacing: 0.2,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-  },
-  tabActive: { fontSize: 14, fontWeight: "700" },
-  tabInactive: { fontSize: 14, fontWeight: "500" },
-  stepNum: { fontSize: 13, fontWeight: "800" },
-  stepText: { fontSize: 14, fontWeight: "400", lineHeight: 20 },
+const variantClasses: Record<Variant, string> = {
+  heading: "text-[30px] font-extrabold tracking-[-0.8px] leading-[36px] text-foreground",
+  subheading: "text-[14px] font-normal leading-[20px] mt-1.5 text-muted-foreground",
+  label: "text-[13px] font-semibold tracking-[0.1px] text-foreground",
+  hint: "text-[11px] font-normal leading-[15px] text-muted-foreground",
+  body: "text-[14px] font-normal leading-[22px] text-foreground",
+  link: "text-[13px] font-bold text-brand",
+  brandName: "text-[18px] font-bold tracking-[-0.3px] text-foreground",
+  brandSub: "text-[11px] font-normal mt-0.5 tracking-[0.2px] text-muted-foreground",
+  sectionLabel:
+    "text-[11px] font-bold tracking-[0.8px] uppercase text-muted-foreground",
+  tabActive: "text-[14px] font-bold text-brand",
+  tabInactive: "text-[14px] font-medium text-muted-foreground",
+  stepNum: "text-[13px] font-extrabold text-brand",
+  stepText: "text-[14px] font-normal leading-[20px] text-foreground",
 };
 
 export function AppText({
   variant = "body",
   color,
+  className,
   style,
   children,
   ...rest
 }: AppTextProps) {
   return (
     <Text
-      style={[variantStyles[variant], color ? { color } : {}, style]}
+      className={[variantClasses[variant], className].filter(Boolean).join(" ")}
+      style={[color ? { color } : {}, style]}
       {...rest}
     >
       {children}
