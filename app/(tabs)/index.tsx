@@ -1,11 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { ReactNode, useRef, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { ReactNode, useCallback, useRef, useState } from "react";
 import {
+    Alert,
     Animated,
+    BackHandler,
     Dimensions,
     Image,
     ImageSourcePropType,
+    Linking,
+    Modal,
+    Platform,
     ScrollView,
     StatusBar,
     TouchableOpacity,
@@ -18,6 +23,11 @@ import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { MOODS, MoodLabel } from "@/lib/moods";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+const CRISIS_HELPLINE = {
+  name: "Kenya Red Cross",
+  number: "1199",
+} as const;
 
 // ─── Image with graceful fallback ────────────────────────────────────────────
 interface ImageWithFallbackProps {
@@ -98,6 +108,51 @@ const PressableCard = ({
 export default function HomePage() {
   const router = useRouter();
   const { isDark, brandAccent } = useAuthTheme();
+
+  const [callConfirmVisible, setCallConfirmVisible] = useState(false);
+
+  const placeHelplineCall = useCallback(async () => {
+    const url =
+      Platform.OS === "ios"
+        ? `telprompt:${CRISIS_HELPLINE.number}`
+        : `tel:${CRISIS_HELPLINE.number}`;
+
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (!canOpen) {
+        Alert.alert(
+          "Unable to place call",
+          "Calling is not available on this device."
+        );
+        return;
+      }
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert(
+        "Unable to place call",
+        "Something went wrong while trying to start the call."
+      );
+    }
+  }, []);
+
+  const handleCallNow = useCallback(() => {
+    setCallConfirmVisible(true);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== "android") {
+        return;
+      }
+
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        router.replace("/(auth)/sign-in");
+        return true;
+      });
+
+      return () => sub.remove();
+    }, [router])
+  );
 
   // Tracks which mood pill is highlighted (null = none selected yet)
   const [selectedMood, setSelectedMood] = useState<MoodLabel | null>(null);
@@ -450,7 +505,11 @@ export default function HomePage() {
               Crisis helpline available 24/7. You are not alone.
             </AppText>
           </View>
-          <TouchableOpacity className="bg-red-500 px-3 py-2 rounded-xl">
+          <TouchableOpacity
+            className="bg-red-500 px-3 py-2 rounded-xl"
+            onPress={handleCallNow}
+            activeOpacity={0.85}
+          >
             <AppText unstyled className="text-white font-bold text-xs">
               Call Now
             </AppText>
@@ -459,6 +518,49 @@ export default function HomePage() {
 
         <View className="h-6" />
       </ScrollView>
+
+      <Modal
+        visible={callConfirmVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCallConfirmVisible(false)}
+      >
+        <View className="flex-1 bg-black/70 justify-center items-center px-6">
+          <View className="bg-card rounded-2xl p-6 w-full max-w-sm border border-border">
+            <AppText unstyled className="text-foreground font-bold text-lg mb-1">
+              Call helpline
+            </AppText>
+            <AppText unstyled className="text-muted-foreground text-sm leading-5 mb-5">
+              {`Call ${CRISIS_HELPLINE.name} (${CRISIS_HELPLINE.number}) for immediate support?`}
+            </AppText>
+
+            <View className="flex-row justify-end space-x-3">
+              <TouchableOpacity
+                onPress={() => setCallConfirmVisible(false)}
+                className="px-5 py-3 border border-border rounded-lg"
+                activeOpacity={0.9}
+              >
+                <AppText unstyled className="text-foreground font-semibold">
+                  Cancel
+                </AppText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={async () => {
+                  setCallConfirmVisible(false);
+                  await placeHelplineCall();
+                }}
+                className="px-5 py-3 bg-red-500 rounded-lg"
+                activeOpacity={0.9}
+              >
+                <AppText unstyled className="text-white font-semibold">
+                  Call Now
+                </AppText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

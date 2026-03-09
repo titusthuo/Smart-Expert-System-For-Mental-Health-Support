@@ -3,21 +3,21 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  View,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import {
-  DEFAULT_GREETING,
-  getAIResponse,
-  isCriticalInput,
+    DEFAULT_GREETING,
+    getAIResponse,
+    isCriticalInput,
 } from "@/lib/chat-ai";
 
 interface Message {
@@ -31,6 +31,7 @@ interface Message {
 export default function ChatScreen() {
   const router = useRouter();
   const { isDark, brandAccent } = useAuthTheme();
+  const insets = useSafeAreaInsets();
 
   // ── Read mood params passed from the home screen ─────────────────────────
   // `mood`       → e.g. "Anxious"
@@ -218,7 +219,7 @@ export default function ChatScreen() {
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
-          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+          keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
         >
           {/* ── Messages list ── */}
           <ScrollView
@@ -227,7 +228,7 @@ export default function ChatScreen() {
             contentContainerStyle={{
               paddingHorizontal: 16,
               paddingTop: 24,
-              paddingBottom: 140,
+              paddingBottom: 140 + insets.bottom,
             }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -367,7 +368,10 @@ export default function ChatScreen() {
           </ScrollView>
 
           {/* ── Input area ── */}
-          <View className="border-t border-border bg-card px-4 pt-3 pb-6">
+          <View
+            className="border-t border-border bg-card px-4 pt-3"
+            style={{ paddingBottom: Math.max(24, 12 + insets.bottom) }}
+          >
             <View className="flex-row items-end">
               <TextInput
                 value={inputValue}
