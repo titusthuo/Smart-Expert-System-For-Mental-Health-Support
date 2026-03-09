@@ -1,25 +1,25 @@
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StatusBar,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StatusBar,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
-  AppText,
-  Button,
-  Card,
-  Input,
-  PasswordRequirements,
-  PasswordStrength,
-  TabStrip,
+    AppText,
+    Button,
+    Card,
+    Input,
+    PasswordRequirements,
+    PasswordStrength,
+    TabStrip,
 } from "@/components/ui";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
@@ -149,11 +149,11 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
           >
             {/* ── Brand ── */}
             <View className="flex-row items-center gap-3 mb-9">
-              <View className="w-11 h-11 rounded-full items-center justify-center">
+              <View className="w-11 h-11 rounded-full overflow-hidden bg-card border border-border items-center justify-center">
                 <Image
                   source={logoImage}
-                  className="w-7 h-7 rounded-full"
-                  resizeMode="contain"
+                  className="w-full h-full"
+                  resizeMode="cover"
                   accessibilityLabel="Mentally logo"
                 />
               </View>

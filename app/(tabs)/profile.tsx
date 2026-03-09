@@ -1,4 +1,3 @@
-import React from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -6,7 +5,8 @@ import { AppText, Card } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 
 export default function ProfileScreen() {
-  const { bg, surface, border, text, subtle, brandSoft, brand } = useAuthTheme();
+  const { bg, surface, border, text, subtle, brandSoft, brand } =
+    useAuthTheme();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }} edges={["top"]}>
@@ -46,4 +46,3 @@ export default function ProfileScreen() {
     </SafeAreaView>
   );
 }
-

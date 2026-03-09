@@ -1,4 +1,3 @@
-import React from "react";
 import { Text, View } from "react-native";
 
 type Props = {
@@ -7,17 +6,19 @@ type Props = {
 
 function computeStrength(
   password: string,
-): { level: number; label: string; tone: "error" | "warning" | "info" | "success" } | null {
+): {
+  level: number;
+  label: string;
+  tone: "error" | "warning" | "info" | "success";
+} | null {
   if (!password) return null;
   const classes = [/[a-z]/, /[A-Z]/, /\d/, /[^a-zA-Z0-9]/].filter((r) =>
     r.test(password),
   ).length;
   if (password.length < 6)
     return { level: 1, label: "Too short", tone: "error" };
-  if (classes <= 2)
-    return { level: 2, label: "Weak", tone: "warning" };
-  if (classes === 3)
-    return { level: 3, label: "Good", tone: "info" };
+  if (classes <= 2) return { level: 2, label: "Weak", tone: "warning" };
+  if (classes === 3) return { level: 3, label: "Good", tone: "info" };
   return { level: 4, label: "Strong", tone: "success" };
 }
 

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -17,29 +17,27 @@ import { useAuthTheme } from "@/hooks/use-auth-theme";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
-  const {
-    isDark,
-    bg,
-    surface,
-    border,
-    text,
-    subtle,
-    brand,
-    brandSoft,
-    success,
-    successSoft,
-  } = useAuthTheme();
+  const { isDark, bg, text, subtle, brand, brandSoft, success, successSoft } =
+    useAuthTheme();
 
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
+  const headerTitle = sent ? "Check your email" : "Reset password";
+  const heroTitle = sent ? "Reset link sent!" : "Forgot password?";
+  const heroIconName = sent ? "mail-open-outline" : "lock-open-outline";
+  const heroIconColor = sent ? success : brand;
+  const heroBgClass = sent ? `bg-${successSoft}` : `bg-${brandSoft}`;
+
   const handleSubmit = () => {
-    if (!email.trim()) {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
       Alert.alert("Required", "Please enter your email address.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       Alert.alert("Invalid email", "Please enter a valid email address.");
       return;
     }
@@ -71,7 +69,7 @@ export default function ForgotPasswordScreen() {
             </TouchableOpacity>
 
             <AppText variant="label" className="text-lg font-semibold">
-              {sent ? "Check your email" : "Reset password"}
+              {headerTitle}
             </AppText>
 
             <View className="w-10" />
@@ -91,21 +89,17 @@ export default function ForgotPasswordScreen() {
             <View className="items-center mb-10">
               <View
                 className={`w-20 h-20 rounded-2xl items-center justify-center mb-5 shadow-md ${
-                  sent ? `bg-${successSoft}` : `bg-${brandSoft}`
+                  heroBgClass
                 }`}
               >
-                <Ionicons
-                  name={sent ? "mail-open-outline" : "lock-open-outline"}
-                  size={40}
-                  color={sent ? success : brand}
-                />
+                <Ionicons name={heroIconName} size={40} color={heroIconColor} />
               </View>
 
               <AppText
                 variant="heading"
                 className="text-3xl font-bold text-center mb-3"
               >
-                {sent ? "Reset link sent!" : "Forgot password?"}
+                {heroTitle}
               </AppText>
 
               <AppText

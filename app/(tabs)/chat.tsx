@@ -6,14 +6,19 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { AppText } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
+import {
+  DEFAULT_GREETING,
+  getAIResponse,
+  isCriticalInput,
+} from "@/lib/chat-ai";
 
 interface Message {
   id: string;
@@ -23,31 +28,9 @@ interface Message {
   showTherapistRecommendation?: boolean;
 }
 
-// ─── Default greeting (no mood selected) ─────────────────────────────────────
-const DEFAULT_GREETING =
-  "Hello! I'm here to support you. How are you feeling today?";
-
-// ─── Mood-unaware AI response fallback ───────────────────────────────────────
-const getAIResponse = (input: string): string => {
-  const lower = input.toLowerCase();
-  if (lower.includes("anxious") || lower.includes("anxiety")) {
-    return "I understand that anxiety can feel overwhelming. Try this breathing exercise: Breathe in slowly for 4 counts, hold for 4, then exhale for 4. This can help calm your nervous system. Would you like to talk more about what's causing your anxiety?";
-  }
-  if (lower.includes("stress") || lower.includes("stressed")) {
-    return "Stress is a common experience, and it's good that you're recognizing it. Some helpful techniques include taking short breaks, practicing mindfulness, or going for a walk. What specific situations are causing you stress?";
-  }
-  if (lower.includes("sleep") || lower.includes("insomnia")) {
-    return "Sleep is crucial for mental health. Try establishing a consistent bedtime routine, avoiding screens an hour before bed, and creating a calm environment. How long have you been experiencing sleep difficulties?";
-  }
-  if (lower.includes("sad") || lower.includes("depressed")) {
-    return "I'm sorry you're feeling this way. It's important to acknowledge these feelings. Activities like exercise, connecting with friends, or engaging in hobbies can help. How long have you been feeling like this?";
-  }
-  return "Thank you for sharing that with me. I'm here to listen and support you. Can you tell me more about what you're experiencing? Remember, you're not alone in this journey.";
-};
-
 export default function ChatScreen() {
   const router = useRouter();
-  const { isDark } = useAuthTheme();
+  const { isDark, brandAccent } = useAuthTheme();
 
   // ── Read mood params passed from the home screen ─────────────────────────
   // `mood`       → e.g. "Anxious"
@@ -69,7 +52,10 @@ export default function ChatScreen() {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isEscalated, setIsEscalated] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  const canSend = !isEscalated && inputValue.trim().length > 0;
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -84,6 +70,8 @@ export default function ChatScreen() {
       // Reset to empty first, show typing, then show the greeting
       setMessages([]);
       setIsTyping(true);
+      setIsEscalated(false);
+      setInputValue("");
       const timer = setTimeout(() => {
         setIsTyping(false);
         setMessages([
@@ -98,14 +86,22 @@ export default function ChatScreen() {
       }, 1200); // 1.2 s typing indicator
       return () => clearTimeout(timer);
     }
-  }, []); // run once on mount
+  }, [mood, openingMessage]);
 
   const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+    if (isEscalated) return;
+
+    const trimmedInput = inputValue.trim();
+    if (!trimmedInput) return;
+
+    const isCritical = isCriticalInput(trimmedInput);
+    if (isCritical) {
+      setIsEscalated(true);
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputValue.trim(),
+      text: trimmedInput,
       sender: "user",
       timestamp: new Date(),
     };
@@ -116,17 +112,12 @@ export default function ChatScreen() {
     scrollToBottom();
 
     setTimeout(() => {
-      const lower = inputValue.toLowerCase();
-      const isCritical =
-        lower.includes("suicid") ||
-        lower.includes("harm") ||
-        lower.includes("very depressed") ||
-        lower.includes("can't go on") ||
-        lower.includes("kill myself");
+      const emergencyLine =
+        "If you are in immediate danger, call 1190 (Kenya Red Cross Mental Health Hotline) or 999 right now.";
 
       const aiText = isCritical
-        ? "I'm really concerned about what you're sharing. It sounds like you're in a lot of pain right now. While I'm here to listen, I strongly recommend speaking with a trained professional who can support you right away."
-        : getAIResponse(inputValue);
+        ? `I'm really concerned about your safety based on what you shared. You deserve immediate support from a trained professional. ${emergencyLine}`
+        : getAIResponse(trimmedInput);
 
       setIsTyping(false);
       setMessages((prev) => [
@@ -143,7 +134,7 @@ export default function ChatScreen() {
     }, 1000);
   };
 
-  const iconColor = isDark ? "#A78BFA" : "#7C3AED";
+  const iconColor = brandAccent;
 
   return (
     <>
@@ -156,24 +147,35 @@ export default function ChatScreen() {
             {/* AI Avatar with online dot */}
             <View className="relative">
               <View className="w-11 h-11 rounded-full bg-brand items-center justify-center">
-                <Text className="text-white font-bold text-sm">AI</Text>
+                <AppText unstyled className="text-white font-bold text-sm">
+                  AI
+                </AppText>
               </View>
               <View className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-card" />
             </View>
 
             <View className="ml-3">
-              <Text className="text-foreground font-bold text-base tracking-tight">
+              <AppText
+                unstyled
+                className="text-foreground font-bold text-base tracking-tight"
+              >
                 Mental Health Assistant
-              </Text>
+              </AppText>
               {/* If the user arrived with a mood, show it in the subtitle */}
               {mood ? (
-                <Text className="text-brand text-xs font-semibold mt-0.5">
+                <AppText
+                  unstyled
+                  className="text-brand text-xs font-semibold mt-0.5"
+                >
                   Chatting about feeling {mood.toLowerCase()}
-                </Text>
+                </AppText>
               ) : (
-                <Text className="text-green-500 text-xs font-medium mt-0.5">
+                <AppText
+                  unstyled
+                  className="text-green-500 text-xs font-medium mt-0.5"
+                >
                   Online • Confidential
-                </Text>
+                </AppText>
               )}
             </View>
           </View>
@@ -191,9 +193,13 @@ export default function ChatScreen() {
         {mood && (
           <View className="mx-4 mt-3 px-4 py-2.5 rounded-xl bg-brand/10 border border-brand/20 flex-row items-center gap-2">
             <Ionicons name="happy-outline" size={16} color={iconColor} />
-            <Text className="text-brand text-xs font-semibold flex-1">
-              You selected "{mood}" — our AI will support you through this
-            </Text>
+            <AppText
+              unstyled
+              className="text-brand text-xs font-semibold flex-1"
+            >
+              You selected &quot;{mood}&quot; — our AI will support you through
+              this
+            </AppText>
             {/* Let the user dismiss the banner */}
             <TouchableOpacity
               onPress={() => router.setParams({ mood: undefined })}
@@ -237,9 +243,12 @@ export default function ChatScreen() {
                   {/* AI avatar */}
                   {msg.sender === "ai" && (
                     <View className="w-8 h-8 rounded-full bg-brand items-center justify-center mr-2 mb-1 shrink-0">
-                      <Text className="text-white font-bold text-[10px]">
+                      <AppText
+                        unstyled
+                        className="text-white font-bold text-[10px]"
+                      >
                         AI
-                      </Text>
+                      </AppText>
                     </View>
                   )}
 
@@ -251,7 +260,8 @@ export default function ChatScreen() {
                           : "bg-card border border-border rounded-3xl rounded-bl-sm px-4 py-3"
                       }
                     >
-                      <Text
+                      <AppText
+                        unstyled
                         className={
                           msg.sender === "user"
                             ? "text-white text-[15px] leading-6"
@@ -259,10 +269,11 @@ export default function ChatScreen() {
                         }
                       >
                         {msg.text}
-                      </Text>
+                      </AppText>
                     </View>
 
-                    <Text
+                    <AppText
+                      unstyled
                       className={`text-xs text-muted-foreground mt-1.5 px-1 ${
                         msg.sender === "user" ? "text-right" : "text-left"
                       }`}
@@ -271,15 +282,18 @@ export default function ChatScreen() {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
-                    </Text>
+                    </AppText>
                   </View>
 
                   {/* User avatar */}
                   {msg.sender === "user" && (
                     <View className="w-8 h-8 rounded-full bg-brand/60 items-center justify-center ml-2 mb-1 shrink-0">
-                      <Text className="text-white font-bold text-[10px]">
+                      <AppText
+                        unstyled
+                        className="text-white font-bold text-[10px]"
+                      >
                         You
-                      </Text>
+                      </AppText>
                     </View>
                   )}
                 </View>
@@ -290,22 +304,37 @@ export default function ChatScreen() {
                     <View className="flex-row items-start gap-3">
                       <Ionicons name="alert-circle" size={24} color="#EAB308" />
                       <View className="flex-1">
-                        <Text className="text-foreground font-bold text-[15px] mb-1.5">
+                        <AppText
+                          unstyled
+                          className="text-foreground font-bold text-[15px] mb-1.5"
+                        >
                           This sounds serious
-                        </Text>
-                        <Text className="text-muted-foreground text-sm leading-5 mb-4">
-                          I'm worried about what you're going through. While I'm
-                          here to listen, I strongly recommend connecting with a
-                          professional who can offer immediate support.
-                        </Text>
+                        </AppText>
+                        <AppText
+                          unstyled
+                          className="text-muted-foreground text-sm leading-5 mb-4"
+                        >
+                          I&apos;m concerned about your safety. Please connect
+                          with a mental health professional as soon as possible.
+                          If you are in immediate danger, call 1190 (Kenya Red
+                          Cross Mental Health Hotline) or 999 right now.
+                        </AppText>
                         <TouchableOpacity
-                          onPress={() => router.replace("/(tabs)/therapists")}
+                          onPress={() =>
+                            router.push({
+                              pathname: "/(tabs)/therapists",
+                              params: { reason: "crisis" },
+                            })
+                          }
                           className="bg-yellow-500 py-3 px-5 rounded-xl items-center"
                           activeOpacity={0.8}
                         >
-                          <Text className="text-black font-bold text-sm">
+                          <AppText
+                            unstyled
+                            className="text-black font-bold text-sm"
+                          >
                             Find a Therapist Now
-                          </Text>
+                          </AppText>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -318,7 +347,12 @@ export default function ChatScreen() {
             {isTyping && (
               <View className="flex-row items-end mb-5">
                 <View className="w-8 h-8 rounded-full bg-brand items-center justify-center mr-2 mb-1 shrink-0">
-                  <Text className="text-white font-bold text-[10px]">AI</Text>
+                  <AppText
+                    unstyled
+                    className="text-white font-bold text-[10px]"
+                  >
+                    AI
+                  </AppText>
                 </View>
                 <View className="bg-card border border-border rounded-3xl rounded-bl-sm px-4 py-3.5">
                   <View className="flex-row items-center gap-1.5">
@@ -338,10 +372,15 @@ export default function ChatScreen() {
               <TextInput
                 value={inputValue}
                 onChangeText={setInputValue}
-                placeholder="Type your message..."
+                placeholder={
+                  isEscalated
+                    ? "Chat paused — use the therapist directory"
+                    : "Type your message..."
+                }
                 placeholderTextColor={
                   isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)"
                 }
+                editable={!isEscalated}
                 className="flex-1 bg-muted border border-border rounded-3xl px-5 py-3 text-[15px] text-foreground max-h-36"
                 multiline
                 textAlignVertical="top"
@@ -351,9 +390,9 @@ export default function ChatScreen() {
 
               <TouchableOpacity
                 onPress={handleSendMessage}
-                disabled={!inputValue.trim()}
+                disabled={!canSend}
                 className={`ml-3 mb-1 w-12 h-12 rounded-full bg-brand items-center justify-center ${
-                  !inputValue.trim() ? "opacity-40" : "active:opacity-80"
+                  !canSend ? "opacity-40" : "active:opacity-80"
                 }`}
                 activeOpacity={0.8}
               >
@@ -361,10 +400,14 @@ export default function ChatScreen() {
               </TouchableOpacity>
             </View>
 
-            <Text className="text-center text-xs text-muted-foreground mt-3 opacity-70">
-              This AI provides general wellness support. For urgent help,
-              contact emergency services.
-            </Text>
+            <AppText
+              unstyled
+              className="text-center text-xs text-muted-foreground mt-3 opacity-70"
+            >
+              {isEscalated
+                ? "For your safety, MindEase KE has paused the chat. If you are in immediate danger, call 1190 or 999 right now."
+                : "This AI provides general wellness support. For urgent help, contact emergency services."}
+            </AppText>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

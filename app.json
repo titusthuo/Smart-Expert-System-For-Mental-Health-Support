@@ -27,6 +27,12 @@
     "plugins": [
       "expo-router",
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "MindEase KE uses your location to sort nearby therapists."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/image-2.png",

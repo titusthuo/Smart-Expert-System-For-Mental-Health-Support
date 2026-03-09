@@ -13,7 +13,6 @@ export function useAuthTheme() {
   const subtle = theme.mutedForeground;
 
   return {
-    scheme,
     isDark,
     bg,
     surface,
@@ -21,18 +20,16 @@ export function useAuthTheme() {
     text,
     subtle,
     brand: AuthPalette.brand,
+    brandAccent: isDark
+      ? AuthPalette.brandAccentDark
+      : AuthPalette.brandAccentLight,
     brandSoft: isDark ? "hsl(262, 40%, 26%)" : AuthPalette.brandSoft,
     error: AuthPalette.error,
-    errorSoft: isDark ? "hsl(0, 40%, 25%)" : AuthPalette.errorSoft,
     success: AuthPalette.success,
     successSoft: isDark ? "hsl(152, 40%, 20%)" : AuthPalette.successSoft,
     successNoteBg: isDark ? "hsl(152, 35%, 18%)" : AuthPalette.successNoteBg,
     successNoteBorder: isDark
       ? "hsl(152, 40%, 30%)"
       : AuthPalette.successNoteBorder,
-    warning: AuthPalette.warning,
-    info: AuthPalette.info,
-    socialGoogle: AuthPalette.socialGoogle,
-    socialFacebook: AuthPalette.socialFacebook,
   };
 }

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -44,8 +44,13 @@ export default function ResetPasswordScreen() {
   const [canSubmit, setCanSubmit] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
 
-  const pwdMatch = confirmPwd.length > 0 && newPwd === confirmPwd;
-  const pwdMismatch = confirmPwd.length > 0 && newPwd !== confirmPwd;
+  const headerClassName = `flex-row items-center justify-between px-5 py-3 border-b border-[${border}] bg-[${bg}]`;
+  const headerButtonClassName = `w-10 h-10 rounded-xl border border-[${border}] bg-[${surface}] items-center justify-center`;
+  const cardClassName = `rounded-2xl border border-[${border}] bg-[${surface}] p-5 gap-4 shadow-sm`;
+
+  const hasConfirm = confirmPwd.length > 0;
+  const pwdMatch = hasConfirm && newPwd === confirmPwd;
+  const pwdMismatch = hasConfirm && newPwd !== confirmPwd;
 
   const handleReset = () => {
     if (!newPwd || !confirmPwd) {
@@ -80,13 +85,11 @@ export default function ResetPasswordScreen() {
           className="flex-1"
         >
           {!resetSuccess && (
-            <View
-              className={`flex-row items-center justify-between px-5 py-3 border-b border-[${border}] bg-[${bg}]`}
-            >
+            <View className={headerClassName}>
               <TouchableOpacity
                 onPress={() => router.back()}
                 activeOpacity={0.7}
-                className={`w-10 h-10 rounded-xl border border-[${border}] bg-[${surface}] items-center justify-center`}
+                className={headerButtonClassName}
               >
                 <Ionicons name="arrow-back" size={20} color={text} />
               </TouchableOpacity>
@@ -132,7 +135,7 @@ export default function ResetPasswordScreen() {
                 </AppText>
 
                 <View
-                  className={`rounded-2xl border border-[${border}] bg-[${surface}] p-5 gap-4 shadow-sm`}
+                  className={cardClassName}
                   // shadow-sm ≈ shadowColor + offset + opacity + radius + elevation
                 >
                   {/* New Password */}
@@ -205,9 +208,7 @@ export default function ResetPasswordScreen() {
                   in with your new password.
                 </AppText>
 
-                <View
-                  className={`rounded-2xl border border-[${border}] bg-[${surface}] p-5 gap-4 shadow-sm`}
-                >
+                <View className={cardClassName}>
                   {/* Security note */}
                   <View
                     className={`flex-row items-start gap-2.5 border border-[${successNoteBorder}] rounded-xl p-3.5 bg-[${successNoteBg}]`}

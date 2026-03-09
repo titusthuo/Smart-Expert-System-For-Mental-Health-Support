@@ -1,11 +1,10 @@
 import { AuthPalette } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
 import {
-  ActivityIndicator,
-  Text,
-  TouchableOpacity,
-  TouchableOpacityProps,
+    ActivityIndicator,
+    Text,
+    TouchableOpacity,
+    TouchableOpacityProps,
 } from "react-native";
 
 type ButtonProps = TouchableOpacityProps & {
