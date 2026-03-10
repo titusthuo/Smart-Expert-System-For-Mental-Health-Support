@@ -1,7 +1,8 @@
+import { AppText } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { Therapist } from "@/lib/therapists";
 import { DollarSign, MapPin, Star } from "lucide-react-native";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Image, TouchableOpacity, View } from "react-native";
 
 export function TherapistCard({
   therapist,
@@ -28,64 +29,53 @@ export function TherapistCard({
         <View className="flex-1">
           <View className="flex-row justify-between items-start mb-2">
             <View>
-              <Text className="text-lg font-semibold text-foreground">
+              <AppText unstyled className="text-lg font-semibold text-foreground">
                 {therapist.name}
-              </Text>
+              </AppText>
               <View className="flex-row items-center mt-0.5">
                 <MapPin size={12} color={subtle} />
-                <Text className="text-sm text-muted-foreground ml-1">
+                <AppText unstyled className="text-sm text-muted-foreground ml-1">
                   {therapist.location}
-                </Text>
+                </AppText>
               </View>
 
               {!!therapist.licenseNumber && (
-                <Text className="text-xs text-muted-foreground mt-1">
+                <AppText unstyled className="text-xs text-muted-foreground mt-1">
                   License: {therapist.licenseNumber}
-                </Text>
+                </AppText>
               )}
-              <Text className="text-xs text-muted-foreground mt-1">
+              <AppText unstyled className="text-xs text-muted-foreground mt-1">
                 Phone: {therapist.phone}
-              </Text>
+              </AppText>
             </View>
 
             {typeof therapist.rating === "number" &&
               typeof therapist.reviews === "number" && (
                 <View className="flex-row items-center bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded">
                   <Star size={16} color="#FBBF24" fill="#FBBF24" />
-                  <Text className="font-semibold text-sm text-foreground ml-1">
+                  <AppText unstyled className="font-semibold text-sm text-foreground ml-1">
                     {therapist.rating}
-                  </Text>
-                  <Text className="text-xs text-muted-foreground ml-1">
+                  </AppText>
+                  <AppText unstyled className="text-xs text-muted-foreground ml-1">
                     ({therapist.reviews})
-                  </Text>
+                  </AppText>
                 </View>
               )}
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            className="mb-2"
-          >
-            <View className="flex-row gap-2">
-              {therapist.specialization.map((spec) => (
-                <View
-                  key={spec}
-                  className="bg-brandSoft px-2.5 py-1 rounded-full"
-                >
-                  <Text className="text-xs text-brand font-medium">{spec}</Text>
-                </View>
-              ))}
-            </View>
-          </ScrollView>
+          <View className="flex-row flex-wrap gap-2 mb-2">
+            {therapist.specialization.map((spec) => (
+              <View key={spec} className="bg-brandSoft px-2.5 py-1 rounded-full max-w-full">
+                <AppText unstyled className="text-xs text-brand font-medium max-w-full flex-shrink">
+                  {spec}
+                </AppText>
+              </View>
+            ))}
+          </View>
 
-          <Text
-            className="text-sm text-foreground mb-3"
-            numberOfLines={2}
-            ellipsizeMode="tail"
-          >
+          <AppText unstyled className="text-sm text-foreground mb-3" numberOfLines={2}>
             {therapist.bio}
-          </Text>
+          </AppText>
 
           <View className="flex-row flex-wrap justify-between items-center gap-2">
             <View className="flex-row items-center flex-shrink">
@@ -95,9 +85,9 @@ export function TherapistCard({
                     size={16}
                     color={isDark ? "#E5E7EB" : "#111827"}
                   />
-                  <Text className="text-foreground font-semibold ml-1 flex-shrink">
+                  <AppText unstyled className="text-foreground font-semibold ml-1 flex-shrink">
                     {`KES ${therapist.price.toLocaleString()}/session`}
-                  </Text>
+                  </AppText>
                 </>
               )}
             </View>
@@ -110,7 +100,8 @@ export function TherapistCard({
                     : "bg-muted text-foreground"
                 }`}
               >
-                <Text
+                <AppText
+                  unstyled
                   className={
                     therapist.availability.includes("Available Now")
                       ? "text-white"
@@ -118,7 +109,7 @@ export function TherapistCard({
                   }
                 >
                   {therapist.availability}
-                </Text>
+                </AppText>
               </View>
             )}
           </View>

@@ -1,115 +1,25 @@
+import { ArticleCard } from "@/components/education/article-card";
+import { CategoryTabs } from "@/components/education/category-tabs";
+import { EducationFooterBanner } from "@/components/education/education-footer-banner";
+import { EducationHeader } from "@/components/education/education-header";
 import { AppText } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
-import { BookOpen, ExternalLink, Search } from "lucide-react-native";
+import {
+  Article,
+  fetchMentalHealthArticles as fetchMentalHealthArticlesApi,
+  normalizeHttpUrl,
+} from "@/lib/education";
+import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    Linking,
-    ScrollView,
-    StatusBar,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// ──────────────────────────────────────────────
-// Types
-// ──────────────────────────────────────────────
-interface Article {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-  category: string;
-  image: string;
-  readTime: string;
-  url: string;
-}
-
-type TopicSearchSection = {
-  Title?: string;
-  Content?: string;
-};
-
-type TopicSearchResource = {
-  Type?: string;
-  Id?: string | number;
-  Title?: string;
-  Categories?: string;
-  ImageUrl?: string;
-  AccessibleVersion?: string;
-  Sections?: {
-    section?: TopicSearchSection[] | TopicSearchSection;
-  };
-};
-
-type TopicSearchResponse = {
-  Result?: {
-    Resources?: {
-      Resource?: TopicSearchResource[] | TopicSearchResource;
-    };
-  };
-};
-
-function toArray<T>(value: T[] | T | undefined | null): T[] {
-  if (!value) return [];
-  return Array.isArray(value) ? value : [value];
-}
-
-function guessCategory(title: string): string {
-  const lower = title.toLowerCase();
-  if (lower.includes("anxiety") || lower.includes("panic")) return "anxiety";
-  if (lower.includes("depress") || lower.includes("sad")) return "depression";
-  if (lower.includes("stress")) return "stress";
-  return "wellness";
-}
-
-function getFallbackImage(title: string) {
-  const lower = title.toLowerCase();
-  if (lower.includes("sleep")) {
-    return "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800";
-  }
-  if (
-    lower.includes("stress") ||
-    lower.includes("anxiety") ||
-    lower.includes("calm")
-  ) {
-    return "https://images.unsplash.com/photo-1522202176988-66273c2b033f?w=800";
-  }
-  return "https://images.unsplash.com/photo-1519337265831-281ec6cc8514?w=800";
-}
-
-function stripHtmlToText(value: string) {
-  return value
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function buildSummaryFromSections(
-  sections: TopicSearchSection[],
-  fallback: string,
-) {
-  const preferred =
-    sections.find((s) =>
-      String(s.Title ?? "")
-        .toLowerCase()
-        .includes("overview"),
-    ) ?? sections[0];
-
-  const content = preferred?.Content ? stripHtmlToText(preferred.Content) : "";
-  const summary = content || fallback;
-  if (summary.length <= 240) return summary;
-  return `${summary.slice(0, 240).trim()}…`;
-}
 
 // ──────────────────────────────────────────────
 // Main Screen
@@ -124,68 +34,26 @@ export default function EducationScreen() {
 
   const categories = ["all", "anxiety", "depression", "stress", "wellness"];
 
-  const fetchMentalHealthArticles = useCallback(
-    async (signal?: AbortSignal) => {
-      try {
-        setLoading(true);
-        setErrorMessage(null);
+  const fetchMentalHealthArticles = useCallback(async (signal?: AbortSignal) => {
+    try {
+      setLoading(true);
+      setErrorMessage(null);
 
-        const res = await fetch(
-          "https://odphp.health.gov/myhealthfinder/api/v4/topicsearch.json?CategoryId=20",
-          signal ? { signal } : undefined,
+      const mapped = await fetchMentalHealthArticlesApi(signal);
+      if (!signal?.aborted) setArticles(mapped);
+    } catch (err) {
+      if (!signal?.aborted) {
+        console.error(err);
+        setErrorMessage(
+          "Could not load mental health resources. Please check your internet and try again.",
         );
-        if (!res.ok) {
-          throw new Error("Failed to fetch mental health topics");
-        }
-
-        const data = (await res.json()) as TopicSearchResponse;
-        const resources = toArray(data?.Result?.Resources?.Resource);
-        if (!resources.length) {
-          throw new Error("No topics found in Mental Health category");
-        }
-
-        const mapped: Article[] = resources.map((r, index) => {
-          const id = String(r.Id ?? index + 1);
-          const title = String(r.Title ?? "Mental Health Topic");
-          const url =
-            String(r.AccessibleVersion ?? "").trim() ||
-            "https://odphp.health.gov/myhealthfinder/healthy-living/mental-health-and-relationships";
-          const image = r.ImageUrl || getFallbackImage(title);
-
-          const fallbackSummary = "Learn more about this mental health topic.";
-          const sections = toArray(r.Sections?.section);
-          const summary = sections.length
-            ? buildSummaryFromSections(sections, fallbackSummary)
-            : fallbackSummary;
-
-          return {
-            id,
-            title,
-            summary,
-            source: "MyHealthfinder – Mental Health & Relationships",
-            category: guessCategory(title),
-            image,
-            readTime: "5-10 min read",
-            url,
-          } satisfies Article;
-        });
-
-        if (!signal?.aborted) setArticles(mapped);
-      } catch (err) {
-        if (!signal?.aborted) {
-          console.error(err);
-          setErrorMessage(
-            "Could not load mental health resources. Please check your internet and try again.",
-          );
-        }
-      } finally {
-        if (!signal?.aborted) {
-          setLoading(false);
-        }
       }
-    },
-    [],
-  );
+    } finally {
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -195,21 +63,6 @@ export default function EducationScreen() {
       controller.abort();
     };
   }, [fetchMentalHealthArticles]);
-
-  const normalizeHttpUrl = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-      return trimmed;
-    }
-    if (trimmed.startsWith("//")) {
-      return `https:${trimmed}`;
-    }
-    if (trimmed.startsWith("www.")) {
-      return `https://${trimmed}`;
-    }
-    return null;
-  };
 
   const openUrlSafely = async (url: string) => {
     const normalized = normalizeHttpUrl(url);
@@ -222,15 +75,7 @@ export default function EducationScreen() {
     }
 
     try {
-      const canOpen = await Linking.canOpenURL(normalized);
-      if (!canOpen) {
-        Alert.alert(
-          "Unable to open",
-          "Please try opening this link in a browser.",
-        );
-        return;
-      }
-      await Linking.openURL(normalized);
+      await WebBrowser.openBrowserAsync(normalized);
     } catch {
       Alert.alert(
         "Unable to open",
@@ -268,62 +113,19 @@ export default function EducationScreen() {
       />
 
       {/* Header */}
-      <View className="bg-card border-b border-border">
-        <View className="px-5 pt-5 pb-4">
-          <View className="flex-row items-center mb-4">
-            <BookOpen size={32} color={subtle} />
-            <AppText
-              unstyled
-              className="text-2xl font-bold text-foreground ml-3"
-            >
-              Mental Health Education
-            </AppText>
-          </View>
-
-          <View className="relative">
-            <View className="absolute left-3 top-[14px] z-10">
-              <Search size={20} color={subtle} />
-            </View>
-            <TextInput
-              placeholder="Search articles and resources..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              className="bg-card border border-border rounded-lg pl-11 py-3 text-base text-foreground"
-              placeholderTextColor={subtle}
-            />
-          </View>
-        </View>
-      </View>
+      <EducationHeader
+        searchQuery={searchQuery}
+        onChangeSearchQuery={setSearchQuery}
+        subtle={subtle}
+      />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Category Tabs */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="px-5 pt-5 pb-4"
-        >
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              onPress={() => setActiveCategory(cat)}
-              className={`mr-3 px-5 py-2.5 rounded-full border ${
-                activeCategory === cat
-                  ? "bg-brand border-brand"
-                  : "bg-card border-border"
-              }`}
-            >
-              <Text
-                className={`font-medium capitalize ${
-                  activeCategory === cat ? "text-white" : "text-foreground"
-                }`}
-              >
-                {cat === "all"
-                  ? "All Topics"
-                  : cat.charAt(0).toUpperCase() + cat.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <CategoryTabs
+          categories={categories}
+          activeCategory={activeCategory}
+          onChangeCategory={setActiveCategory}
+        />
 
         {/* Content */}
         {loading ? (
@@ -362,85 +164,19 @@ export default function EducationScreen() {
         ) : (
           <View className="px-5 pb-10 gap-5">
             {filteredArticles.map((article) => (
-              <View
+              <ArticleCard
                 key={article.id}
-                className="bg-card rounded-xl overflow-hidden shadow-sm border border-border"
-              >
-                <Image
-                  source={{ uri: article.image }}
-                  className="w-full h-48"
-                  resizeMode="cover"
-                />
-
-                <View className="p-5">
-                  <View className="flex-row justify-between items-center mb-3">
-                    <View className="bg-brandSoft px-3 py-1 rounded-full">
-                      <Text className="text-brand text-xs font-medium capitalize">
-                        {article.category}
-                      </Text>
-                    </View>
-                    <Text className="text-muted-foreground text-xs">
-                      {article.readTime}
-                    </Text>
-                  </View>
-
-                  <Text className="text-lg font-semibold text-foreground mb-2">
-                    {article.title}
-                  </Text>
-
-                  <Text
-                    className="text-muted-foreground text-sm mb-4"
-                    numberOfLines={3}
-                    ellipsizeMode="tail"
-                  >
-                    {article.summary}
-                  </Text>
-
-                  <View className="flex-row flex-wrap justify-between items-center gap-3">
-                    <View className="flex-row items-center flex-1">
-                      <BookOpen size={16} color={subtle} />
-                      <Text
-                        className="text-muted-foreground text-xs ml-1.5 flex-shrink"
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                      >
-                        Source: {article.source}
-                      </Text>
-                    </View>
-
-                    <TouchableOpacity
-                      onPress={() => openUrlSafely(article.url)}
-                      className="flex-row items-center px-4 py-2 border border-brand rounded-lg flex-shrink-0"
-                    >
-                      <Text className="text-brand font-medium text-sm mr-1.5">
-                        Read More
-                      </Text>
-                      <ExternalLink size={16} color={brandAccent} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
+                article={article}
+                subtle={subtle}
+                brandAccent={brandAccent}
+                onPressReadMore={() => openUrlSafely(article.url)}
+              />
             ))}
           </View>
         )}
 
         {/* Footer Banner */}
-        <View className="mx-5 mt-6 mb-12 p-6 bg-brandSoft border border-border rounded-xl">
-          <View className="flex-row items-start gap-3">
-            <BookOpen size={24} color={brandAccent} />
-            <View>
-              <Text className="font-semibold text-foreground mb-2 text-base">
-                Evidence-Based Resources
-              </Text>
-              <Text className="text-sm text-muted-foreground leading-5">
-                Content from MyHealthfinder (U.S. Office of Disease Prevention
-                and Health Promotion) — Mental Health & Relationships section.
-                For educational support only. Not a substitute for professional
-                advice.
-              </Text>
-            </View>
-          </View>
-        </View>
+        <EducationFooterBanner brandAccent={brandAccent} />
       </ScrollView>
     </SafeAreaView>
   );

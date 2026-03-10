@@ -1,27 +1,31 @@
+import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    TouchableOpacity,
-    View,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { AuthFeedbackModal, useAuthFeedback } from "@/components/auth/auth-feedback";
+
 import {
-    AppText,
-    Button,
-    Card,
-    Input,
-    PasswordRequirements,
-    PasswordStrength,
-    TabStrip,
+  AppText,
+  Button,
+  Card,
+  Input,
+  PasswordRequirements,
+  PasswordStrength,
+  TabStrip,
 } from "@/components/ui";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuthTheme } from "@/hooks/use-auth-theme";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type FormData = {
   firstName: string;
@@ -39,8 +43,8 @@ type AuthTabsProps = {
 
 export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
   const router = useRouter();
-  const scheme = useColorScheme() ?? "light";
-  const isDark = scheme === "dark";
+  const { border, brand, isDark, surface } = useAuthTheme();
+  const feedback = useAuthFeedback();
 
   const logoImage = require("../../assets/logos/brain.jpg");
 
@@ -73,19 +77,15 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
   const pwdMismatch =
     form.confirmPassword.length > 0 && form.password !== form.confirmPassword;
 
-  const handleSignIn = () => {
-    if (!username || !password) {
-      Alert.alert("Missing fields", "Please enter your username and password.");
-      return;
-    }
-    setSignInLoading(true);
-    setTimeout(() => {
-      setSignInLoading(false);
-      router.replace("/(tabs)");
-    }, 1500);
-  };
+  const signInCanSubmit = !signInLoading && !!username.trim() && !!password;
 
-  const handleSignUp = () => {
+  const trimmedSignUpEmail = form.email.trim();
+  const signUpEmailError = useMemo(() => {
+    if (!trimmedSignUpEmail) return "";
+    return EMAIL_RE.test(trimmedSignUpEmail) ? "" : "Please enter a valid email address.";
+  }, [trimmedSignUpEmail]);
+
+  const signUpMissingFields = useMemo(() => {
     const {
       firstName,
       lastName,
@@ -95,58 +95,122 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
       password: pwd,
       confirmPassword,
     } = form;
-    if (
-      !firstName ||
-      !lastName ||
-      !uname ||
-      !email ||
-      !country ||
-      !pwd ||
-      !confirmPassword
-    ) {
-      Alert.alert("Missing fields", "Please fill in all required fields.");
+
+    const missing: string[] = [];
+    if (!firstName.trim()) missing.push("First name");
+    if (!lastName.trim()) missing.push("Last name");
+    if (!uname.trim()) missing.push("Username");
+    if (!email.trim()) missing.push("Email");
+    if (!country.trim()) missing.push("Country");
+    if (!pwd) missing.push("Password");
+    if (!confirmPassword) missing.push("Confirm password");
+    return missing;
+  }, [form]);
+
+  const handleSignIn = useCallback(async () => {
+    if (!signInCanSubmit) {
+      await feedback.show({
+        title: "Missing details",
+        message: "Please enter your username and password.",
+        variant: "error",
+        haptic: "error",
+      });
       return;
     }
+
+    setSignInLoading(true);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    setTimeout(() => {
+      setSignInLoading(false);
+      router.replace("/(tabs)");
+    }, 900);
+  }, [feedback, router, signInCanSubmit]);
+
+  const handleSignUp = useCallback(async () => {
+    const pwd = form.password;
+    const confirmPassword = form.confirmPassword;
+
+    if (signUpMissingFields.length > 0) {
+      await feedback.show({
+        title: "Missing fields",
+        message: "Please fill in all required fields.",
+        variant: "error",
+        haptic: "error",
+      });
+      return;
+    }
+
+    if (signUpEmailError) {
+      await feedback.show({
+        title: "Invalid email",
+        message: signUpEmailError,
+        variant: "error",
+        haptic: "error",
+      });
+      return;
+    }
+
     if (pwd !== confirmPassword) {
-      Alert.alert(
-        "Passwords do not match",
-        "Please make sure both passwords are the same.",
-      );
+      await feedback.show({
+        title: "Passwords do not match",
+        message: "Please make sure both passwords are the same.",
+        variant: "error",
+        haptic: "error",
+      });
       return;
     }
+
     if (!canSubmit) {
-      Alert.alert(
-        "Weak password",
-        "Please meet all the password requirements.",
-      );
+      await feedback.show({
+        title: "Weak password",
+        message: "Please meet all the password requirements.",
+        variant: "error",
+        haptic: "error",
+      });
       return;
     }
+
     if (!terms) {
-      Alert.alert("Terms required", "Please accept the terms to continue.");
+      await feedback.show({
+        title: "Terms required",
+        message: "Please accept the terms to continue.",
+        variant: "error",
+        haptic: "error",
+      });
       return;
     }
+
     setSignUpLoading(true);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
     setTimeout(() => {
       setSignUpLoading(false);
-      Alert.alert("Account Created", "Welcome to Mentally!", [
-        { text: "Get Started", onPress: () => router.replace("/(tabs)") },
-      ]);
-    }, 1500);
-  };
+      feedback.show({
+        title: "Account created",
+        message: "Welcome to Mentally!",
+        variant: "success",
+        haptic: "success",
+        onClose: () => router.replace("/(tabs)"),
+      }).catch(() => undefined);
+    }, 950);
+  }, [canSubmit, feedback, form.confirmPassword, form.password, router, signUpEmailError, signUpMissingFields.length, terms]);
 
   return (
-    <View className="flex-1 bg-background">
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-      <SafeAreaView className="flex-1">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1"
-        >
-          <ScrollView
-            contentContainerClassName="flex-grow px-6 pt-5 pb-10"
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+    <>
+      <View className="flex-1 bg-background">
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+        <SafeAreaView className="flex-1">
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            className="flex-1"
+            keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
           >
+            <ScrollView
+              contentContainerClassName="flex-grow px-6 pt-5 pb-10"
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
             {/* ── Brand ── */}
             <View className="flex-row items-center gap-3 mb-9">
               <View className="w-11 h-11 rounded-full overflow-hidden bg-card border border-border items-center justify-center">
@@ -210,6 +274,7 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                     onChangeText={setUsername}
                     autoCapitalize="none"
                     autoCorrect={false}
+                    returnKeyType="next"
                   />
 
                   <Input
@@ -219,6 +284,8 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
+                    returnKeyType="done"
+                    onSubmitEditing={handleSignIn}
                   />
 
                   <AppText
@@ -234,7 +301,8 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                     rightIcon="arrow-forward"
                     loading={signInLoading}
                     onPress={handleSignIn}
-                    className="mt-2"
+                    className="mt-2 h-14"
+                    disabled={!signInCanSubmit}
                   />
                 </View>
               ) : (
@@ -286,6 +354,7 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
+                    error={trimmedSignUpEmail ? signUpEmailError : undefined}
                   />
 
                   <Input
@@ -343,12 +412,11 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                     className="flex-row items-start gap-2.5"
                   >
                     <View
-                      className={[
-                        "w-5 h-5 rounded-md border-2 items-center justify-center mt-[1px] flex-shrink-0",
-                        terms
-                          ? "bg-brand border-brand"
-                          : "bg-card border-border",
-                      ].join(" ")}
+                      className="w-5 h-5 rounded-md border-2 items-center justify-center mt-[1px] flex-shrink-0"
+                      style={{
+                        backgroundColor: terms ? brand : surface,
+                        borderColor: terms ? brand : border,
+                      }}
                     >
                       {terms && (
                         <AppText variant="hint" className="text-white">
@@ -371,7 +439,8 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                     rightIcon="arrow-forward"
                     loading={signUpLoading}
                     onPress={handleSignUp}
-                    className="mt-3"
+                    className="mt-3 h-14"
+                    disabled={signUpLoading}
                   />
                 </View>
               )}
@@ -405,9 +474,12 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
                 </>
               )}
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </View>
+
+      <AuthFeedbackModal {...feedback.modalProps} />
+    </>
   );
 }

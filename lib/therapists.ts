@@ -1,78 +1,9 @@
 import type { ImageSourcePropType } from "react-native";
 
-export type Therapist = {
-  id: string;
-  name: string;
-  photo: ImageSourcePropType;
-  location: string;
-  county: string;
-  town: string;
-  phone: string;
-  whatsapp?: string;
-  email?: string;
-  coords?: { lat: number; lng: number };
-  specialization: string[];
-  bio: string;
-  licenseNumber?: string;
-  rating?: number;
-  reviews?: number;
-  price?: number;
-  availability?: string;
-};
+import type { Review, Therapist, TherapistDetail } from "./therapists/types";
 
-type TherapistDetail = Therapist & {
-  fullBio: string;
-  qualifications: string[];
-  experience: string;
-};
-
-export type Review = {
-  id: string;
-  author: string;
-  rating: number;
-  date: string;
-  comment: string;
-};
-
-type DropdownOption = { label: string; value: string };
-
-export const specializationOptions: DropdownOption[] = [
-  { label: "All Specializations", value: "all" },
-  { label: "Anxiety", value: "anxiety" },
-  { label: "Depression", value: "depression" },
-  { label: "Trauma", value: "trauma" },
-  { label: "Stress Management", value: "stress management" },
-  { label: "Psychiatry", value: "psychiatry" },
-  { label: "Addiction", value: "addiction" },
-  { label: "Grief & Loss", value: "grief" },
-  { label: "Sleep / Insomnia", value: "sleep" },
-  { label: "Anger Management", value: "anger management" },
-  { label: "Self-Esteem", value: "self-esteem" },
-  { label: "Emotion Regulation", value: "emotion regulation" },
-  { label: "HIV Psychiatry", value: "hiv psychiatry" },
-  { label: "Family Therapy", value: "family therapy" },
-];
-
-export const locationOptions: DropdownOption[] = [
-  { label: "All Locations", value: "all" },
-  { label: "Nairobi", value: "nairobi" },
-  { label: "Kakamega", value: "kakamega" },
-  { label: "Eldoret", value: "eldoret" },
-  { label: "Mombasa", value: "mombasa" },
-  { label: "Nakuru", value: "nakuru" },
-  { label: "Kisumu", value: "kisumu" },
-  { label: "Kisii", value: "kisii" },
-  { label: "Siaya", value: "siaya" },
-  { label: "Nyeri", value: "nyeri" },
-];
-
-export function getOptionLabel(
-  options: DropdownOption[],
-  value: string,
-  fallback: string,
-) {
-  return options.find((o) => o.value === value)?.label ?? fallback;
-}
+export { getOptionLabel, locationOptions, specializationOptions } from "./therapists/options";
+export type { Review, Therapist } from "./therapists/types";
 
 const therapistPhotos: Record<string, ImageSourcePropType> = {
   "1": require("../assets/images/therapists/dr-david-wairoto.jpg"),

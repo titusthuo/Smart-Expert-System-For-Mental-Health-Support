@@ -1,4 +1,6 @@
+import { AppText } from "@/components/ui/text";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
+import { openUrlSafely } from "@/lib/links";
 import { getTherapistById, mockReviews, Review } from "@/lib/therapists";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -12,22 +14,35 @@ import {
     Alert,
     FlatList,
     Image,
-    Linking,
     ScrollView,
     StatusBar,
-    Text,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TherapistDetailScreen() {
   const router = useRouter();
-  const { id, reason } = useLocalSearchParams<{
+  const { id, reason, from } = useLocalSearchParams<{
     id?: string;
     reason?: string;
+    from?: string;
   }>();
   const { isDark, subtle } = useAuthTheme();
+
+  const handleBackPress = () => {
+    if (from === "therapists") {
+      router.replace("/(tabs)/therapists");
+      return;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace("/(tabs)/therapists");
+  };
 
   const therapist = getTherapistById(id);
 
@@ -39,47 +54,19 @@ export default function TherapistDetailScreen() {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 justify-center items-center p-6">
         <View className="bg-white rounded-xl p-8 items-center shadow-sm">
-          <Text className="text-gray-800 text-lg mb-4">
+          <AppText className="text-gray-800 text-lg mb-4">
             Therapist not found
-          </Text>
+          </AppText>
           <TouchableOpacity
             onPress={() => router.replace("/(tabs)/therapists")}
             className="bg-purple-600 px-6 py-3 rounded-lg"
           >
-            <Text className="text-white font-medium">Back to Therapists</Text>
+            <AppText className="text-white font-medium">Back to Therapists</AppText>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
-
-  const openUrlSafely = async (url: string, fallbackUrl?: string) => {
-    try {
-      const canOpen = await Linking.canOpenURL(url);
-      if (canOpen) {
-        await Linking.openURL(url);
-        return;
-      }
-
-      if (fallbackUrl) {
-        const canOpenFallback = await Linking.canOpenURL(fallbackUrl);
-        if (canOpenFallback) {
-          await Linking.openURL(fallbackUrl);
-          return;
-        }
-      }
-
-      Alert.alert(
-        "Unable to open",
-        "Please use your phone to contact this therapist.",
-      );
-    } catch {
-      Alert.alert(
-        "Unable to open",
-        "Please use your phone to contact this therapist.",
-      );
-    }
-  };
 
   const normalizePhoneDigits = (value: string) => value.replace(/[^\d]/g, "");
 
@@ -92,7 +79,13 @@ export default function TherapistDetailScreen() {
       );
       return;
     }
-    await openUrlSafely(`tel:${digits}`);
+    const opened = await openUrlSafely(`tel:${digits}`);
+    if (!opened) {
+      Alert.alert(
+        "Unable to open",
+        "Please use your phone to contact this therapist.",
+      );
+    }
   };
 
   const handleWhatsApp = async () => {
@@ -109,7 +102,13 @@ export default function TherapistDetailScreen() {
     const text = encodeURIComponent(prefilledMessage);
     const appUrl = `whatsapp://send?phone=${digits}&text=${text}`;
     const webUrl = `https://wa.me/${digits}?text=${text}`;
-    await openUrlSafely(appUrl, webUrl);
+    const opened = await openUrlSafely(appUrl, { fallbackUrl: webUrl });
+    if (!opened) {
+      Alert.alert(
+        "Unable to open",
+        "Please use your phone to contact this therapist.",
+      );
+    }
   };
 
   const handleEmail = async () => {
@@ -123,9 +122,15 @@ export default function TherapistDetailScreen() {
 
     const subject = encodeURIComponent(`${appName} - Session request`);
     const body = encodeURIComponent(prefilledMessage);
-    await openUrlSafely(
+    const opened = await openUrlSafely(
       `mailto:${therapist.email}?subject=${subject}&body=${body}`,
     );
+    if (!opened) {
+      Alert.alert(
+        "Unable to open",
+        "Please use your phone to contact this therapist.",
+      );
+    }
   };
 
   const renderReview = ({ item }: { item: Review }) => (
@@ -133,13 +138,13 @@ export default function TherapistDetailScreen() {
       <View className="flex-row justify-between items-start mb-2">
         <View className="flex-row items-center">
           <View className="w-10 h-10 bg-purple-100 rounded-full items-center justify-center mr-3">
-            <Text className="text-purple-600 font-medium text-lg">
+            <AppText className="text-purple-600 font-medium text-lg">
               {item.author[0]}
-            </Text>
+            </AppText>
           </View>
           <View>
-            <Text className="font-medium text-gray-900">{item.author}</Text>
-            <Text className="text-xs text-gray-500">{item.date}</Text>
+            <AppText className="font-medium text-gray-900">{item.author}</AppText>
+            <AppText className="text-xs text-gray-500">{item.date}</AppText>
           </View>
         </View>
 
@@ -151,7 +156,7 @@ export default function TherapistDetailScreen() {
             ))}
         </View>
       </View>
-      <Text className="text-sm text-gray-700 leading-5">{item.comment}</Text>
+      <AppText className="text-sm text-gray-700 leading-5">{item.comment}</AppText>
     </View>
   );
 
@@ -166,12 +171,12 @@ export default function TherapistDetailScreen() {
       {/* Sticky Header */}
       <View className="bg-card border-b border-border">
         <View className="flex-row items-center px-4 py-4">
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={handleBackPress}>
             <ArrowLeft size={24} color={isDark ? "#E5E7EB" : "#111827"} />
           </TouchableOpacity>
-          <Text className="text-xl font-semibold text-foreground ml-4">
+          <AppText className="text-xl font-semibold text-foreground ml-4">
             Therapist Details
-          </Text>
+          </AppText>
         </View>
       </View>
 
@@ -179,13 +184,13 @@ export default function TherapistDetailScreen() {
         <View className="px-4 py-6 space-y-6 pb-32">
           {isCrisis && (
             <View className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
-              <Text className="text-foreground font-semibold mb-2">
+              <AppText className="text-foreground font-semibold mb-2">
                 Immediate support
-              </Text>
-              <Text className="text-muted-foreground">
+              </AppText>
+              <AppText className="text-muted-foreground">
                 If you are in immediate danger, call 1190 (Kenya Red Cross
                 Mental Health Hotline) or 999 right now.
-              </Text>
+              </AppText>
             </View>
           )}
 
@@ -201,14 +206,14 @@ export default function TherapistDetailScreen() {
               <View className="flex-1 w-full">
                 <View className="flex-row justify-between items-start mb-3">
                   <View>
-                    <Text className="text-2xl font-semibold text-foreground">
+                    <AppText className="text-2xl font-semibold text-foreground">
                       {therapist.name}
-                    </Text>
+                    </AppText>
                     <View className="flex-row items-center mt-1">
                       <MapPin size={16} color={subtle} />
-                      <Text className="text-muted-foreground ml-1">
+                      <AppText className="text-muted-foreground ml-1">
                         {therapist.location}
-                      </Text>
+                      </AppText>
                     </View>
                   </View>
 
@@ -216,12 +221,12 @@ export default function TherapistDetailScreen() {
                     typeof therapist.reviews === "number" && (
                       <View className="flex-row items-center bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded">
                         <Star size={20} color="#FBBF24" fill="#FBBF24" />
-                        <Text className="font-semibold ml-1.5 text-foreground">
+                        <AppText className="font-semibold ml-1.5 text-foreground">
                           {therapist.rating}
-                        </Text>
-                        <Text className="text-sm text-muted-foreground ml-1">
+                        </AppText>
+                        <AppText className="text-sm text-muted-foreground ml-1">
                           ({therapist.reviews} reviews)
-                        </Text>
+                        </AppText>
                       </View>
                     )}
                 </View>
@@ -232,9 +237,9 @@ export default function TherapistDetailScreen() {
                       key={spec}
                       className="bg-brandSoft px-3 py-1 rounded-full"
                     >
-                      <Text className="text-xs text-brand font-medium">
+                      <AppText className="text-xs text-brand font-medium">
                         {spec}
-                      </Text>
+                      </AppText>
                     </View>
                   ))}
                 </View>
@@ -244,9 +249,9 @@ export default function TherapistDetailScreen() {
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center">
                       {!!therapist.experience && (
-                        <Text className="text-foreground">
+                        <AppText className="text-foreground">
                           {therapist.experience}
-                        </Text>
+                        </AppText>
                       )}
                     </View>
                     {typeof therapist.price === "number" && (
@@ -255,9 +260,9 @@ export default function TherapistDetailScreen() {
                           size={16}
                           color={isDark ? "#E5E7EB" : "#111827"}
                         />
-                        <Text className="text-foreground font-semibold ml-1.5">
+                        <AppText className="text-foreground font-semibold ml-1.5">
                           KES {therapist.price.toLocaleString()}/session
-                        </Text>
+                        </AppText>
                       </View>
                     )}
                   </View>
@@ -265,17 +270,17 @@ export default function TherapistDetailScreen() {
 
                 <View className="mt-5 pt-4 border-t border-border">
                   {!!therapist.licenseNumber && (
-                    <Text className="text-sm text-muted-foreground">
+                    <AppText className="text-sm text-muted-foreground">
                       License: {therapist.licenseNumber}
-                    </Text>
+                    </AppText>
                   )}
-                  <Text className="text-sm text-muted-foreground mt-2">
+                  <AppText className="text-sm text-muted-foreground mt-2">
                     Phone: {therapist.phone}
-                  </Text>
+                  </AppText>
                   {!!therapist.email && (
-                    <Text className="text-sm text-muted-foreground mt-2">
+                    <AppText className="text-sm text-muted-foreground mt-2">
                       Email: {therapist.email}
-                    </Text>
+                    </AppText>
                   )}
 
                   <View className="flex-row flex-wrap gap-3 mt-4">
@@ -283,33 +288,33 @@ export default function TherapistDetailScreen() {
                       onPress={handleCall}
                       className="bg-purple-600 px-4 py-3 rounded-lg"
                     >
-                      <Text className="text-white font-semibold">Call</Text>
+                      <AppText className="text-white font-semibold">Call</AppText>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={handleWhatsApp}
                       className="bg-green-600 px-4 py-3 rounded-lg"
                     >
-                      <Text className="text-white font-semibold">WhatsApp</Text>
+                      <AppText className="text-white font-semibold">WhatsApp</AppText>
                     </TouchableOpacity>
                     {!!therapist.email && (
                       <TouchableOpacity
                         onPress={handleEmail}
                         className="bg-muted px-4 py-3 rounded-lg border border-border"
                       >
-                        <Text className="text-foreground font-semibold">
+                        <AppText className="text-foreground font-semibold">
                           Email
-                        </Text>
+                        </AppText>
                       </TouchableOpacity>
                     )}
                   </View>
 
-                  <Text className="text-xs text-muted-foreground mt-4 leading-5">
+                  <AppText className="text-xs text-muted-foreground mt-4 leading-5">
                     Privacy note: When you tap Call, WhatsApp, or Email,{" "}
                     {appName}
                     will open another app on your device. Your message and any
                     personal information you share will be handled by that
                     service and the therapist.
-                  </Text>
+                  </AppText>
                 </View>
               </View>
             </View>
@@ -317,12 +322,12 @@ export default function TherapistDetailScreen() {
 
           {/* About */}
           <View className="bg-card rounded-xl p-6 shadow-sm border border-border">
-            <Text className="text-xl font-semibold mb-3 text-foreground">
+            <AppText className="text-xl font-semibold mb-3 text-foreground">
               About
-            </Text>
-            <Text className="text-foreground leading-6">
+            </AppText>
+            <AppText className="text-foreground leading-6">
               {therapist.fullBio}
-            </Text>
+            </AppText>
           </View>
 
           {/* Qualifications */}
@@ -330,14 +335,14 @@ export default function TherapistDetailScreen() {
             <View className="bg-card rounded-xl p-6 shadow-sm border border-border">
               <View className="flex-row items-center mb-4">
                 <Award size={20} color="#9333EA" className="mr-2" />
-                <Text className="text-xl font-semibold text-foreground">
+                <AppText className="text-xl font-semibold text-foreground">
                   Qualifications & Experience
-                </Text>
+                </AppText>
               </View>
               {therapist.qualifications.map((qual: string, index: number) => (
                 <View key={index} className="flex-row items-start mb-2">
                   <View className="w-2 h-2 bg-purple-600 rounded-full mt-2 mr-3" />
-                  <Text className="text-foreground flex-1">{qual}</Text>
+                  <AppText className="text-foreground flex-1">{qual}</AppText>
                 </View>
               ))}
             </View>
@@ -346,9 +351,9 @@ export default function TherapistDetailScreen() {
           {/* Reviews */}
           {mockReviews.length > 0 && (
             <View className="bg-card rounded-xl p-6 shadow-sm border border-border">
-              <Text className="text-xl font-semibold mb-4 text-foreground">
+              <AppText className="text-xl font-semibold mb-4 text-foreground">
                 Reviews
-              </Text>
+              </AppText>
 
               <FlatList
                 data={mockReviews}
