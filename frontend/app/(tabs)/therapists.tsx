@@ -3,10 +3,10 @@ import { TherapistsEmpty } from "@/components/therapists/therapists-empty";
 import { TherapistsHeader } from "@/components/therapists/therapists-header";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { Coords, haversineDistanceKm } from "@/lib/geo";
+import { useTherapistsQuery } from "@/lib/graphql/generated/graphql";
 import {
     getOptionLabel,
     locationOptions,
-    mockTherapists,
     specializationOptions,
     Therapist,
 } from "@/lib/therapists";
@@ -17,11 +17,13 @@ import { FlatList, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const FALLBACK_COORDS: Coords = { lat: -1.176, lng: 36.756 };
+const FALLBACK_THERAPIST_PHOTO = require("../../assets/images/therapists/Therapists-image.jpg");
 
 export default function TherapistsScreen() {
   const router = useRouter();
   const { reason } = useLocalSearchParams<{ reason?: string }>();
   const { isDark } = useAuthTheme();
+  const { data } = useTherapistsQuery();
   const [searchQuery, setSearchQuery] = useState("");
   const [specializationFilter, setSpecializationFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
@@ -80,7 +82,30 @@ export default function TherapistsScreen() {
     "All Locations",
   );
 
-  const filteredTherapists = mockTherapists.filter((therapist) => {
+  const therapists: Therapist[] = useMemo(() => {
+    const items = ((data as unknown as { therapists?: any[] })?.therapists ?? []) as any[];
+    return items.map((t: any) => ({
+      id: String(t.id),
+      name: t.name,
+      photo: t.photoUrl ? { uri: t.photoUrl } : FALLBACK_THERAPIST_PHOTO,
+      location: t.location,
+      county: t.county,
+      town: t.town,
+      phone: t.phone,
+      whatsapp: t.whatsapp ?? undefined,
+      email: t.email ?? undefined,
+      coords: t.coords ? { lat: t.coords.lat, lng: t.coords.lng } : undefined,
+      specialization: t.specialization ?? [],
+      bio: t.bio,
+      licenseNumber: t.licenseNumber ?? undefined,
+      rating: typeof t.rating === "number" ? t.rating : undefined,
+      reviews: typeof t.reviews === "number" ? t.reviews : undefined,
+      price: typeof t.price === "number" ? t.price : undefined,
+      availability: t.availability ?? undefined,
+    }));
+  }, [data]);
+
+  const filteredTherapists = therapists.filter((therapist) => {
     const matchesSearch =
       therapist.name.toLowerCase().includes(queryLower) ||
       therapist.specialization.some((spec) =>
@@ -102,7 +127,7 @@ export default function TherapistsScreen() {
 
   const sortedTherapists = useMemo(() => {
     return filteredTherapists
-      .map((t) => {
+      .map((t: Therapist) => {
         const distanceKm = t.coords
           ? haversineDistanceKm(userCoords, t.coords)
           : Number.POSITIVE_INFINITY;

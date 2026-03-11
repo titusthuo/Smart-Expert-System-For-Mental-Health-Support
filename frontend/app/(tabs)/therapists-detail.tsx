@@ -1,7 +1,8 @@
 import { AppText } from "@/components/ui/text";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
+import { useTherapistQuery } from "@/lib/graphql/generated/graphql";
 import { openUrlSafely } from "@/lib/links";
-import { getTherapistById, mockReviews, Review } from "@/lib/therapists";
+import { Review, TherapistDetail } from "@/lib/therapists";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
     ArrowLeft,
@@ -21,6 +22,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+const FALLBACK_THERAPIST_PHOTO = require("../../assets/images/therapists/Therapists-image.jpg");
+
 export default function TherapistDetailScreen() {
   const router = useRouter();
   const { id, reason, from } = useLocalSearchParams<{
@@ -29,6 +32,11 @@ export default function TherapistDetailScreen() {
     from?: string;
   }>();
   const { isDark, subtle } = useAuthTheme();
+
+  const therapistId = Number(id);
+  const { data } = useTherapistQuery({
+    variables: { id: Number.isFinite(therapistId) ? therapistId : 0 },
+  });
 
   const handleBackPress = () => {
     if (from === "therapists") {
@@ -44,7 +52,41 @@ export default function TherapistDetailScreen() {
     router.replace("/(tabs)/therapists");
   };
 
-  const therapist = getTherapistById(id);
+  const therapist: TherapistDetail | undefined = (() => {
+    const t = (data as any)?.therapist;
+    if (!t) return undefined;
+
+    return {
+      id: String(t.id),
+      name: t.name,
+      photo: t.photoUrl ? { uri: t.photoUrl } : FALLBACK_THERAPIST_PHOTO,
+      location: t.location,
+      county: t.county,
+      town: t.town,
+      phone: t.phone,
+      whatsapp: t.whatsapp ?? undefined,
+      email: t.email ?? undefined,
+      coords: t.coords ? { lat: t.coords.lat, lng: t.coords.lng } : undefined,
+      specialization: t.specialization ?? [],
+      bio: t.bio,
+      licenseNumber: t.licenseNumber ?? undefined,
+      rating: typeof t.rating === "number" ? t.rating : undefined,
+      reviews: typeof t.reviews === "number" ? t.reviews : undefined,
+      price: typeof t.price === "number" ? t.price : undefined,
+      availability: t.availability ?? undefined,
+      fullBio: t.fullBio ?? "",
+      qualifications: t.qualifications ?? [],
+      experience: t.experience ?? "",
+    };
+  })();
+
+  const reviews: Review[] = (((data as any)?.therapist?.reviewsList ?? []) as any[]).map((r: any) => ({
+    id: String(r.id),
+    author: r.author,
+    rating: r.rating,
+    date: r.date,
+    comment: r.comment,
+  }));
 
   const isCrisis = reason === "crisis";
   const appName = "MindEase KE";
@@ -349,14 +391,14 @@ export default function TherapistDetailScreen() {
           )}
 
           {/* Reviews */}
-          {mockReviews.length > 0 && (
+          {reviews.length > 0 && (
             <View className="bg-card rounded-xl p-6 shadow-sm border border-border">
               <AppText className="text-xl font-semibold mb-4 text-foreground">
                 Reviews
               </AppText>
 
               <FlatList
-                data={mockReviews}
+                data={reviews}
                 renderItem={renderReview}
                 keyExtractor={(item) => item.id}
                 scrollEnabled={false}

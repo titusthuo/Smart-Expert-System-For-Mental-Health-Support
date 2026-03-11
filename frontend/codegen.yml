@@ -1,0 +1,17 @@
+overwrite: true
+schema: http://127.0.0.1:8000/graphql/
+documents: 'src/**/*.graphql'
+generates:
+  src/lib/graphql/generated/graphql.tsx:
+    plugins:
+      - 'typescript'
+      - 'typescript-operations'
+      - 'typescript-react-apollo'
+    config:
+      withHooks: true
+      withHOC: false
+      withComponent: false
+      exportFragmentSpreadSubTypes: true
+      documentMode: graphQLTag
+      dedupeFragments: true
+      reactApolloVersion: 3

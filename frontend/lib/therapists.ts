@@ -3,7 +3,7 @@ import type { ImageSourcePropType } from "react-native";
 import type { Review, Therapist, TherapistDetail } from "./therapists/types";
 
 export { getOptionLabel, locationOptions, specializationOptions } from "./therapists/options";
-export type { Review, Therapist } from "./therapists/types";
+export type { Review, Therapist, TherapistDetail } from "./therapists/types";
 
 const therapistPhotos: Record<string, ImageSourcePropType> = {
   "1": require("../assets/images/therapists/dr-david-wairoto.jpg"),
