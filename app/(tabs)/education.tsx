@@ -1,35 +1,183 @@
-import React from "react";
-import { View } from "react-native";
+import { ArticleCard } from "@/components/education/article-card";
+import { CategoryTabs } from "@/components/education/category-tabs";
+import { EducationFooterBanner } from "@/components/education/education-footer-banner";
+import { EducationHeader } from "@/components/education/education-header";
+import { AppText } from "@/components/ui";
+import { useAuthTheme } from "@/hooks/use-auth-theme";
+import {
+  Article,
+  fetchMentalHealthArticles as fetchMentalHealthArticlesApi,
+  normalizeHttpUrl,
+} from "@/lib/education";
+import * as WebBrowser from "expo-web-browser";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  View
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppText, Card } from "@/components/ui";
-import { useAuthTheme } from "@/hooks/use-auth-theme";
-
+// ──────────────────────────────────────────────
+// Main Screen
+// ──────────────────────────────────────────────
 export default function EducationScreen() {
-  const { bg, surface, border, text, subtle } = useAuthTheme();
+  const { isDark, subtle, brandAccent } = useAuthTheme();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const categories = ["all", "anxiety", "depression", "stress", "wellness"];
+
+  const fetchMentalHealthArticles = useCallback(async (signal?: AbortSignal) => {
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+
+      const mapped = await fetchMentalHealthArticlesApi(signal);
+      if (!signal?.aborted) setArticles(mapped);
+    } catch (err) {
+      if (!signal?.aborted) {
+        console.error(err);
+        setErrorMessage(
+          "Could not load mental health resources. Please check your internet and try again.",
+        );
+      }
+    } finally {
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchMentalHealthArticles(controller.signal);
+
+    return () => {
+      controller.abort();
+    };
+  }, [fetchMentalHealthArticles]);
+
+  const openUrlSafely = async (url: string) => {
+    const normalized = normalizeHttpUrl(url);
+    if (!normalized) {
+      Alert.alert(
+        "No link available",
+        "This article link is missing or invalid.",
+      );
+      return;
+    }
+
+    try {
+      await WebBrowser.openBrowserAsync(normalized);
+    } catch {
+      Alert.alert(
+        "Unable to open",
+        "Please try opening this link in a browser.",
+      );
+    }
+  };
+
+  const handleRetry = () => {
+    fetchMentalHealthArticles();
+  };
+
+  const filteredArticles = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return articles.filter((article) => {
+      const matchesSearch =
+        !query ||
+        article.title.toLowerCase().includes(query) ||
+        article.summary.toLowerCase().includes(query);
+
+      const matchesCategory =
+        activeCategory === "all" || article.category === activeCategory;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [activeCategory, articles, searchQuery]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: bg }} edges={["top"]}>
-      <View style={{ padding: 16, gap: 12 }}>
-        <AppText variant="heading" color={text}>
-          Education
-        </AppText>
-        <AppText variant="body" color={subtle}>
-          Evidence-based articles and learning resources.
-        </AppText>
+    <SafeAreaView className="flex-1 bg-background">
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor="transparent"
+        translucent
+      />
 
-        <Card style={{ backgroundColor: surface, borderColor: border }}>
-          <View style={{ padding: 16, gap: 8 }}>
-            <AppText variant="label" color={text}>
-              Placeholder
-            </AppText>
-            <AppText variant="body" color={subtle}>
-              We’ll add topics, reading lists, and recommended content here.
+      {/* Header */}
+      <EducationHeader
+        searchQuery={searchQuery}
+        onChangeSearchQuery={setSearchQuery}
+        subtle={subtle}
+      />
+
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* Category Tabs */}
+        <CategoryTabs
+          categories={categories}
+          activeCategory={activeCategory}
+          onChangeCategory={setActiveCategory}
+        />
+
+        {/* Content */}
+        {loading ? (
+          <View className="flex-1 justify-center items-center mt-20">
+            <ActivityIndicator size="large" color={brandAccent} />
+            <AppText unstyled className="mt-4 text-muted-foreground">
+              Loading mental health resources...
             </AppText>
           </View>
-        </Card>
-      </View>
+        ) : errorMessage ? (
+          <View className="mx-5 mt-10 p-8 bg-card border border-border rounded-xl items-center">
+            <AppText
+              unstyled
+              className="text-muted-foreground text-center text-base mb-4"
+            >
+              {errorMessage}
+            </AppText>
+            <TouchableOpacity
+              onPress={handleRetry}
+              className="bg-brand px-5 py-3 rounded-lg"
+            >
+              <AppText unstyled className="text-white font-semibold">
+                Try again
+              </AppText>
+            </TouchableOpacity>
+          </View>
+        ) : filteredArticles.length === 0 ? (
+          <View className="mx-5 mt-10 p-8 bg-card border border-border rounded-xl items-center">
+            <AppText
+              unstyled
+              className="text-muted-foreground text-center text-base"
+            >
+              No articles found matching your search.
+            </AppText>
+          </View>
+        ) : (
+          <View className="px-5 pb-10 gap-5">
+            {filteredArticles.map((article) => (
+              <ArticleCard
+                key={article.id}
+                article={article}
+                subtle={subtle}
+                brandAccent={brandAccent}
+                onPressReadMore={() => openUrlSafely(article.url)}
+              />
+            ))}
+          </View>
+        )}
+
+        {/* Footer Banner */}
+        <EducationFooterBanner brandAccent={brandAccent} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
-

@@ -4,11 +4,7 @@ type ThemeColors = {
   background: string;
   foreground: string;
   card: string;
-  cardForeground: string;
   border: string;
-  primary: string;
-  primaryForeground: string;
-  muted: string;
   mutedForeground: string;
 };
 
@@ -17,22 +13,14 @@ export const Colors: Record<AppColorScheme, ThemeColors> = {
     background: "hsl(0, 0%, 100%)",
     foreground: "hsl(0, 0%, 9%)",
     card: "hsl(0, 0%, 100%)",
-    cardForeground: "hsl(0, 0%, 9%)",
     border: "hsl(0, 0%, 90%)",
-    primary: "hsl(240, 100%, 1%)",
-    primaryForeground: "hsl(0, 0%, 100%)",
-    muted: "hsl(240, 10%, 93%)",
     mutedForeground: "hsl(240, 5%, 45%)",
   },
   dark: {
     background: "hsl(0, 0%, 9%)",
     foreground: "hsl(0, 0%, 98%)",
     card: "hsl(0, 0%, 9%)",
-    cardForeground: "hsl(0, 0%, 98%)",
     border: "hsl(0, 0%, 17%)",
-    primary: "hsl(0, 0%, 98%)",
-    primaryForeground: "hsl(0, 0%, 13%)",
-    muted: "hsl(0, 0%, 17%)",
     mutedForeground: "hsl(0, 0%, 44%)",
   },
 };
@@ -44,19 +32,13 @@ export const AuthPalette = {
   // Brand
   brand: "#5B21B6",
   brandSoft: "#EDE9FE",
+  brandAccentLight: "#7C3AED",
+  brandAccentDark: "#A78BFA",
 
   // Status / feedback
   error: "#EF4444",
-  errorSoft: "#FEE2E2",
   success: "#10B981",
   successSoft: "#D1FAE5",
   successNoteBg: "#F0FDF4",
   successNoteBorder: "#BBF7D0",
-  warning: "#F59E0B",
-  info: "#3B82F6",
-
-  // Social brand colors
-  socialGoogle: "#EA4335",
-  socialFacebook: "#1877F2",
 };
-

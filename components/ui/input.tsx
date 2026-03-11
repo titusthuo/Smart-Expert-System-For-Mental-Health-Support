@@ -1,13 +1,13 @@
-import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
-import {
-  Text,
-  TextInput,
-  TextInputProps,
-  TouchableOpacity,
-  View,
-} from "react-native";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
+import {
+    Text,
+    TextInput,
+    TextInputProps,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 type InputProps = TextInputProps & {
   label?: string;

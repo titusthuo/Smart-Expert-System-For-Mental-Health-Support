@@ -1,50 +1,107 @@
-# Welcome to your Expo app 👋
+# Smart Expert System for Mental Health Support
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An Expo + React Native application that provides mental health support features such as:
 
-## Get started
+- AI-assisted chat support
+- A curated Education/resources feed
+- A Therapists directory with filtering and details
+- A user Profile screen with persistent preferences and profile data
 
-1. Install dependencies
+This repository uses **Expo Router** for file-based navigation and **NativeWind/Tailwind** for styling.
 
-   ```bash
-   npm install
-   ```
+## Tech stack
 
-2. Start the app
+- **Expo** (React Native)
+- **Expo Router** (file-based routing)
+- **TypeScript**
+- **NativeWind** + **TailwindCSS**
 
-   ```bash
-   npx expo start
-   ```
+## Getting started
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### 1) Install dependencies
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2) Run the app
 
-## Learn more
+```bash
+npm run start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Then open the app using one of:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Android emulator
+- iOS simulator
+- Expo Go
 
-## Join the community
+## Scripts
 
-Join our community of developers creating universal apps.
+- **Start dev server**
+  `npm run start`
+- **Start on Android**
+  `npm run android`
+- **Start on iOS**
+  `npm run ios`
+- **Start on Web**
+  `npm run web`
+- **Lint**
+  `npm run lint`
+- **Typecheck**
+  `npx tsc -p . --noEmit`
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Project structure
+
+- `app/`
+  Expo Router routes.
+  - `app/(tabs)/` main tab screens (Home, Chat, Therapists, Education, Profile)
+  - `app/(tabs)/_layout.tsx` tab navigator configuration
+- `components/`
+  Reusable UI components and screen-specific components.
+- `hooks/`
+  Custom React hooks (theme, auth theme helpers, etc.).
+- `lib/`
+  Shared non-UI logic (data access, parsing, helpers).
+- `constants/`
+  Theme tokens and app constants.
+- `assets/`
+  Images, icons, etc.
+
+## Storage conventions
+
+This app uses a small storage wrapper in `lib/storage.ts` to ensure consistent behavior on:
+
+- Native (`AsyncStorage`)
+- Web (`localStorage`)
+
+Prefer these helpers instead of using `AsyncStorage` directly:
+
+- `getStoredString`, `setStoredString`, `removeStoredItem`
+- `getStoredJson`, `setStoredJson`
+
+Current keys in use include (subject to change):
+
+- `profileData`
+- `profilePhotoUri`
+- `themeMode`
+
+## UI / styling conventions
+
+- Use `className` with NativeWind for styling.
+- Prefer `AppText` (from `components/ui/text`) over raw `Text` to keep typography consistent.
+
+## Navigation conventions (Expo Router)
+
+- Use `router.push(...)` for normal forward navigation.
+- Use `router.replace(...)` only when you explicitly do *not* want a back-stack entry.
+- When a screen must always return to a specific place, pass a `from` param and use it on back.
+
+## Troubleshooting
+
+- **Metro cache issues**
+  Run `npx expo start -c`
+- **Type errors**
+  Run `npx tsc -p . --noEmit`
+- **Lint issues**
+  Run `npm run lint`
