@@ -1,7 +1,6 @@
-import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-export type TabItem = {
+type TabItem = {
   key: string;
   label: string;
   onPress: () => void;

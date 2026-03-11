@@ -1,9 +1,9 @@
-import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect } from "react";
-import { Text, View } from "react-native";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
+import { Ionicons } from "@expo/vector-icons";
+import { useEffect } from "react";
+import { Text, View } from "react-native";
 
-export type Requirement = {
+type Requirement = {
   label: string;
   test: (pwd: string) => boolean;
 };
@@ -39,9 +39,7 @@ export function PasswordRequirements({
   return (
     <View className="border border-border rounded-xl p-3.5 bg-card">
       {title && (
-        <Text
-          className="text-[10px] font-extrabold tracking-[0.8px] uppercase text-muted-foreground mb-1"
-        >
+        <Text className="text-[10px] font-extrabold tracking-[0.8px] uppercase text-muted-foreground mb-1">
           {title}
         </Text>
       )}

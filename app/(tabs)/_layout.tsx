@@ -1,12 +1,11 @@
 import { HapticTab } from "@/components/haptic-tab";
-import { IconSymbol } from "@/components/ui/icon-symbol";
+import { IconSymbol } from "@/components/ui";
 import { AuthPalette, Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppColorScheme } from "@/hooks/use-theme-preference";
 import { Tabs } from "expo-router";
-import React from "react";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = useAppColorScheme() ?? "light";
   const isDark = colorScheme === "dark";
   const theme = Colors[isDark ? "dark" : "light"];
 
@@ -45,6 +44,7 @@ export default function TabLayout() {
         name="chat"
         options={{
           title: "Chat",
+          tabBarHideOnKeyboard: true,
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="chatbubble.fill" color={color} />
           ),
@@ -80,6 +80,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="person.fill" color={color} />
           ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="therapists-detail"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

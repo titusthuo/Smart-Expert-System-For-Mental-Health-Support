@@ -1,136 +1,134 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Animated,
-  Dimensions,
-  Image,
-  ImageSourcePropType,
-  ScrollView,
-  StatusBar,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    Image,
+    Platform,
+    ScrollView,
+    StatusBar,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { HomeDialogs } from "@/components/home/home-dialogs";
+import { ImageWithFallback } from "@/components/home/image-with-fallback";
+import { PressableCard } from "@/components/home/pressable-card";
+import { AppText, Button } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
+import { openUrlSafely } from "@/lib/links";
+import { MOODS, MoodLabel } from "@/lib/moods";
+import { getStoredJson } from "@/lib/storage";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-// ─── Mood definitions ─────────────────────────────────────────────────────────
-// Each mood carries the opening message the AI will use in the chat screen.
-export const MOODS = [
-  {
-    emoji: "😊",
-    label: "Great",
-    aiGreeting:
-      "That's wonderful to hear! 😊 I'm really glad you're feeling great today. What's been making your day so positive? I'd love to hear about it, and we can also explore ways to keep that energy going!",
-  },
-  {
-    emoji: "😐",
-    label: "Okay",
-    aiGreeting:
-      "Thanks for checking in. Feeling 'okay' is perfectly valid — sometimes days are just neutral, and that's alright. Is there anything on your mind you'd like to talk through, or anything that could make today feel a little better?",
-  },
-  {
-    emoji: "😔",
-    label: "Low",
-    aiGreeting:
-      "I'm sorry you're feeling low right now. 💙 It takes courage to acknowledge that, and I'm here with you. Would you like to share what's been weighing on you? Sometimes just talking about it can help lighten the load.",
-  },
-  {
-    emoji: "😟",
-    label: "Anxious",
-    aiGreeting:
-      "I hear you — anxiety can feel really overwhelming. 🤍 Let's take a breath together first. Try inhaling slowly for 4 counts, holding for 4, then exhaling for 4. Whenever you're ready, tell me what's been causing you to feel anxious.",
-  },
-  {
-    emoji: "😤",
-    label: "Stressed",
-    aiGreeting:
-      "I can understand how draining stress feels. You've done the right thing by reaching out. 💪 Let's work through this together — what's the biggest source of stress for you right now? We can break it down step by step.",
-  },
-] as const;
+const SPACING = {
+  xs: 8,
+  sm: 12,
+  md: 16,
+  lg: 20,
+  xl: 24,
+} as const;
 
-export type MoodLabel = (typeof MOODS)[number]["label"];
-
-// ─── Image with graceful fallback ────────────────────────────────────────────
-interface ImageWithFallbackProps {
-  source: ImageSourcePropType;
-  alt: string;
-  className?: string;
-  style?: any;
-}
-
-const ImageWithFallback = ({
-  source,
-  alt,
-  className,
-  style,
-}: ImageWithFallbackProps) => {
-  const [error, setError] = React.useState(false);
-  return error ? (
-    <View
-      className={`items-center justify-center bg-muted ${className}`}
-      style={style}
-    >
-      <Ionicons name="image-outline" size={28} color="#9CA3AF" />
-      <Text className="text-xs text-muted-foreground text-center mt-1 px-2">
-        {alt}
-      </Text>
-    </View>
-  ) : (
-    <Image
-      source={source}
-      className={className}
-      style={style}
-      onError={() => setError(true)}
-      accessibilityLabel={alt}
-      resizeMode="cover"
-    />
-  );
-};
-
-// ─── Pressable card with subtle scale feedback ────────────────────────────────
-const PressableCard = ({
-  onPress,
-  children,
-  className = "",
-}: {
-  onPress?: () => void;
-  children: React.ReactNode;
-  className?: string;
-}) => {
-  const scale = useRef(new Animated.Value(1)).current;
-  const press = () => {
-    Animated.sequence([
-      Animated.timing(scale, {
-        toValue: 0.97,
-        duration: 80,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scale, {
-        toValue: 1,
-        duration: 120,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    onPress?.();
-  };
-  return (
-    <TouchableOpacity activeOpacity={1} onPress={press} disabled={!onPress}>
-      <Animated.View style={{ transform: [{ scale }] }} className={className}>
-        {children}
-      </Animated.View>
-    </TouchableOpacity>
-  );
-};
+const CRISIS_HELPLINE = {
+  name: "Kenya Red Cross",
+  number: "1199",
+} as const;
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const router = useRouter();
-  const { isDark } = useAuthTheme();
+  const { border, brand, brandAccent, isDark, subtle, surface, text } = useAuthTheme();
+
+  const [callConfirmVisible, setCallConfirmVisible] = useState(false);
+
+  const [infoVisible, setInfoVisible] = useState(false);
+  const [infoTitle, setInfoTitle] = useState("");
+  const [infoMessage, setInfoMessage] = useState("");
+
+  const [profileName, setProfileName] = useState<string>("John Doe");
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        const parsed = await getStoredJson<{ name?: unknown }>("profileData");
+        if (!mounted || !parsed) return;
+        if (typeof parsed?.name === "string" && parsed.name.trim()) {
+          setProfileName(parsed.name.trim());
+        }
+      } catch {
+        // ignore
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const firstName = useMemo(() => {
+    const parts = profileName.trim().split(/\s+/).filter(Boolean);
+    return parts[0] ?? "";
+  }, [profileName]);
+
+  const avatarInitials = useMemo(() => {
+    const parts = profileName.trim().split(/\s+/).filter(Boolean);
+    const first = parts[0]?.[0] ?? "";
+    const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? "" : "";
+    return (first + last).toUpperCase() || "U";
+  }, [profileName]);
+
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  }, []);
+
+  const openInfo = useCallback((title: string, message: string) => {
+    setInfoTitle(title);
+    setInfoMessage(message);
+    setInfoVisible(true);
+  }, []);
+
+  const tryHaptics = useCallback(
+    (fn: () => Promise<unknown>) => {
+      fn().catch(() => undefined);
+    },
+    []
+  );
+
+  const placeHelplineCall = useCallback(async () => {
+    const url =
+      Platform.OS === "ios"
+        ? `telprompt:${CRISIS_HELPLINE.number}`
+        : `tel:${CRISIS_HELPLINE.number}`;
+
+    try {
+      const opened = await openUrlSafely(url);
+      if (!opened) {
+        openInfo(
+          "Unable to place call",
+          "Calling is not available on this device."
+        );
+        return;
+      }
+    } catch {
+      openInfo(
+        "Unable to place call",
+        "Something went wrong while trying to start the call."
+      );
+    }
+  }, [openInfo]);
+
+  const handleCallNow = useCallback(() => {
+    tryHaptics(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
+    setCallConfirmVisible(true);
+  }, [tryHaptics]);
 
   // Tracks which mood pill is highlighted (null = none selected yet)
   const [selectedMood, setSelectedMood] = useState<MoodLabel | null>(null);
@@ -142,11 +140,13 @@ export default function HomePage() {
 
   const HERO_HEIGHT = SCREEN_WIDTH < 400 ? 190 : 230;
   const GRID_IMG_HEIGHT = SCREEN_WIDTH < 400 ? 120 : 148;
-  const iconColor = isDark ? "#A78BFA" : "#7C3AED";
+  const INSIGHT_CARD_WIDTH = Math.min(320, Math.max(248, Math.round(SCREEN_WIDTH * 0.72)));
 
   // ── Mood pill tap handler ────────────────────────────────────────────────
   const handleMoodSelect = (mood: (typeof MOODS)[number]) => {
     setSelectedMood(mood.label);
+
+    tryHaptics(() => Haptics.selectionAsync());
 
     // Small delay so the user sees the pill highlight before navigation
     setTimeout(() => {
@@ -173,35 +173,53 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════
           HEADER
       ══════════════════════════════════════════ */}
-      <View className="flex-row items-center justify-between px-5 py-3.5 bg-card border-b border-border">
+      <View className="flex-row items-center justify-between px-5 bg-card border-b border-border h-14">
         <View className="flex-row items-center gap-2.5">
-          <View className="w-10 h-10 rounded-full overflow-hidden border-2 border-brand/30">
+          <View className="w-9 h-9 rounded-full overflow-hidden border border-border">
             <Image
               source={logoImage}
-              className="w-full h-full"
+              style={{ width: "100%", height: "100%" }}
               resizeMode="cover"
+              accessibilityLabel="Mentally logo"
             />
           </View>
           <View>
-            <Text className="text-foreground font-bold text-[18px] tracking-tight leading-tight">
+            <AppText
+              unstyled
+              className="text-foreground font-bold text-[18px] tracking-tight leading-tight"
+            >
               Mentally
-            </Text>
-            <Text className="text-muted-foreground text-[11px] font-medium">
+            </AppText>
+            <AppText
+              unstyled
+              className="text-muted-foreground text-[11px] font-medium"
+            >
               Your wellness companion
-            </Text>
+            </AppText>
           </View>
         </View>
 
-        <View className="flex-row items-center gap-3">
-          <TouchableOpacity className="w-9 h-9 rounded-full bg-muted items-center justify-center">
+        <View className="flex-row items-center gap-2.5">
+          <TouchableOpacity
+            className="w-9 h-9 rounded-full bg-muted items-center justify-center"
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+            activeOpacity={0.8}
+          >
             <Ionicons
               name="notifications-outline"
               size={20}
-              color={isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)"}
+              color={subtle}
             />
           </TouchableOpacity>
-          <View className="w-10 h-10 rounded-full bg-brand items-center justify-center">
-            <Text className="text-white font-bold text-sm">JD</Text>
+          <View
+            className="w-9 h-9 rounded-full items-center justify-center border"
+            style={{ backgroundColor: brand, borderColor: border }}
+            accessibilityLabel="Profile"
+          >
+            <AppText unstyled className="text-white font-bold text-[13px]">
+              {avatarInitials}
+            </AppText>
           </View>
         </View>
       </View>
@@ -212,44 +230,53 @@ export default function HomePage() {
       <ScrollView
         className="flex-1 bg-background"
         contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: 24,
-          paddingBottom: 40,
+          paddingHorizontal: SPACING.md,
+          paddingTop: SPACING.lg,
+          paddingBottom: SPACING.xl,
         }}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Greeting ─────────────────────────────── */}
-        <View className="mb-5">
-          <Text className="text-foreground text-2xl font-bold tracking-tight mb-1">
-            Good morning, John 👋
-          </Text>
-          <Text className="text-muted-foreground text-sm leading-5">
-            How are you feeling today? We're here to help.
-          </Text>
+        <View style={{ marginBottom: SPACING.xl }}>
+          <AppText
+            unstyled
+            className="text-foreground text-2xl font-bold tracking-tight mb-1"
+          >
+            {greeting}
+            {firstName ? `, ${firstName}` : ""} 👋
+          </AppText>
+          <AppText unstyled className="text-muted-foreground text-sm leading-5">
+            How are you feeling right now? I’m here with you.
+          </AppText>
         </View>
 
         {/* ── Mood check-in section ─────────────────── */}
-        <View className="mb-6">
+        <View style={{ marginBottom: SPACING.xl }}>
           {/* Section label */}
           <View className="flex-row items-center gap-2 mb-3">
-            <Ionicons name="happy-outline" size={16} color={iconColor} />
-            <Text className="text-foreground font-bold text-sm tracking-tight">
+            <Ionicons name="happy-outline" size={16} color={brandAccent} />
+            <AppText
+              unstyled
+              className="text-foreground font-bold text-sm tracking-tight"
+            >
               How are you feeling right now?
-            </Text>
+            </AppText>
           </View>
 
           {/* Hint text — tells the user what tapping a pill does */}
-          <Text className="text-muted-foreground text-xs mb-3 leading-4">
+          <AppText
+            unstyled
+            className="text-muted-foreground text-xs mb-3 leading-4"
+          >
             Tap a mood and our AI will start a conversation tailored just for
             you.
-          </Text>
+          </AppText>
 
           {/* Pill row */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            className="-mx-4"
-            contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}
+            contentContainerStyle={{ paddingHorizontal: SPACING.md, gap: 10 }}
           >
             {MOODS.map((mood) => {
               const isSelected = selectedMood === mood.label;
@@ -258,20 +285,24 @@ export default function HomePage() {
                   key={mood.label}
                   activeOpacity={0.75}
                   onPress={() => handleMoodSelect(mood)}
-                  className={`flex-row items-center gap-1.5 px-4 py-2.5 rounded-full border ${
-                    isSelected
-                      ? "bg-brand border-brand"
-                      : "bg-card border-border"
-                  }`}
+                  className="flex-row items-center gap-1.5 px-4 py-2.5 rounded-full border"
+                  style={{
+                    backgroundColor: isSelected ? brand : surface,
+                    borderColor: isSelected ? brand : border,
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Mood: ${mood.label}`}
                 >
-                  <Text className="text-base">{mood.emoji}</Text>
-                  <Text
-                    className={`text-sm font-semibold ${
-                      isSelected ? "text-white" : "text-foreground"
-                    }`}
+                  <AppText unstyled className="text-base">
+                    {mood.emoji}
+                  </AppText>
+                  <AppText
+                    unstyled
+                    className="text-sm font-semibold"
+                    style={{ color: isSelected ? "#FFFFFF" : text }}
                   >
                     {mood.label}
-                  </Text>
+                  </AppText>
                   {/* Show a small arrow on selected to hint "navigating" */}
                   {isSelected && (
                     <Ionicons name="arrow-forward" size={13} color="#FFFFFF" />
@@ -283,225 +314,210 @@ export default function HomePage() {
         </View>
 
         {/* ── Hero image card ───────────────────────── */}
-        <View className="mb-5 rounded-2xl overflow-hidden border border-border bg-card">
+        <View
+          className="rounded-2xl overflow-hidden border border-border bg-card"
+          style={{ marginBottom: SPACING.lg }}
+        >
           <ImageWithFallback
             source={heroImage}
             alt="People meditating in a peaceful setting"
-            className="w-full"
-            style={{ height: HERO_HEIGHT }}
+            style={{ height: HERO_HEIGHT, width: "100%" }}
           />
-          <View className="absolute bottom-0 left-0 right-0 px-4 py-3 bg-black/40">
-            <Text className="text-white font-bold text-base">
-              Your journey to better mental health
-            </Text>
-            <Text className="text-white/75 text-xs mt-0.5">
-              Backed by evidence-based research
-            </Text>
-          </View>
-        </View>
-
-        {/* ── Main message card ─────────────────────── */}
-        <View className="mb-5 rounded-2xl bg-card border border-border p-4">
-          <View className="flex-row items-center gap-2 mb-3">
-            <View className="w-9 h-9 rounded-full bg-brand/15 items-center justify-center">
-              <Ionicons name="heart" size={18} color={iconColor} />
-            </View>
-            <Text className="text-foreground font-bold text-[15px] flex-1 leading-tight">
-              Mental health is at the core of your well-being
-            </Text>
-          </View>
-
-          <Text className="text-muted-foreground text-[13px] leading-5 mb-3">
-            Take your mental health seriously. Chat with our AI for
-            personalized, research-backed mental health assistance — anytime you
-            need it.
-          </Text>
-
-          <View className="rounded-xl bg-brand/10 border border-brand/25 px-4 py-3">
-            <View className="flex-row items-start gap-2">
-              <Ionicons
-                name="chatbubble-ellipses"
-                size={14}
-                color={iconColor}
-                style={{ marginTop: 2 }}
+          <View className="absolute inset-0" pointerEvents="none">
+            <View className="flex-1" />
+            <View style={{ height: HERO_HEIGHT * 0.55 }}>
+              <View
+                style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.08)" }}
               />
-              <Text className="text-brand text-xs italic leading-5 flex-1">
-                "Taking care of your mental health is not a luxury — it is a
-                necessity for living a fulfilling life."
-              </Text>
+              <View
+                style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.22)" }}
+              />
+              <View
+                style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.42)" }}
+              />
             </View>
+          </View>
+
+          <View className="absolute bottom-0 left-0 right-0 px-4 py-3">
+            <AppText unstyled className="text-white font-bold text-base">
+              A calmer moment, right now
+            </AppText>
+            <AppText unstyled className="text-white/80 text-xs mt-0.5">
+              Small steps add up. You don’t have to do this alone.
+            </AppText>
           </View>
         </View>
 
-        {/* ── Primary CTA ───────────────────────────── */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => router.push("/(tabs)/chat")}
-          className="mb-5 rounded-2xl bg-brand flex-row items-center justify-center py-4 gap-2.5"
+        <View
+          className="rounded-2xl bg-card border border-border p-4"
+          style={{ marginBottom: SPACING.lg }}
         >
-          <Ionicons name="chatbubble-ellipses" size={20} color="#FFFFFF" />
-          <Text className="text-white font-bold text-base tracking-tight">
-            Chat with Mentally
-          </Text>
-        </TouchableOpacity>
-
-        {/* ── Feature cards ─────────────────────────── */}
-        <Text className="text-foreground font-bold text-base mb-3 tracking-tight">
-          Explore Features
-        </Text>
-
-        <View className="flex-row gap-3 mb-5">
-          <PressableCard
-            className="flex-1 bg-card border border-border rounded-2xl p-4"
-            onPress={() => router.push("/therapists")}
-          >
-            <View className="w-11 h-11 rounded-xl bg-blue-500/15 items-center justify-center mb-3">
-              <Ionicons
-                name="people"
-                size={22}
-                color={isDark ? "#60A5FA" : "#2563EB"}
-              />
-            </View>
-            <Text className="text-foreground font-bold text-[13px] leading-5 mb-1">
-              Find a Therapist
-            </Text>
-            <Text className="text-muted-foreground text-[11px] leading-4">
-              Connect with qualified mental health professionals near you
-            </Text>
-            <View className="flex-row items-center mt-3 gap-1">
-              <Text className="text-brand text-[11px] font-bold">Explore</Text>
-              <Ionicons name="arrow-forward" size={11} color={iconColor} />
-            </View>
-          </PressableCard>
-
-          <PressableCard
-            className="flex-1 bg-card border border-border rounded-2xl p-4"
-            onPress={() => router.push("/education")}
-          >
-            <View className="w-11 h-11 rounded-xl bg-green-500/15 items-center justify-center mb-3">
-              <Ionicons
-                name="book-outline"
-                size={22}
-                color={isDark ? "#4ADE80" : "#16A34A"}
-              />
-            </View>
-            <Text className="text-foreground font-bold text-[13px] leading-5 mb-1">
-              Learn &amp; Grow
-            </Text>
-            <Text className="text-muted-foreground text-[11px] leading-4">
-              Evidence-based mental health education and resources
-            </Text>
-            <View className="flex-row items-center mt-3 gap-1">
-              <Text className="text-brand text-[11px] font-bold">Explore</Text>
-              <Ionicons name="arrow-forward" size={11} color={iconColor} />
-            </View>
-          </PressableCard>
-        </View>
-
-        {/* ── Daily tip card ────────────────────────── */}
-        <View className="mb-5 rounded-2xl bg-green-500/10 border border-green-500/25 p-4">
           <View className="flex-row items-center gap-2 mb-2">
             <Ionicons
               name="bulb-outline"
               size={18}
               color={isDark ? "#4ADE80" : "#16A34A"}
             />
-            <Text className="text-green-600 font-bold text-sm">
+            <AppText unstyled className="text-green-600 font-bold text-sm">
               Daily Wellness Tip
-            </Text>
+            </AppText>
           </View>
-          <Text className="text-foreground text-[13px] leading-5">
-            Practice the{" "}
-            <Text className="font-bold">4-7-8 breathing technique</Text>: inhale
-            for 4 seconds, hold for 7, exhale for 8. It activates your
-            parasympathetic nervous system and reduces anxiety within minutes.
-          </Text>
+          <AppText unstyled className="text-foreground text-[13px] leading-5">
+            Try{" "}
+            <AppText unstyled className="font-bold">
+              4-7-8 breathing
+            </AppText>
+            : inhale 4, hold 7, exhale 8.
+          </AppText>
         </View>
 
         {/* ── Image grid ────────────────────────────── */}
-        <Text className="text-foreground font-bold text-base mb-3 tracking-tight">
+        <AppText
+          unstyled
+          className="text-foreground font-bold text-base tracking-tight"
+          style={{ marginBottom: SPACING.sm }}
+        >
           Wellness Insights
-        </Text>
+        </AppText>
 
-        <View className="flex-row gap-3">
-          <PressableCard className="flex-1 bg-card border border-border rounded-2xl overflow-hidden">
-            <ImageWithFallback
-              source={gridImage1}
-              alt="Woman practising self care"
-              className="w-full"
-              style={{ height: GRID_IMG_HEIGHT }}
-            />
-            <View className="p-3">
-              <View className="flex-row items-center gap-1 mb-1">
-                <Ionicons name="heart-outline" size={12} color={iconColor} />
-                <Text className="text-brand text-[10px] font-bold uppercase tracking-wide">
-                  Self-Care
-                </Text>
-              </View>
-              <Text className="text-foreground text-[13px] font-bold leading-5">
-                Self-Care Matters
-              </Text>
-              <Text className="text-muted-foreground text-[11px] leading-4 mt-0.5">
-                Prioritize your mental well-being every day
-              </Text>
-            </View>
-          </PressableCard>
-
-          <PressableCard className="flex-1 bg-card border border-border rounded-2xl overflow-hidden">
-            <ImageWithFallback
-              source={gridImage2}
-              alt="Mental health education"
-              className="w-full"
-              style={{ height: GRID_IMG_HEIGHT }}
-            />
-            <View className="p-3">
-              <View className="flex-row items-center gap-1 mb-1">
-                <Ionicons
-                  name="flask-outline"
-                  size={12}
-                  color={isDark ? "#4ADE80" : "#16A34A"}
-                />
-                <Text
-                  className="text-[10px] font-bold uppercase tracking-wide"
-                  style={{ color: isDark ? "#4ADE80" : "#16A34A" }}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="-mr-4"
+        >
+          <View className="flex-row pr-4">
+            <PressableCard
+              className="mr-3 bg-card border border-border rounded-2xl overflow-hidden"
+              style={{ width: INSIGHT_CARD_WIDTH }}
+            >
+              <ImageWithFallback
+                source={gridImage1}
+                alt="Woman practising self care"
+                style={{ height: GRID_IMG_HEIGHT, width: "100%" }}
+              />
+              <View className="p-3">
+                <View className="flex-row items-center gap-1 mb-1">
+                  <Ionicons
+                    name="heart-outline"
+                    size={12}
+                    color={brandAccent}
+                  />
+                  <AppText
+                    unstyled
+                    className="text-brand text-[10px] font-bold uppercase tracking-wide"
+                  >
+                    Self-Care
+                  </AppText>
+                </View>
+                <AppText
+                  unstyled
+                  className="text-foreground text-[13px] font-bold leading-5"
                 >
-                  Research
-                </Text>
+                  Self-Care Matters
+                </AppText>
+                <AppText
+                  unstyled
+                  className="text-muted-foreground text-[11px] leading-4 mt-0.5"
+                >
+                  Prioritize your mental well-being every day
+                </AppText>
               </View>
-              <Text className="text-foreground text-[13px] font-bold leading-5">
-                Evidence-Based Support
-              </Text>
-              <Text className="text-muted-foreground text-[11px] leading-4 mt-0.5">
-                Resources backed by scientific research
-              </Text>
-            </View>
-          </PressableCard>
-        </View>
+            </PressableCard>
+
+            <PressableCard
+              className="bg-card border border-border rounded-2xl overflow-hidden"
+              style={{ width: INSIGHT_CARD_WIDTH }}
+            >
+              <ImageWithFallback
+                source={gridImage2}
+                alt="Mental health education"
+                style={{ height: GRID_IMG_HEIGHT, width: "100%" }}
+              />
+              <View className="p-3">
+                <View className="flex-row items-center gap-1 mb-1">
+                  <Ionicons
+                    name="flask-outline"
+                    size={12}
+                    color={isDark ? "#4ADE80" : "#16A34A"}
+                  />
+                  <AppText
+                    unstyled
+                    className="text-[10px] font-bold uppercase tracking-wide"
+                    style={{ color: isDark ? "#4ADE80" : "#16A34A" }}
+                  >
+                    Research
+                  </AppText>
+                </View>
+                <AppText
+                  unstyled
+                  className="text-foreground text-[13px] font-bold leading-5"
+                >
+                  Evidence-Based Support
+                </AppText>
+                <AppText
+                  unstyled
+                  className="text-muted-foreground text-[11px] leading-4 mt-0.5"
+                >
+                  Resources backed by scientific research
+                </AppText>
+              </View>
+            </PressableCard>
+          </View>
+        </ScrollView>
 
         {/* ── Emergency banner ──────────────────────── */}
-        <View className="mt-5 rounded-2xl bg-red-500/10 border border-red-500/25 p-4 flex-row items-center gap-3">
-          <View className="w-10 h-10 rounded-full bg-red-500/20 items-center justify-center shrink-0">
+        <View
+          className="rounded-2xl border p-4 flex-row items-center gap-3"
+          style={{
+            marginTop: SPACING.xl,
+            borderColor: isDark ? "rgba(168,85,247,0.25)" : "rgba(124,58,237,0.25)",
+            backgroundColor: isDark ? "rgba(168,85,247,0.10)" : "rgba(124,58,237,0.08)",
+          }}
+        >
+          <View className="w-10 h-10 rounded-full items-center justify-center shrink-0" style={{ backgroundColor: isDark ? "rgba(168,85,247,0.18)" : "rgba(124,58,237,0.14)" }}>
             <Ionicons
               name="call"
               size={18}
-              color={isDark ? "#F87171" : "#DC2626"}
+              color={brandAccent}
             />
           </View>
           <View className="flex-1">
-            <Text className="text-foreground font-bold text-[13px] mb-0.5">
-              Need immediate help?
-            </Text>
-            <Text className="text-muted-foreground text-[11px] leading-4">
-              Crisis helpline available 24/7. You are not alone.
-            </Text>
+            <AppText
+              unstyled
+              className="text-foreground font-bold text-[13px] mb-0.5"
+            >
+              Need to talk to someone?
+            </AppText>
+            <AppText
+              unstyled
+              className="text-muted-foreground text-[11px] leading-4"
+            >
+              Free, confidential support is available 24/7.
+            </AppText>
           </View>
-          <TouchableOpacity className="bg-red-500 px-3 py-2 rounded-xl">
-            <Text className="text-white font-bold text-xs">Call Now</Text>
-          </TouchableOpacity>
+          <Button text="Call" onPress={handleCallNow} className="h-11 px-4" />
         </View>
 
         <View className="h-6" />
       </ScrollView>
+
+      <HomeDialogs
+        callConfirmVisible={callConfirmVisible}
+        onCloseCallConfirm={() => setCallConfirmVisible(false)}
+        helplineName={CRISIS_HELPLINE.name}
+        helplineNumber={CRISIS_HELPLINE.number}
+        onConfirmCall={() => {
+          setCallConfirmVisible(false);
+          tryHaptics(() =>
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+          );
+          placeHelplineCall().catch(() => undefined);
+        }}
+        infoVisible={infoVisible}
+        infoTitle={infoTitle}
+        infoMessage={infoMessage}
+        onCloseInfo={() => setInfoVisible(false)}
+      />
     </SafeAreaView>
   );
 }
