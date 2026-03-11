@@ -1,5 +1,7 @@
 import { Colors } from "@/constants/theme";
 import { ThemePreferenceProvider, useAppColorScheme } from "@/hooks/use-theme-preference";
+import { apolloClient } from "@/lib/graphql/client";
+import { ApolloProvider } from "@apollo/client";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
@@ -78,7 +80,9 @@ function RootLayoutContent() {
 export default function RootLayout() {
   return (
     <ThemePreferenceProvider>
-      <RootLayoutContent />
+      <ApolloProvider client={apolloClient}>
+        <RootLayoutContent />
+      </ApolloProvider>
     </ThemePreferenceProvider>
   );
 }

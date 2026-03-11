@@ -1,0 +1,15 @@
+Django>=5.1,<5.2
+djangorestframework
+djangorestframework-simplejwt
+django-filter                  # ← this is the one that was missing!
+django-cors-headers
+channels>=4.0
+channels-redis>=4.2
+redis>=5.0
+graphene-django>=3.2
+django-graphql-jwt>=0.4.0
+
+# Optional but highly recommended extras
+gunicorn                        # for production
+psycopg2-binary                 # if you use PostgreSQL
+celery>=5.3                     # if you plan to use background tasks later

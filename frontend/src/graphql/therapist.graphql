@@ -1,0 +1,34 @@
+query Therapist($id: Int!) {
+  therapist(id: $id) {
+    id
+    name
+    photoUrl
+    location
+    county
+    town
+    phone
+    whatsapp
+    email
+    coords {
+      lat
+      lng
+    }
+    specialization
+    bio
+    fullBio
+    qualifications
+    experience
+    licenseNumber
+    rating
+    reviews
+    price
+    availability
+    reviewsList {
+      id
+      author
+      rating
+      date
+      comment
+    }
+  }
+}
