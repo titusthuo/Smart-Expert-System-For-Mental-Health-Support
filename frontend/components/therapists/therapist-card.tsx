@@ -1,7 +1,7 @@
 import { AppText } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
-import { Therapist } from "@/lib/therapists";
-import { DollarSign, MapPin, Star } from "lucide-react-native";
+import { Therapist } from "@/lib/therapists/types";
+import { DollarSign, MapPin } from "lucide-react-native";
 import { Image, TouchableOpacity, View } from "react-native";
 
 export function TherapistCard({
@@ -17,50 +17,37 @@ export function TherapistCard({
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={onPress}
-      className="bg-card rounded-xl p-4 mb-4 shadow-sm border border-border"
+      className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm"
     >
       <View className="flex-row">
         <Image
           source={therapist.photo}
-          className="w-24 h-24 rounded-lg mr-4"
+          className="mr-4 h-24 w-24 rounded-2xl"
           resizeMode="cover"
         />
 
         <View className="flex-1">
-          <View className="flex-row justify-between items-start mb-2">
+          <View className="mb-3">
             <View>
-              <AppText unstyled className="text-lg font-semibold text-foreground">
+              <AppText unstyled className="text-lg font-semibold leading-6 text-foreground" numberOfLines={2}>
                 {therapist.name}
               </AppText>
-              <View className="flex-row items-center mt-0.5">
+              <View className="mt-1 flex-row items-start">
                 <MapPin size={12} color={subtle} />
-                <AppText unstyled className="text-sm text-muted-foreground ml-1">
+                <AppText unstyled className="ml-1 flex-1 text-sm leading-5 text-muted-foreground" numberOfLines={2}>
                   {therapist.location}
                 </AppText>
               </View>
 
               {!!therapist.licenseNumber && (
-                <AppText unstyled className="text-xs text-muted-foreground mt-1">
+                <AppText unstyled className="mt-2 text-xs text-muted-foreground">
                   License: {therapist.licenseNumber}
                 </AppText>
               )}
-              <AppText unstyled className="text-xs text-muted-foreground mt-1">
+              <AppText unstyled className="mt-1 text-xs text-muted-foreground">
                 Phone: {therapist.phone}
               </AppText>
             </View>
-
-            {typeof therapist.rating === "number" &&
-              typeof therapist.reviews === "number" && (
-                <View className="flex-row items-center bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded">
-                  <Star size={16} color="#FBBF24" fill="#FBBF24" />
-                  <AppText unstyled className="font-semibold text-sm text-foreground ml-1">
-                    {therapist.rating}
-                  </AppText>
-                  <AppText unstyled className="text-xs text-muted-foreground ml-1">
-                    ({therapist.reviews})
-                  </AppText>
-                </View>
-              )}
           </View>
 
           <View className="flex-row flex-wrap gap-2 mb-2">
@@ -73,7 +60,7 @@ export function TherapistCard({
             ))}
           </View>
 
-          <AppText unstyled className="text-sm text-foreground mb-3" numberOfLines={2}>
+          <AppText unstyled className="mb-3 text-sm leading-5 text-foreground" numberOfLines={2}>
             {therapist.bio}
           </AppText>
 

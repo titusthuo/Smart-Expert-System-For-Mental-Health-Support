@@ -3,8 +3,10 @@ import { setContext } from "@apollo/client/link/context";
 
 import { getStoredString } from "@/lib/storage";
 
+const graphqlUri = process.env.EXPO_PUBLIC_GRAPHQL_URL ?? "http://127.0.0.1:8000/graphql/";
+
 const httpLink = new HttpLink({
-  uri: "http://127.0.0.1:8000/graphql/",
+  uri: graphqlUri,
 });
 
 const authLink = setContext(async (_, { headers }) => {

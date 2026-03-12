@@ -1,5 +1,5 @@
-query Therapist($id: Int!) {
-  therapist(id: $id) {
+query Therapists {
+  therapists {
     id
     name
     photoUrl
@@ -15,20 +15,8 @@ query Therapist($id: Int!) {
     }
     specialization
     bio
-    fullBio
-    qualifications
-    experience
     licenseNumber
-    rating
-    reviews
     price
     availability
-    reviewsList {
-      id
-      author
-      rating
-      date
-      comment
-    }
   }
 }
