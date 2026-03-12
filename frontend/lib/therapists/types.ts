@@ -14,8 +14,6 @@ export type Therapist = {
   specialization: string[];
   bio: string;
   licenseNumber?: string;
-  rating?: number;
-  reviews?: number;
   price?: number;
   availability?: string;
 };

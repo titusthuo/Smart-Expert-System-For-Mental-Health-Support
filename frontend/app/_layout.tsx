@@ -1,6 +1,6 @@
 import { Colors } from "@/constants/theme";
+import { apolloClient } from "@/graphql/client";
 import { ThemePreferenceProvider, useAppColorScheme } from "@/hooks/use-theme-preference";
-import { apolloClient } from "@/lib/graphql/client";
 import { ApolloProvider } from "@apollo/client";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";

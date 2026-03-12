@@ -1,8 +1,10 @@
 overwrite: true
 schema: http://127.0.0.1:8000/graphql/
-documents: 'src/**/*.graphql'
+documents:
+  - 'src/graphql/queries/**/*.graphql'
+  - 'src/graphql/mutations/**/*.graphql'
 generates:
-  src/lib/graphql/generated/graphql.tsx:
+  src/graphql/generated/graphql.tsx:
     plugins:
       - 'typescript'
       - 'typescript-operations'

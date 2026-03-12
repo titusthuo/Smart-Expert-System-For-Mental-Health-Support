@@ -1,5 +1,5 @@
 import { useAuthTheme } from "@/hooks/use-auth-theme";
-import { locationOptions, specializationOptions } from "@/lib/therapists";
+import { locationOptions, specializationOptions } from "@/lib/therapists/options";
 import { MapPin, Search } from "lucide-react-native";
 import React from "react";
 import { ScrollView, TextInput, View } from "react-native";

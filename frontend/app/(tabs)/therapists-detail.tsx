@@ -1,28 +1,23 @@
 import { AppText } from "@/components/ui/text";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
-import { useTherapistQuery } from "@/lib/graphql/generated/graphql";
+import { useTherapist } from "@/hooks/useTherapist";
 import { openUrlSafely } from "@/lib/links";
-import { Review, TherapistDetail } from "@/lib/therapists";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    ArrowLeft,
-    Award,
-    DollarSign,
-    MapPin,
-    Star,
+  ArrowLeft,
+  Award,
+  DollarSign,
+  MapPin,
 } from "lucide-react-native";
 import {
-    Alert,
-    FlatList,
-    Image,
-    ScrollView,
-    StatusBar,
-    TouchableOpacity,
-    View
+  Alert,
+  Image,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const FALLBACK_THERAPIST_PHOTO = require("../../assets/images/therapists/Therapists-image.jpg");
 
 export default function TherapistDetailScreen() {
   const router = useRouter();
@@ -32,11 +27,7 @@ export default function TherapistDetailScreen() {
     from?: string;
   }>();
   const { isDark, subtle } = useAuthTheme();
-
-  const therapistId = Number(id);
-  const { data } = useTherapistQuery({
-    variables: { id: Number.isFinite(therapistId) ? therapistId : 0 },
-  });
+  const { therapist } = useTherapist(id);
 
   const handleBackPress = () => {
     if (from === "therapists") {
@@ -51,42 +42,6 @@ export default function TherapistDetailScreen() {
 
     router.replace("/(tabs)/therapists");
   };
-
-  const therapist: TherapistDetail | undefined = (() => {
-    const t = (data as any)?.therapist;
-    if (!t) return undefined;
-
-    return {
-      id: String(t.id),
-      name: t.name,
-      photo: t.photoUrl ? { uri: t.photoUrl } : FALLBACK_THERAPIST_PHOTO,
-      location: t.location,
-      county: t.county,
-      town: t.town,
-      phone: t.phone,
-      whatsapp: t.whatsapp ?? undefined,
-      email: t.email ?? undefined,
-      coords: t.coords ? { lat: t.coords.lat, lng: t.coords.lng } : undefined,
-      specialization: t.specialization ?? [],
-      bio: t.bio,
-      licenseNumber: t.licenseNumber ?? undefined,
-      rating: typeof t.rating === "number" ? t.rating : undefined,
-      reviews: typeof t.reviews === "number" ? t.reviews : undefined,
-      price: typeof t.price === "number" ? t.price : undefined,
-      availability: t.availability ?? undefined,
-      fullBio: t.fullBio ?? "",
-      qualifications: t.qualifications ?? [],
-      experience: t.experience ?? "",
-    };
-  })();
-
-  const reviews: Review[] = (((data as any)?.therapist?.reviewsList ?? []) as any[]).map((r: any) => ({
-    id: String(r.id),
-    author: r.author,
-    rating: r.rating,
-    date: r.date,
-    comment: r.comment,
-  }));
 
   const isCrisis = reason === "crisis";
   const appName = "MindEase KE";
@@ -175,33 +130,6 @@ export default function TherapistDetailScreen() {
     }
   };
 
-  const renderReview = ({ item }: { item: Review }) => (
-    <View className="border-b border-gray-200 pb-4 last:border-b-0">
-      <View className="flex-row justify-between items-start mb-2">
-        <View className="flex-row items-center">
-          <View className="w-10 h-10 bg-purple-100 rounded-full items-center justify-center mr-3">
-            <AppText className="text-purple-600 font-medium text-lg">
-              {item.author[0]}
-            </AppText>
-          </View>
-          <View>
-            <AppText className="font-medium text-gray-900">{item.author}</AppText>
-            <AppText className="text-xs text-gray-500">{item.date}</AppText>
-          </View>
-        </View>
-
-        <View className="flex-row">
-          {Array(item.rating)
-            .fill(0)
-            .map((_, i) => (
-              <Star key={i} size={16} color="#FBBF24" fill="#FBBF24" />
-            ))}
-        </View>
-      </View>
-      <AppText className="text-sm text-gray-700 leading-5">{item.comment}</AppText>
-    </View>
-  );
-
   return (
     <SafeAreaView className="flex-1 bg-background">
       <StatusBar
@@ -258,19 +186,6 @@ export default function TherapistDetailScreen() {
                       </AppText>
                     </View>
                   </View>
-
-                  {typeof therapist.rating === "number" &&
-                    typeof therapist.reviews === "number" && (
-                      <View className="flex-row items-center bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded">
-                        <Star size={20} color="#FBBF24" fill="#FBBF24" />
-                        <AppText className="font-semibold ml-1.5 text-foreground">
-                          {therapist.rating}
-                        </AppText>
-                        <AppText className="text-sm text-muted-foreground ml-1">
-                          ({therapist.reviews} reviews)
-                        </AppText>
-                      </View>
-                    )}
                 </View>
 
                 <View className="flex-row flex-wrap gap-2 mb-4">
@@ -390,21 +305,6 @@ export default function TherapistDetailScreen() {
             </View>
           )}
 
-          {/* Reviews */}
-          {reviews.length > 0 && (
-            <View className="bg-card rounded-xl p-6 shadow-sm border border-border">
-              <AppText className="text-xl font-semibold mb-4 text-foreground">
-                Reviews
-              </AppText>
-
-              <FlatList
-                data={reviews}
-                renderItem={renderReview}
-                keyExtractor={(item) => item.id}
-                scrollEnabled={false}
-              />
-            </View>
-          )}
         </View>
       </ScrollView>
     </SafeAreaView>

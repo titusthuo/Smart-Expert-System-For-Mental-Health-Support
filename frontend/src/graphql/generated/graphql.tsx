@@ -302,12 +302,12 @@ export type TherapistQueryVariables = Exact<{
 }>;
 
 
-export type TherapistQuery = { __typename?: 'Query', therapist?: { __typename?: 'TherapistType', id: string, name: string, photoUrl?: string | null, location: string, county: string, town: string, phone: string, whatsapp?: string | null, email?: string | null, specialization?: Array<string | null> | null, bio: string, fullBio?: string | null, qualifications: any, experience: string, licenseNumber?: string | null, rating?: number | null, reviews?: number | null, price?: number | null, availability?: string | null, coords?: { __typename?: 'CoordsType', lat?: number | null, lng?: number | null } | null, reviewsList?: Array<{ __typename?: 'TherapistReviewType', id: string, author: string, rating: number, date: any, comment: string } | null> | null } | null };
+export type TherapistQuery = { __typename?: 'Query', therapist?: { __typename?: 'TherapistType', id: string, name: string, photoUrl?: string | null, location: string, county: string, town: string, phone: string, whatsapp?: string | null, email?: string | null, specialization?: Array<string | null> | null, bio: string, fullBio?: string | null, qualifications: any, experience: string, licenseNumber?: string | null, price?: number | null, availability?: string | null, coords?: { __typename?: 'CoordsType', lat?: number | null, lng?: number | null } | null } | null };
 
 export type TherapistsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type TherapistsQuery = { __typename?: 'Query', therapists?: Array<{ __typename?: 'TherapistType', id: string, name: string, photoUrl?: string | null, location: string, county: string, town: string, phone: string, whatsapp?: string | null, email?: string | null, specialization?: Array<string | null> | null, bio: string, licenseNumber?: string | null, rating?: number | null, reviews?: number | null, price?: number | null, availability?: string | null, coords?: { __typename?: 'CoordsType', lat?: number | null, lng?: number | null } | null } | null> | null };
+export type TherapistsQuery = { __typename?: 'Query', therapists?: Array<{ __typename?: 'TherapistType', id: string, name: string, photoUrl?: string | null, location: string, county: string, town: string, phone: string, whatsapp?: string | null, email?: string | null, specialization?: Array<string | null> | null, bio: string, licenseNumber?: string | null, price?: number | null, availability?: string | null, coords?: { __typename?: 'CoordsType', lat?: number | null, lng?: number | null } | null } | null> | null };
 
 
 export const TherapistDocument = gql`
@@ -332,17 +332,8 @@ export const TherapistDocument = gql`
     qualifications
     experience
     licenseNumber
-    rating
-    reviews
     price
     availability
-    reviewsList {
-      id
-      author
-      rating
-      date
-      comment
-    }
   }
 }
     `;
@@ -401,8 +392,6 @@ export const TherapistsDocument = gql`
     specialization
     bio
     licenseNumber
-    rating
-    reviews
     price
     availability
   }

@@ -5,6 +5,6 @@ const expoConfig = require('eslint-config-expo/flat');
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ['dist/*', 'src/lib/graphql/generated/*'],
+    ignores: ['dist/*', 'src/lib/graphql/generated/*', 'src/graphql/generated/*'],
   },
 ]);
