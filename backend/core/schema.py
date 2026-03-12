@@ -137,6 +137,9 @@ class TherapistType(DjangoObjectType):
 
 class UserType(DjangoObjectType):
     patient = graphene.Field(PatientType)
+    name = graphene.String()
+    phone = graphene.String()
+    country = graphene.String()
 
     class Meta:
         model = User
@@ -147,6 +150,22 @@ class UserType(DjangoObjectType):
             return self.patient
         except AttributeError:
             return None
+
+    def resolve_name(self, info):
+        full = f"{(self.first_name or '').strip()} {(self.last_name or '').strip()}".strip()
+        return full or self.username
+
+    def resolve_phone(self, info):
+        return self.phone_number
+
+    def resolve_country(self, info):
+        try:
+            patient = self.patient
+        except AttributeError:
+            return None
+        if patient and patient.country:
+            return patient.country.name
+        return None
 
 
 class DoctorAvailabilityType(DjangoObjectType):
@@ -380,64 +399,86 @@ class CreateDoctorAvailabilityInput(graphene.InputObjectType):
 
 class SignIn(graphene.Mutation):
     class Arguments:
-        email_or_phone_number = graphene.String(required=True)
+        username = graphene.String(required=True)
         password = graphene.String(required=True)
 
-    jwt_token = graphene.String()
+    token = graphene.String()
     user = graphene.Field(UserType)
 
     @staticmethod
-    def mutate(root, info, email_or_phone_number, password):
-        user = authenticate(username=email_or_phone_number, password=password)
+    def mutate(root, info, username, password):
+        user = authenticate(username=username, password=password)
         if not user:
             try:
-                user_by_email = User.objects.get(email__iexact=email_or_phone_number)
+                user_by_email = User.objects.get(email__iexact=username)
                 user = authenticate(username=user_by_email.username, password=password)
             except User.DoesNotExist:
                 pass
         if not user:
             try:
-                user_by_phone = User.objects.get(phone_number=email_or_phone_number)
+                user_by_phone = User.objects.get(phone_number=username)
                 user = authenticate(username=user_by_phone.username, password=password)
             except User.DoesNotExist:
                 pass
         if not user:
             raise Exception("Invalid credentials")
         token = get_token(user)
-        return SignIn(jwt_token=token, user=user)
+        return SignIn(token=token, user=user)
 
 
 class SignUp(graphene.Mutation):
     class Arguments:
+        first_name = graphene.String(required=True)
+        last_name = graphene.String(required=True)
         username = graphene.String(required=True)
         email = graphene.String(required=True)
-        phone_number = graphene.String(required=True)
+        country = graphene.String(required=True)
         password = graphene.String(required=True)
 
-    jwt_token = graphene.String()
+    token = graphene.String()
     user = graphene.Field(UserType)
     success = graphene.Boolean()
     error = graphene.String()
 
     @staticmethod
-    def mutate(root, info, username, email, phone_number, password):
+    def mutate(root, info, first_name, last_name, username, email, country, password):
         if User.objects.filter(username__iexact=username).exists():
             return SignUp(success=False, error="Username already taken")
         if User.objects.filter(email__iexact=email).exists():
             return SignUp(success=False, error="Email already registered")
-        if User.objects.filter(phone_number=phone_number).exists():
-            return SignUp(success=False, error="Phone number already registered")
         username = username.lower().strip()
         email = email.lower().strip()
+        first_name = first_name.strip()
+        last_name = last_name.strip()
         user = User.objects.create_user(
             username=username,
             email=email,
-            phone_number=phone_number,
+            first_name=first_name,
+            last_name=last_name,
         )
         user.set_password(password)
         user.save()
+
+        resolved_country = None
+        country_name = (country or "").strip()
+        if country_name:
+            resolved_country, _ = Country.objects.get_or_create(name=country_name)
+
+        Patient.objects.get_or_create(
+            user=user,
+            defaults={
+                "first_name": first_name,
+                "last_name": last_name,
+                "middle_name": "",
+                "date_of_birth": None,
+                "gender": "",
+                "country": resolved_country,
+                "county": None,
+            },
+        )
+
         token = get_token(user)
-        return SignUp(success=True, error=None, jwt_token=token, user=user)
+        return SignUp(success=True, error=None, token=token, user=user)
 
 
 class CreatePatientProfile(graphene.Mutation):
@@ -947,6 +988,9 @@ class Mutation(graphene.ObjectType):
     token_auth = graphql_jwt.ObtainJSONWebToken.Field()
     verify_token = graphql_jwt.Verify.Field()
     refresh_token = graphql_jwt.Refresh.Field()
+
+    sign_in = SignIn.Field()
+    sign_up = SignUp.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)

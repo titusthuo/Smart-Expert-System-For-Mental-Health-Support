@@ -167,6 +167,8 @@ export type InsuaranceType = {
 export type Mutation = {
   __typename?: 'Mutation';
   refreshToken?: Maybe<Refresh>;
+  signIn?: Maybe<SignIn>;
+  signUp?: Maybe<SignUp>;
   /** Obtain JSON Web Token mutation */
   tokenAuth?: Maybe<ObtainJsonWebToken>;
   verifyToken?: Maybe<Verify>;
@@ -175,6 +177,22 @@ export type Mutation = {
 
 export type MutationRefreshTokenArgs = {
   token?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationSignInArgs = {
+  password: Scalars['String']['input'];
+  username: Scalars['String']['input'];
+};
+
+
+export type MutationSignUpArgs = {
+  country: Scalars['String']['input'];
+  email: Scalars['String']['input'];
+  firstName: Scalars['String']['input'];
+  lastName: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+  username: Scalars['String']['input'];
 };
 
 
@@ -235,6 +253,20 @@ export type Refresh = {
   token: Scalars['String']['output'];
 };
 
+export type SignIn = {
+  __typename?: 'SignIn';
+  token?: Maybe<Scalars['String']['output']>;
+  user?: Maybe<UserType>;
+};
+
+export type SignUp = {
+  __typename?: 'SignUp';
+  error?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
+  token?: Maybe<Scalars['String']['output']>;
+  user?: Maybe<UserType>;
+};
+
 export type SpecialtyType = {
   __typename?: 'SpecialtyType';
   id: Scalars['ID']['output'];
@@ -280,13 +312,16 @@ export type TherapistType = {
 
 export type UserType = {
   __typename?: 'UserType';
+  country?: Maybe<Scalars['String']['output']>;
   email?: Maybe<Scalars['String']['output']>;
   firstName: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   /** Designates whether this user should be treated as active. Unselect this instead of deleting accounts. */
   isActive: Scalars['Boolean']['output'];
   lastName: Scalars['String']['output'];
+  name?: Maybe<Scalars['String']['output']>;
   patient?: Maybe<PatientType>;
+  phone?: Maybe<Scalars['String']['output']>;
   phoneNumber?: Maybe<Scalars['String']['output']>;
   /** Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only. */
   username: Scalars['String']['output'];
@@ -296,6 +331,26 @@ export type Verify = {
   __typename?: 'Verify';
   payload: Scalars['GenericScalar']['output'];
 };
+
+export type SignInMutationVariables = Exact<{
+  username: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+}>;
+
+
+export type SignInMutation = { __typename?: 'Mutation', signIn?: { __typename?: 'SignIn', token?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null } | null } | null };
+
+export type SignUpMutationVariables = Exact<{
+  firstName: Scalars['String']['input'];
+  lastName: Scalars['String']['input'];
+  username: Scalars['String']['input'];
+  email: Scalars['String']['input'];
+  country: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+}>;
+
+
+export type SignUpMutation = { __typename?: 'Mutation', signUp?: { __typename?: 'SignUp', success?: boolean | null, error?: string | null, token?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null } | null } | null };
 
 export type TherapistQueryVariables = Exact<{
   id: Scalars['Int']['input'];
@@ -310,6 +365,103 @@ export type TherapistsQueryVariables = Exact<{ [key: string]: never; }>;
 export type TherapistsQuery = { __typename?: 'Query', therapists?: Array<{ __typename?: 'TherapistType', id: string, name: string, photoUrl?: string | null, location: string, county: string, town: string, phone: string, whatsapp?: string | null, email?: string | null, specialization?: Array<string | null> | null, bio: string, licenseNumber?: string | null, price?: number | null, availability?: string | null, coords?: { __typename?: 'CoordsType', lat?: number | null, lng?: number | null } | null } | null> | null };
 
 
+export const SignInDocument = gql`
+    mutation SignIn($username: String!, $password: String!) {
+  signIn(username: $username, password: $password) {
+    token
+    user {
+      id
+      username
+      email
+      name
+      phone
+      country
+    }
+  }
+}
+    `;
+export type SignInMutationFn = Apollo.MutationFunction<SignInMutation, SignInMutationVariables>;
+
+/**
+ * __useSignInMutation__
+ *
+ * To run a mutation, you first call `useSignInMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSignInMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [signInMutation, { data, loading, error }] = useSignInMutation({
+ *   variables: {
+ *      username: // value for 'username'
+ *      password: // value for 'password'
+ *   },
+ * });
+ */
+export function useSignInMutation(baseOptions?: Apollo.MutationHookOptions<SignInMutation, SignInMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<SignInMutation, SignInMutationVariables>(SignInDocument, options);
+      }
+export type SignInMutationHookResult = ReturnType<typeof useSignInMutation>;
+export type SignInMutationResult = Apollo.MutationResult<SignInMutation>;
+export type SignInMutationOptions = Apollo.BaseMutationOptions<SignInMutation, SignInMutationVariables>;
+export const SignUpDocument = gql`
+    mutation SignUp($firstName: String!, $lastName: String!, $username: String!, $email: String!, $country: String!, $password: String!) {
+  signUp(
+    firstName: $firstName
+    lastName: $lastName
+    username: $username
+    email: $email
+    country: $country
+    password: $password
+  ) {
+    success
+    error
+    token
+    user {
+      id
+      username
+      email
+      name
+      phone
+      country
+    }
+  }
+}
+    `;
+export type SignUpMutationFn = Apollo.MutationFunction<SignUpMutation, SignUpMutationVariables>;
+
+/**
+ * __useSignUpMutation__
+ *
+ * To run a mutation, you first call `useSignUpMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSignUpMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [signUpMutation, { data, loading, error }] = useSignUpMutation({
+ *   variables: {
+ *      firstName: // value for 'firstName'
+ *      lastName: // value for 'lastName'
+ *      username: // value for 'username'
+ *      email: // value for 'email'
+ *      country: // value for 'country'
+ *      password: // value for 'password'
+ *   },
+ * });
+ */
+export function useSignUpMutation(baseOptions?: Apollo.MutationHookOptions<SignUpMutation, SignUpMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<SignUpMutation, SignUpMutationVariables>(SignUpDocument, options);
+      }
+export type SignUpMutationHookResult = ReturnType<typeof useSignUpMutation>;
+export type SignUpMutationResult = Apollo.MutationResult<SignUpMutation>;
+export type SignUpMutationOptions = Apollo.BaseMutationOptions<SignUpMutation, SignUpMutationVariables>;
 export const TherapistDocument = gql`
     query Therapist($id: Int!) {
   therapist(id: $id) {
