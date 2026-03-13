@@ -1,0 +1,14 @@
+mutation UpdateProfile($name: String, $email: String, $phone: String) {
+  updateProfile(name: $name, email: $email, phone: $phone) {
+    success
+    error
+    user {
+      id
+      username
+      email
+      name
+      phone
+      country
+    }
+  }
+}
