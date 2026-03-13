@@ -1,16 +1,19 @@
-import { ApolloClient, HttpLink, InMemoryCache } from "@apollo/client";
+import { ApolloClient, InMemoryCache } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
+// @ts-ignore - apollo-upload-client types issue
+import { createUploadLink } from "apollo-upload-client";
 
-import { getStoredString } from "@/lib/storage";
+import { useAuthSession } from "@/stores/useAuthSession";
 
-const graphqlUri = process.env.EXPO_PUBLIC_GRAPHQL_URL ?? "http://127.0.0.1:8000/graphql/";
+const graphqlUri =
+  process.env.EXPO_PUBLIC_GRAPHQL_URL ?? "http://127.0.0.1:8000/graphql/";
 
-const httpLink = new HttpLink({
+const uploadLink = createUploadLink({
   uri: graphqlUri,
 });
 
-const authLink = setContext(async (_, { headers }) => {
-  const token = await getStoredString("authToken");
+const authLink = setContext((_, { headers }) => {
+  const token = useAuthSession.getState().session?.jwt;
   return {
     headers: {
       ...headers,
@@ -20,6 +23,6 @@ const authLink = setContext(async (_, { headers }) => {
 });
 
 export const apolloClient = new ApolloClient({
-  link: authLink.concat(httpLink),
+  link: authLink.concat(uploadLink),
   cache: new InMemoryCache(),
 });

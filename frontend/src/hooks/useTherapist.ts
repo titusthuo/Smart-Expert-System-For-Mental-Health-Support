@@ -31,7 +31,8 @@ export function useTherapist(id?: string) {
     if (!item) return undefined;
 
     const coords =
-      typeof item.coords?.lat === "number" && typeof item.coords?.lng === "number"
+      typeof item.coords?.lat === "number" &&
+      typeof item.coords?.lng === "number"
         ? { lat: item.coords.lat, lng: item.coords.lng }
         : undefined;
 
@@ -46,13 +47,19 @@ export function useTherapist(id?: string) {
       whatsapp: item.whatsapp ?? undefined,
       email: item.email ?? undefined,
       coords,
-      specialization: (item.specialization ?? []).filter((value): value is string => Boolean(value)),
+      specialization: (item.specialization ?? []).filter(
+        (value): value is string => Boolean(value),
+      ),
       bio: item.bio,
       licenseNumber: item.licenseNumber ?? undefined,
       price: typeof item.price === "number" ? item.price : undefined,
       availability: item.availability ?? undefined,
       fullBio: item.fullBio ?? "",
-      qualifications: Array.isArray(item.qualifications) ? item.qualifications.filter((value): value is string => typeof value === "string") : [],
+      qualifications: Array.isArray(item.qualifications)
+        ? item.qualifications.filter(
+            (value): value is string => typeof value === "string",
+          )
+        : [],
       experience: item.experience ?? "",
     };
   }, [data]);

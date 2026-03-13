@@ -3,19 +3,14 @@ import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { useTherapist } from "@/hooks/useTherapist";
 import { openUrlSafely } from "@/lib/links";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { ArrowLeft, Award, DollarSign, MapPin } from "lucide-react-native";
 import {
-  ArrowLeft,
-  Award,
-  DollarSign,
-  MapPin,
-} from "lucide-react-native";
-import {
-  Alert,
-  Image,
-  ScrollView,
-  StatusBar,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    ScrollView,
+    StatusBar,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -27,7 +22,7 @@ export default function TherapistDetailScreen() {
     from?: string;
   }>();
   const { isDark, subtle } = useAuthTheme();
-  const { therapist } = useTherapist(id);
+  const { therapist, loading } = useTherapist(id);
 
   const handleBackPress = () => {
     if (from === "therapists") {
@@ -47,6 +42,15 @@ export default function TherapistDetailScreen() {
   const appName = "MindEase KE";
   const prefilledMessage = `Hello, I found you through ${appName} because I'm seeking support. Can we discuss next steps for support?`;
 
+  // Show loading state while fetching to prevent "not found" flash
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 justify-center items-center">
+        <AppText className="text-gray-600">Loading...</AppText>
+      </SafeAreaView>
+    );
+  }
+
   if (!therapist) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 justify-center items-center p-6">
@@ -58,7 +62,9 @@ export default function TherapistDetailScreen() {
             onPress={() => router.replace("/(tabs)/therapists")}
             className="bg-purple-600 px-6 py-3 rounded-lg"
           >
-            <AppText className="text-white font-medium">Back to Therapists</AppText>
+            <AppText className="text-white font-medium">
+              Back to Therapists
+            </AppText>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -245,13 +251,17 @@ export default function TherapistDetailScreen() {
                       onPress={handleCall}
                       className="bg-purple-600 px-4 py-3 rounded-lg"
                     >
-                      <AppText className="text-white font-semibold">Call</AppText>
+                      <AppText className="text-white font-semibold">
+                        Call
+                      </AppText>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={handleWhatsApp}
                       className="bg-green-600 px-4 py-3 rounded-lg"
                     >
-                      <AppText className="text-white font-semibold">WhatsApp</AppText>
+                      <AppText className="text-white font-semibold">
+                        WhatsApp
+                      </AppText>
                     </TouchableOpacity>
                     {!!therapist.email && (
                       <TouchableOpacity
@@ -304,7 +314,6 @@ export default function TherapistDetailScreen() {
               ))}
             </View>
           )}
-
         </View>
       </ScrollView>
     </SafeAreaView>

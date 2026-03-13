@@ -21,13 +21,14 @@ export type Scalars = {
   GenericScalar: { input: any; output: any; }
   JSONString: { input: any; output: any; }
   Time: { input: any; output: any; }
+  Upload: { input: any; output: any; }
 };
 
 export type AiChatMessageType = {
   __typename?: 'AIChatMessageType';
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
-  /** True if message is from the patient, False if from AI */
+  /** True if message is from the user, False if from AI */
   isFromUser: Scalars['Boolean']['output'];
   text: Scalars['String']['output'];
 };
@@ -122,6 +123,40 @@ export enum CoreAppointmentStatusChoices {
   Upcoming = 'UPCOMING'
 }
 
+/** An enumeration. */
+export enum CoreUserNotificationNotificationTypeChoices {
+  /** Appointment */
+  Appointment = 'APPOINTMENT',
+  /** Information */
+  Info = 'INFO',
+  /** Reminder */
+  Reminder = 'REMINDER',
+  /** Success */
+  Success = 'SUCCESS',
+  /** Warning */
+  Warning = 'WARNING'
+}
+
+/** An enumeration. */
+export enum CoreWellnessArticleCategoryChoices {
+  /** Mindfulness */
+  Mindfulness = 'MINDFULNESS',
+  /** Nutrition */
+  Nutrition = 'NUTRITION',
+  /** Relationships */
+  Relationships = 'RELATIONSHIPS',
+  /** Research */
+  Research = 'RESEARCH',
+  /** Self-Care */
+  SelfCare = 'SELF_CARE',
+  /** Sleep */
+  Sleep = 'SLEEP',
+  /** Stress Management */
+  Stress = 'STRESS',
+  /** Therapy */
+  Therapy = 'THERAPY'
+}
+
 export type CountryType = {
   __typename?: 'CountryType';
   code: Scalars['String']['output'];
@@ -134,6 +169,25 @@ export type CountyType = {
   country: CountryType;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
+};
+
+export type CrisisHelplineType = {
+  __typename?: 'CrisisHelplineType';
+  countryName?: Maybe<Scalars['String']['output']>;
+  /** What this helpline offers */
+  description: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  /** Available 24/7 */
+  is247: Scalars['Boolean']['output'];
+  /** Primary helpline for this country */
+  isPrimary: Scalars['Boolean']['output'];
+  /** Comma-separated, e.g., English, Swahili */
+  languages: Scalars['String']['output'];
+  /** e.g., Kenya Red Cross, SAMH, 988 Lifeline */
+  name: Scalars['String']['output'];
+  /** e.g., 1199, 988 */
+  phoneNumber: Scalars['String']['output'];
+  website: Scalars['String']['output'];
 };
 
 export type DoctorAvailabilityType = {
@@ -154,6 +208,19 @@ export type DoctorAvailabilityType = {
   startTimeOfDay: Scalars['Time']['output'];
 };
 
+export type FeaturedBannerType = {
+  __typename?: 'FeaturedBannerType';
+  /** e.g., Learn More, Start Now */
+  actionText: Scalars['String']['output'];
+  /** Internal route or external URL */
+  actionUrl: Scalars['String']['output'];
+  displayOrder: Scalars['Int']['output'];
+  id: Scalars['ID']['output'];
+  imageUrl?: Maybe<Scalars['String']['output']>;
+  subtitle: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+};
+
 export type InsuaranceType = {
   __typename?: 'InsuaranceType';
   id: Scalars['ID']['output'];
@@ -167,10 +234,13 @@ export type InsuaranceType = {
 export type Mutation = {
   __typename?: 'Mutation';
   refreshToken?: Maybe<Refresh>;
+  removeProfilePicture?: Maybe<RemoveProfilePicture>;
   signIn?: Maybe<SignIn>;
   signUp?: Maybe<SignUp>;
   /** Obtain JSON Web Token mutation */
   tokenAuth?: Maybe<ObtainJsonWebToken>;
+  updateProfile?: Maybe<UpdateProfile>;
+  uploadProfilePicture?: Maybe<UploadProfilePicture>;
   verifyToken?: Maybe<Verify>;
 };
 
@@ -202,6 +272,18 @@ export type MutationTokenAuthArgs = {
 };
 
 
+export type MutationUpdateProfileArgs = {
+  email?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  phone?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationUploadProfilePictureArgs = {
+  file: Scalars['Upload']['input'];
+};
+
+
 export type MutationVerifyTokenArgs = {
   token?: InputMaybe<Scalars['String']['input']>;
 };
@@ -216,7 +298,7 @@ export type ObtainJsonWebToken = {
 
 export type PatientType = {
   __typename?: 'PatientType';
-  aiChatMessages: Array<AiChatMessageType>;
+  aiChatMessagesLegacy: Array<AiChatMessageType>;
   appointments: Array<AppointmentType>;
   country?: Maybe<CountryType>;
   county?: Maybe<CountyType>;
@@ -235,10 +317,21 @@ export type PatientType = {
 
 export type Query = {
   __typename?: 'Query';
+  crisisHelpline?: Maybe<CrisisHelplineType>;
+  featuredBanners?: Maybe<Array<Maybe<FeaturedBannerType>>>;
+  featuredWellnessArticles?: Maybe<Array<Maybe<WellnessArticleType>>>;
   hello?: Maybe<Scalars['String']['output']>;
   me?: Maybe<UserType>;
+  myNotifications?: Maybe<Array<Maybe<UserNotificationType>>>;
   therapist?: Maybe<TherapistType>;
   therapists?: Maybe<Array<Maybe<TherapistType>>>;
+  unreadNotificationCount?: Maybe<Scalars['Int']['output']>;
+  wellnessTipOfDay?: Maybe<WellnessTipType>;
+};
+
+
+export type QueryCrisisHelplineArgs = {
+  countryName?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -251,6 +344,13 @@ export type Refresh = {
   payload: Scalars['GenericScalar']['output'];
   refreshExpiresIn: Scalars['Int']['output'];
   token: Scalars['String']['output'];
+};
+
+export type RemoveProfilePicture = {
+  __typename?: 'RemoveProfilePicture';
+  error?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
+  user?: Maybe<UserType>;
 };
 
 export type SignIn = {
@@ -310,6 +410,33 @@ export type TherapistType = {
   whatsapp?: Maybe<Scalars['String']['output']>;
 };
 
+export type UpdateProfile = {
+  __typename?: 'UpdateProfile';
+  error?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
+  user?: Maybe<UserType>;
+};
+
+export type UploadProfilePicture = {
+  __typename?: 'UploadProfilePicture';
+  error?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
+  user?: Maybe<UserType>;
+};
+
+export type UserNotificationType = {
+  __typename?: 'UserNotificationType';
+  /** Where to navigate on tap */
+  actionUrl: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  icon: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  isRead: Scalars['Boolean']['output'];
+  message: Scalars['String']['output'];
+  notificationType: CoreUserNotificationNotificationTypeChoices;
+  title: Scalars['String']['output'];
+};
+
 export type UserType = {
   __typename?: 'UserType';
   country?: Maybe<Scalars['String']['output']>;
@@ -323,6 +450,7 @@ export type UserType = {
   patient?: Maybe<PatientType>;
   phone?: Maybe<Scalars['String']['output']>;
   phoneNumber?: Maybe<Scalars['String']['output']>;
+  profilePictureUrl?: Maybe<Scalars['String']['output']>;
   /** Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only. */
   username: Scalars['String']['output'];
 };
@@ -332,13 +460,49 @@ export type Verify = {
   payload: Scalars['GenericScalar']['output'];
 };
 
+export type WellnessArticleType = {
+  __typename?: 'WellnessArticleType';
+  category: CoreWellnessArticleCategoryChoices;
+  /** Full article content (optional) */
+  content: Scalars['String']['output'];
+  /** Lower numbers appear first */
+  displayOrder: Scalars['Int']['output'];
+  /** Link to external article */
+  externalUrl: Scalars['String']['output'];
+  /** Ionicons name */
+  icon: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  imageUrl?: Maybe<Scalars['String']['output']>;
+  /** Short description */
+  subtitle: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+};
+
+export type WellnessTipType = {
+  __typename?: 'WellnessTipType';
+  /** e.g., Breathing, Meditation, Sleep */
+  category: Scalars['String']['output'];
+  /** Short, actionable wellness advice */
+  content: Scalars['String']['output'];
+  /** Ionicons name */
+  icon: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  title: Scalars['String']['output'];
+  viewCount: Scalars['Int']['output'];
+};
+
+export type RemoveProfilePictureMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type RemoveProfilePictureMutation = { __typename?: 'Mutation', removeProfilePicture?: { __typename?: 'RemoveProfilePicture', success?: boolean | null, error?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null, profilePictureUrl?: string | null } | null } | null };
+
 export type SignInMutationVariables = Exact<{
   username: Scalars['String']['input'];
   password: Scalars['String']['input'];
 }>;
 
 
-export type SignInMutation = { __typename?: 'Mutation', signIn?: { __typename?: 'SignIn', token?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null } | null } | null };
+export type SignInMutation = { __typename?: 'Mutation', signIn?: { __typename?: 'SignIn', token?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null, profilePictureUrl?: string | null } | null } | null };
 
 export type SignUpMutationVariables = Exact<{
   firstName: Scalars['String']['input'];
@@ -350,7 +514,28 @@ export type SignUpMutationVariables = Exact<{
 }>;
 
 
-export type SignUpMutation = { __typename?: 'Mutation', signUp?: { __typename?: 'SignUp', success?: boolean | null, error?: string | null, token?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null } | null } | null };
+export type SignUpMutation = { __typename?: 'Mutation', signUp?: { __typename?: 'SignUp', success?: boolean | null, error?: string | null, token?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null, profilePictureUrl?: string | null } | null } | null };
+
+export type UpdateProfileMutationVariables = Exact<{
+  name?: InputMaybe<Scalars['String']['input']>;
+  email?: InputMaybe<Scalars['String']['input']>;
+  phone?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type UpdateProfileMutation = { __typename?: 'Mutation', updateProfile?: { __typename?: 'UpdateProfile', success?: boolean | null, error?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null } | null } | null };
+
+export type UploadProfilePictureMutationVariables = Exact<{
+  file: Scalars['Upload']['input'];
+}>;
+
+
+export type UploadProfilePictureMutation = { __typename?: 'Mutation', uploadProfilePicture?: { __typename?: 'UploadProfilePicture', success?: boolean | null, error?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null, profilePictureUrl?: string | null } | null } | null };
+
+export type GetHomepageContentQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetHomepageContentQuery = { __typename?: 'Query', unreadNotificationCount?: number | null, wellnessTipOfDay?: { __typename?: 'WellnessTipType', id: string, title: string, content: string, icon: string, category: string } | null, featuredWellnessArticles?: Array<{ __typename?: 'WellnessArticleType', id: string, title: string, subtitle: string, category: CoreWellnessArticleCategoryChoices, icon: string, imageUrl?: string | null, externalUrl: string } | null> | null, crisisHelpline?: { __typename?: 'CrisisHelplineType', id: string, name: string, phoneNumber: string, description: string, is247: boolean, countryName?: string | null } | null, featuredBanners?: Array<{ __typename?: 'FeaturedBannerType', id: string, title: string, subtitle: string, imageUrl?: string | null, actionText: string, actionUrl: string } | null> | null, myNotifications?: Array<{ __typename?: 'UserNotificationType', id: string, notificationType: CoreUserNotificationNotificationTypeChoices, title: string, message: string, icon: string, isRead: boolean, createdAt: any } | null> | null };
 
 export type TherapistQueryVariables = Exact<{
   id: Scalars['Int']['input'];
@@ -365,6 +550,48 @@ export type TherapistsQueryVariables = Exact<{ [key: string]: never; }>;
 export type TherapistsQuery = { __typename?: 'Query', therapists?: Array<{ __typename?: 'TherapistType', id: string, name: string, photoUrl?: string | null, location: string, county: string, town: string, phone: string, whatsapp?: string | null, email?: string | null, specialization?: Array<string | null> | null, bio: string, licenseNumber?: string | null, price?: number | null, availability?: string | null, coords?: { __typename?: 'CoordsType', lat?: number | null, lng?: number | null } | null } | null> | null };
 
 
+export const RemoveProfilePictureDocument = gql`
+    mutation RemoveProfilePicture {
+  removeProfilePicture {
+    success
+    error
+    user {
+      id
+      username
+      email
+      name
+      phone
+      country
+      profilePictureUrl
+    }
+  }
+}
+    `;
+export type RemoveProfilePictureMutationFn = Apollo.MutationFunction<RemoveProfilePictureMutation, RemoveProfilePictureMutationVariables>;
+
+/**
+ * __useRemoveProfilePictureMutation__
+ *
+ * To run a mutation, you first call `useRemoveProfilePictureMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRemoveProfilePictureMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [removeProfilePictureMutation, { data, loading, error }] = useRemoveProfilePictureMutation({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useRemoveProfilePictureMutation(baseOptions?: Apollo.MutationHookOptions<RemoveProfilePictureMutation, RemoveProfilePictureMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<RemoveProfilePictureMutation, RemoveProfilePictureMutationVariables>(RemoveProfilePictureDocument, options);
+      }
+export type RemoveProfilePictureMutationHookResult = ReturnType<typeof useRemoveProfilePictureMutation>;
+export type RemoveProfilePictureMutationResult = Apollo.MutationResult<RemoveProfilePictureMutation>;
+export type RemoveProfilePictureMutationOptions = Apollo.BaseMutationOptions<RemoveProfilePictureMutation, RemoveProfilePictureMutationVariables>;
 export const SignInDocument = gql`
     mutation SignIn($username: String!, $password: String!) {
   signIn(username: $username, password: $password) {
@@ -376,6 +603,7 @@ export const SignInDocument = gql`
       name
       phone
       country
+      profilePictureUrl
     }
   }
 }
@@ -427,6 +655,7 @@ export const SignUpDocument = gql`
       name
       phone
       country
+      profilePictureUrl
     }
   }
 }
@@ -462,6 +691,174 @@ export function useSignUpMutation(baseOptions?: Apollo.MutationHookOptions<SignU
 export type SignUpMutationHookResult = ReturnType<typeof useSignUpMutation>;
 export type SignUpMutationResult = Apollo.MutationResult<SignUpMutation>;
 export type SignUpMutationOptions = Apollo.BaseMutationOptions<SignUpMutation, SignUpMutationVariables>;
+export const UpdateProfileDocument = gql`
+    mutation UpdateProfile($name: String, $email: String, $phone: String) {
+  updateProfile(name: $name, email: $email, phone: $phone) {
+    success
+    error
+    user {
+      id
+      username
+      email
+      name
+      phone
+      country
+    }
+  }
+}
+    `;
+export type UpdateProfileMutationFn = Apollo.MutationFunction<UpdateProfileMutation, UpdateProfileMutationVariables>;
+
+/**
+ * __useUpdateProfileMutation__
+ *
+ * To run a mutation, you first call `useUpdateProfileMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateProfileMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateProfileMutation, { data, loading, error }] = useUpdateProfileMutation({
+ *   variables: {
+ *      name: // value for 'name'
+ *      email: // value for 'email'
+ *      phone: // value for 'phone'
+ *   },
+ * });
+ */
+export function useUpdateProfileMutation(baseOptions?: Apollo.MutationHookOptions<UpdateProfileMutation, UpdateProfileMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateProfileMutation, UpdateProfileMutationVariables>(UpdateProfileDocument, options);
+      }
+export type UpdateProfileMutationHookResult = ReturnType<typeof useUpdateProfileMutation>;
+export type UpdateProfileMutationResult = Apollo.MutationResult<UpdateProfileMutation>;
+export type UpdateProfileMutationOptions = Apollo.BaseMutationOptions<UpdateProfileMutation, UpdateProfileMutationVariables>;
+export const UploadProfilePictureDocument = gql`
+    mutation UploadProfilePicture($file: Upload!) {
+  uploadProfilePicture(file: $file) {
+    success
+    error
+    user {
+      id
+      username
+      email
+      name
+      phone
+      country
+      profilePictureUrl
+    }
+  }
+}
+    `;
+export type UploadProfilePictureMutationFn = Apollo.MutationFunction<UploadProfilePictureMutation, UploadProfilePictureMutationVariables>;
+
+/**
+ * __useUploadProfilePictureMutation__
+ *
+ * To run a mutation, you first call `useUploadProfilePictureMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUploadProfilePictureMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [uploadProfilePictureMutation, { data, loading, error }] = useUploadProfilePictureMutation({
+ *   variables: {
+ *      file: // value for 'file'
+ *   },
+ * });
+ */
+export function useUploadProfilePictureMutation(baseOptions?: Apollo.MutationHookOptions<UploadProfilePictureMutation, UploadProfilePictureMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UploadProfilePictureMutation, UploadProfilePictureMutationVariables>(UploadProfilePictureDocument, options);
+      }
+export type UploadProfilePictureMutationHookResult = ReturnType<typeof useUploadProfilePictureMutation>;
+export type UploadProfilePictureMutationResult = Apollo.MutationResult<UploadProfilePictureMutation>;
+export type UploadProfilePictureMutationOptions = Apollo.BaseMutationOptions<UploadProfilePictureMutation, UploadProfilePictureMutationVariables>;
+export const GetHomepageContentDocument = gql`
+    query GetHomepageContent {
+  wellnessTipOfDay {
+    id
+    title
+    content
+    icon
+    category
+  }
+  featuredWellnessArticles {
+    id
+    title
+    subtitle
+    category
+    icon
+    imageUrl
+    externalUrl
+  }
+  crisisHelpline {
+    id
+    name
+    phoneNumber
+    description
+    is247
+    countryName
+  }
+  featuredBanners {
+    id
+    title
+    subtitle
+    imageUrl
+    actionText
+    actionUrl
+  }
+  myNotifications {
+    id
+    notificationType
+    title
+    message
+    icon
+    isRead
+    createdAt
+  }
+  unreadNotificationCount
+}
+    `;
+
+/**
+ * __useGetHomepageContentQuery__
+ *
+ * To run a query within a React component, call `useGetHomepageContentQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetHomepageContentQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetHomepageContentQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetHomepageContentQuery(baseOptions?: Apollo.QueryHookOptions<GetHomepageContentQuery, GetHomepageContentQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetHomepageContentQuery, GetHomepageContentQueryVariables>(GetHomepageContentDocument, options);
+      }
+export function useGetHomepageContentLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetHomepageContentQuery, GetHomepageContentQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetHomepageContentQuery, GetHomepageContentQueryVariables>(GetHomepageContentDocument, options);
+        }
+// @ts-ignore
+export function useGetHomepageContentSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetHomepageContentQuery, GetHomepageContentQueryVariables>): Apollo.UseSuspenseQueryResult<GetHomepageContentQuery, GetHomepageContentQueryVariables>;
+export function useGetHomepageContentSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetHomepageContentQuery, GetHomepageContentQueryVariables>): Apollo.UseSuspenseQueryResult<GetHomepageContentQuery | undefined, GetHomepageContentQueryVariables>;
+export function useGetHomepageContentSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetHomepageContentQuery, GetHomepageContentQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetHomepageContentQuery, GetHomepageContentQueryVariables>(GetHomepageContentDocument, options);
+        }
+export type GetHomepageContentQueryHookResult = ReturnType<typeof useGetHomepageContentQuery>;
+export type GetHomepageContentLazyQueryHookResult = ReturnType<typeof useGetHomepageContentLazyQuery>;
+export type GetHomepageContentSuspenseQueryHookResult = ReturnType<typeof useGetHomepageContentSuspenseQuery>;
+export type GetHomepageContentQueryResult = Apollo.QueryResult<GetHomepageContentQuery, GetHomepageContentQueryVariables>;
 export const TherapistDocument = gql`
     query Therapist($id: Int!) {
   therapist(id: $id) {

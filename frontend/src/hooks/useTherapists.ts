@@ -1,4 +1,7 @@
-import { TherapistsQuery, useTherapistsQuery } from "@/graphql/generated/graphql";
+import {
+    TherapistsQuery,
+    useTherapistsQuery,
+} from "@/graphql/generated/graphql";
 import { Therapist } from "@/lib/therapists/types";
 import { useEffect, useMemo } from "react";
 
@@ -20,14 +23,20 @@ export function useTherapists() {
   }, [data, error, loading]);
 
   const therapists = useMemo<Therapist[]>(() => {
-    const items = (data?.therapists ?? []) as NonNullable<TherapistsQuery["therapists"]>;
+    const items = (data?.therapists ?? []) as NonNullable<
+      TherapistsQuery["therapists"]
+    >;
 
     return items
-      .filter((therapist): therapist is NonNullable<typeof therapist> => Boolean(therapist))
+      .filter((therapist): therapist is NonNullable<typeof therapist> =>
+        Boolean(therapist),
+      )
       .map((therapist) => ({
         id: String(therapist.id),
         name: therapist.name,
-        photo: therapist.photoUrl ? { uri: therapist.photoUrl } : FALLBACK_THERAPIST_PHOTO,
+        photo: therapist.photoUrl
+          ? { uri: therapist.photoUrl }
+          : FALLBACK_THERAPIST_PHOTO,
         location: therapist.location,
         county: therapist.county,
         town: therapist.town,
@@ -35,13 +44,17 @@ export function useTherapists() {
         whatsapp: therapist.whatsapp ?? undefined,
         email: therapist.email ?? undefined,
         coords:
-          typeof therapist.coords?.lat === "number" && typeof therapist.coords?.lng === "number"
+          typeof therapist.coords?.lat === "number" &&
+          typeof therapist.coords?.lng === "number"
             ? { lat: therapist.coords.lat, lng: therapist.coords.lng }
             : undefined,
-        specialization: (therapist.specialization ?? []).filter((value): value is string => Boolean(value)),
+        specialization: (therapist.specialization ?? []).filter(
+          (value): value is string => Boolean(value),
+        ),
         bio: therapist.bio,
         licenseNumber: therapist.licenseNumber ?? undefined,
-        price: typeof therapist.price === "number" ? therapist.price : undefined,
+        price:
+          typeof therapist.price === "number" ? therapist.price : undefined,
         availability: therapist.availability ?? undefined,
       }));
   }, [data]);

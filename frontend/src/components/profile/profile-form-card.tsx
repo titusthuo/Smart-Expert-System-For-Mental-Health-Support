@@ -1,7 +1,7 @@
 import { AppText } from "@/components/ui";
+import { Mail, Phone, User } from "lucide-react-native";
 import React from "react";
 import { Image, TextInput, TouchableOpacity, View } from "react-native";
-import { Mail, Phone, User } from "lucide-react-native";
 
 export type ProfileData = {
   name: string;
@@ -15,12 +15,14 @@ export function ProfileFormCard({
   onPressAvatar,
   onChangeProfileData,
   onPressSave,
+  loading = false,
 }: {
   profileData: ProfileData;
   profilePhotoUri: string | null;
   onPressAvatar: () => void;
   onChangeProfileData: (next: ProfileData) => void;
   onPressSave: () => void;
+  loading?: boolean;
 }) {
   return (
     <View className="bg-card rounded-2xl p-6 mb-6 shadow-sm border border-border">
@@ -61,7 +63,11 @@ export function ProfileFormCard({
             Full Name
           </AppText>
           <View className="relative">
-            <User size={20} color="#9ca3af" className="absolute left-3 top-3.5 z-10" />
+            <User
+              size={20}
+              color="#9ca3af"
+              className="absolute left-3 top-3.5 z-10"
+            />
             <TextInput
               value={profileData.name}
               onChangeText={(text) =>
@@ -79,7 +85,11 @@ export function ProfileFormCard({
             Email Address
           </AppText>
           <View className="relative">
-            <Mail size={20} color="#9ca3af" className="absolute left-3 top-3.5 z-10" />
+            <Mail
+              size={20}
+              color="#9ca3af"
+              className="absolute left-3 top-3.5 z-10"
+            />
             <TextInput
               value={profileData.email}
               onChangeText={(text) =>
@@ -98,7 +108,11 @@ export function ProfileFormCard({
             Phone Number
           </AppText>
           <View className="relative">
-            <Phone size={20} color="#9ca3af" className="absolute left-3 top-3.5 z-10" />
+            <Phone
+              size={20}
+              color="#9ca3af"
+              className="absolute left-3 top-3.5 z-10"
+            />
             <TextInput
               value={profileData.phone}
               onChangeText={(text) =>
@@ -114,12 +128,13 @@ export function ProfileFormCard({
 
         <TouchableOpacity
           onPress={onPressSave}
-          className="bg-brand py-4 rounded-lg items-center active:opacity-90"
+          disabled={loading}
+          className={`py-4 rounded-lg items-center ${loading ? "bg-brand/50" : "bg-brand active:opacity-90"}`}
           accessibilityRole="button"
           accessibilityLabel="Save profile changes"
         >
           <AppText unstyled className="text-white font-medium text-base">
-            Save Changes
+            {loading ? "Saving..." : "Save Changes"}
           </AppText>
         </TouchableOpacity>
       </View>

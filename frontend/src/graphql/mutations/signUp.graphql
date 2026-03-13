@@ -24,6 +24,7 @@ mutation SignUp(
       name
       phone
       country
+      profilePictureUrl
     }
   }
 }

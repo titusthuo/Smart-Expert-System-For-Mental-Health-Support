@@ -1,16 +1,18 @@
 import { useCallback } from "react";
 
 import { useSignInMutation } from "@/graphql/generated/graphql";
-import { setStoredJson, setStoredString } from "@/lib/storage";
+import { useAuthSession } from "@/stores/useAuthSession";
 
 type ProfileData = {
   name: string;
   email: string;
   phone: string;
+  photoUri: string | null;
 };
 
 export function useSignIn() {
   const [mutate, state] = useSignInMutation();
+  const setSession = useAuthSession((s) => s.setSession);
 
   const signIn = useCallback(
     async ({ username, password }: { username: string; password: string }) => {
@@ -29,14 +31,30 @@ export function useSignIn() {
         throw new Error("Sign in failed");
       }
 
-      await setStoredString("authToken", token);
-
       const profileData: ProfileData = {
-        name: typeof user.name === "string" && user.name.trim() ? user.name : "John Doe",
-        email: typeof user.email === "string" && user.email.trim() ? user.email : "",
-        phone: typeof user.phone === "string" && user.phone.trim() ? user.phone : "",
+        name:
+          typeof user.name === "string" && user.name.trim()
+            ? user.name
+            : user.username || "User",
+        email:
+          typeof user.email === "string" && user.email.trim() ? user.email : "",
+        phone:
+          typeof user.phone === "string" && user.phone.trim() ? user.phone : "",
+        photoUri: user.profilePictureUrl || null,
       };
-      await setStoredJson("profileData", profileData);
+
+      await setSession({
+        jwt: token,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email ?? null,
+          name: user.name ?? null,
+          phone: user.phone ?? null,
+          country: user.country ?? null,
+        },
+        profile: profileData,
+      });
 
       return {
         token,
@@ -44,7 +62,7 @@ export function useSignIn() {
         profileData,
       };
     },
-    [mutate]
+    [mutate, setSession],
   );
 
   return {
