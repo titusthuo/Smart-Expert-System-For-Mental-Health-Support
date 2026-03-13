@@ -6,15 +6,6 @@ from datetime import timedelta, time
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-class User(AbstractUser):
-    phone_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
-    email = models.EmailField(unique=True, null=True, blank=True)
-    phone_number_verified = models.BooleanField(default=False)
-    email_verified = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.email or self.phone_number or str(self.id)
-
 
 class Country(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -26,6 +17,31 @@ class Country(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class User(AbstractUser):
+    phone_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    email = models.EmailField(unique=True, null=True, blank=True)
+    phone_number_verified = models.BooleanField(default=False)
+    email_verified = models.BooleanField(default=False)
+    
+    # Profile fields (no longer requiring Patient model)
+    profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)
+    country = models.ForeignKey(Country, on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
+
+    def __str__(self):
+        return self.email or self.phone_number or str(self.id)
+    
+    def save(self, *args, **kwargs):
+        # Clean up old profile picture when uploading new one
+        try:
+            old = User.objects.get(pk=self.pk)
+            if old.profile_picture and old.profile_picture != self.profile_picture:
+                if default_storage.exists(old.profile_picture.path):
+                    default_storage.delete(old.profile_picture.path)
+        except User.DoesNotExist:
+            pass
+        super().save(*args, **kwargs)
 
 
 class County(models.Model):
@@ -280,20 +296,22 @@ class Notification(models.Model):
 
 
 class AIChatMessage(models.Model):
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='ai_chat_messages')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ai_chat_messages', null=True, blank=True)
+    # Legacy field - will be removed in future migration
+    patient = models.ForeignKey('Patient', on_delete=models.CASCADE, related_name='ai_chat_messages_legacy', null=True, blank=True)
     text = models.TextField()
-    is_from_user = models.BooleanField(default=True, help_text="True if message is from the patient, False if from AI")
+    is_from_user = models.BooleanField(default=True, help_text="True if message is from the user, False if from AI")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['created_at']
         indexes = [
-            models.Index(fields=['patient', 'created_at']),
+            models.Index(fields=['user', 'created_at']),
         ]
 
     def __str__(self):
         sender = 'User' if self.is_from_user else 'AI'
-        return f"{sender} to {self.patient} at {self.created_at}"
+        return f"{sender} to {self.user} at {self.created_at}"
 
 
 class Therapist(models.Model):

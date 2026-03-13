@@ -1,12 +1,13 @@
 import { useCallback } from "react";
 
 import { useSignUpMutation } from "@/graphql/generated/graphql";
-import { setStoredJson, setStoredString } from "@/lib/storage";
+import { useAuthSession } from "@/stores/useAuthSession";
 
 type ProfileData = {
   name: string;
   email: string;
   phone: string;
+  photoUri: string | null;
 };
 
 type SignUpInput = {
@@ -20,9 +21,17 @@ type SignUpInput = {
 
 export function useSignUp() {
   const [mutate, state] = useSignUpMutation();
+  const setSession = useAuthSession((s) => s.setSession);
 
   const signUp = useCallback(
-    async ({ firstName, lastName, username, email, country, password }: SignUpInput) => {
+    async ({
+      firstName,
+      lastName,
+      username,
+      email,
+      country,
+      password,
+    }: SignUpInput) => {
       const res = await mutate({
         variables: {
           firstName: firstName.trim(),
@@ -43,18 +52,38 @@ export function useSignUp() {
       const token = payload.token ?? null;
       const user = payload.user ?? null;
 
-      if (token) {
-        await setStoredString("authToken", token);
-      }
-
       let profileData: ProfileData | null = null;
       if (user) {
         profileData = {
-          name: typeof user.name === "string" && user.name.trim() ? user.name : "John Doe",
-          email: typeof user.email === "string" && user.email.trim() ? user.email : "",
-          phone: typeof user.phone === "string" && user.phone.trim() ? user.phone : "",
+          name:
+            typeof user.name === "string" && user.name.trim()
+              ? user.name
+              : user.username || "User",
+          email:
+            typeof user.email === "string" && user.email.trim()
+              ? user.email
+              : "",
+          phone:
+            typeof user.phone === "string" && user.phone.trim()
+              ? user.phone
+              : "",
+          photoUri: user.profilePictureUrl || null,
         };
-        await setStoredJson("profileData", profileData);
+      }
+
+      if (token && user && profileData) {
+        await setSession({
+          jwt: token,
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email ?? null,
+            name: user.name ?? null,
+            phone: user.phone ?? null,
+            country: user.country ?? null,
+          },
+          profile: profileData,
+        });
       }
 
       return {
@@ -64,7 +93,7 @@ export function useSignUp() {
         success: true,
       };
     },
-    [mutate]
+    [mutate, setSession],
   );
 
   return {

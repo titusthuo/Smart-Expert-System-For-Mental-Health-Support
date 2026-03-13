@@ -73,13 +73,13 @@ except admin.sites.NotRegistered:
 # ====================== USER ADMIN ======================
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ('email', 'phone_number', 'first_name', 'last_name', 'is_staff', 'is_active')
-    list_filter = ('is_staff', 'is_active', 'is_superuser')
-    search_fields = ('email', 'phone_number', 'first_name', 'last_name')
+    list_display = ('email', 'phone_number', 'first_name', 'last_name', 'country', 'preview_photo', 'is_staff', 'is_active')
+    list_filter = ('is_staff', 'is_active', 'is_superuser', 'country')
+    search_fields = ('email', 'phone_number', 'first_name', 'last_name', 'username')
     ordering = ('email',)
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        ('Personal Info', {'fields': ('first_name', 'last_name', 'email', 'phone_number')}),
+        ('Personal Info', {'fields': ('first_name', 'last_name', 'email', 'phone_number', 'country', 'profile_picture')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
@@ -88,6 +88,16 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('email', 'phone_number', 'password1', 'password2', 'is_staff', 'is_active'),
         }),
     )
+    
+    def preview_photo(self, obj):
+        """Display profile picture thumbnail in admin list view"""
+        if obj.profile_picture:
+            return format_html(
+                '<img src="{}" width="40" height="40" style="border-radius:50%; object-fit:cover;" />',
+                obj.profile_picture.url
+            )
+        return "(No photo)"
+    preview_photo.short_description = "Photo"
 
 
 # ====================== PATIENT ADMIN WITH SAFE FILE UPLOAD ======================

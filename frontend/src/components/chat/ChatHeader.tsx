@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { TouchableOpacity, View } from "react-native";
 
 import { AppText } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
-import { getStoredJson } from "@/lib/storage";
+import { useAuthSession } from "@/stores/useAuthSession";
 
 type ChatHeaderProps = {
   mood?: string;
@@ -12,33 +12,21 @@ type ChatHeaderProps = {
 
 export function ChatHeader({ mood, onPressProfile }: ChatHeaderProps) {
   const { brand, border } = useAuthTheme();
+  const session = useAuthSession((s) => s.session);
 
-  const [profileName, setProfileName] = useState<string>("John Doe");
-
-  useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      try {
-        const parsed = await getStoredJson<{ name?: unknown }>("profileData");
-        if (!mounted || !parsed) return;
-        if (typeof parsed?.name === "string" && parsed.name.trim()) {
-          setProfileName(parsed.name.trim());
-        }
-      } catch {
-        // ignore
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const profileName = useMemo(() => {
+    return (
+      session?.profile?.name ||
+      session?.user?.name ||
+      session?.user?.username ||
+      "User"
+    );
+  }, [session]);
 
   const initials = useMemo(() => {
     const parts = profileName.trim().split(/\s+/).filter(Boolean);
     const first = parts[0]?.[0] ?? "";
-    const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? "" : "";
+    const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
     return (first + last).toUpperCase() || "U";
   }, [profileName]);
 
@@ -59,15 +47,24 @@ export function ChatHeader({ mood, onPressProfile }: ChatHeaderProps) {
         </View>
 
         <View className="ml-3">
-          <AppText unstyled className="text-foreground font-bold text-base tracking-tight">
+          <AppText
+            unstyled
+            className="text-foreground font-bold text-base tracking-tight"
+          >
             Mental Health Assistant
           </AppText>
           {mood ? (
-            <AppText unstyled className="text-brand text-xs font-semibold mt-0.5">
+            <AppText
+              unstyled
+              className="text-brand text-xs font-semibold mt-0.5"
+            >
               Chatting about feeling {mood.toLowerCase()}
             </AppText>
           ) : (
-            <AppText unstyled className="text-green-500 text-xs font-medium mt-0.5">
+            <AppText
+              unstyled
+              className="text-green-500 text-xs font-medium mt-0.5"
+            >
               Online • Confidential
             </AppText>
           )}

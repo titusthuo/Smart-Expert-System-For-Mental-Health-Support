@@ -29,7 +29,7 @@ export function AuthTabsScreen({ initialTab }: AuthTabsProps) {
   const { isDark } = useAuthTheme();
   const feedback = useAuthFeedback();
 
-  const logoImage = require("../../assets/logos/brain.jpg");
+  const logoImage = require("../../../assets/logos/brain.jpg");
 
   const [activeTab, setActiveTab] = useState<"signIn" | "signUp">(initialTab);
 

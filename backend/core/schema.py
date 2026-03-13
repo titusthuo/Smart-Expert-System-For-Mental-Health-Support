@@ -140,6 +140,7 @@ class UserType(DjangoObjectType):
     name = graphene.String()
     phone = graphene.String()
     country = graphene.String()
+    profile_picture_url = graphene.String()
 
     class Meta:
         model = User
@@ -159,12 +160,14 @@ class UserType(DjangoObjectType):
         return self.phone_number
 
     def resolve_country(self, info):
-        try:
-            patient = self.patient
-        except AttributeError:
-            return None
-        if patient and patient.country:
-            return patient.country.name
+        # Read country directly from User model (no Patient needed)
+        if self.country:
+            return self.country.name
+        return None
+    
+    def resolve_profile_picture_url(self, info):
+        if self.profile_picture:
+            return info.context.build_absolute_uri(self.profile_picture.url)
         return None
 
 
@@ -459,23 +462,12 @@ class SignUp(graphene.Mutation):
         user.set_password(password)
         user.save()
 
-        resolved_country = None
+        # Store country directly on User model (no Patient needed)
         country_name = (country or "").strip()
         if country_name:
             resolved_country, _ = Country.objects.get_or_create(name=country_name)
-
-        Patient.objects.get_or_create(
-            user=user,
-            defaults={
-                "first_name": first_name,
-                "last_name": last_name,
-                "middle_name": "",
-                "date_of_birth": None,
-                "gender": "",
-                "country": resolved_country,
-                "county": None,
-            },
-        )
+            user.country = resolved_country
+            user.save()
 
         token = get_token(user)
         return SignUp(success=True, error=None, token=token, user=user)
@@ -725,41 +717,84 @@ class UploadProfilePicture(graphene.Mutation):
 
     success = graphene.Boolean()
     error = graphene.String()
-    patient = graphene.Field(PatientType)
+    user = graphene.Field(UserType)
 
     @staticmethod
     @login_required
     def mutate(root, info, file):
         user = info.context.user
-        try:
-            patient = user.patient
-        except AttributeError:
-            return UploadProfilePicture(success=False, error="Patient profile does not exist. Create profile first.")
         if not file:
-            return UploadProfilePicture(success=False, error="No file provided")
-        patient.profile_picture = file
-        patient.save()
-        return UploadProfilePicture(success=True, error=None, patient=patient)
+            return UploadProfilePicture(success=False, error="No file provided", user=None)
+        user.profile_picture = file
+        user.save()
+        return UploadProfilePicture(success=True, error=None, user=user)
 
 
 class RemoveProfilePicture(graphene.Mutation):
     success = graphene.Boolean()
     error = graphene.String()
-    patient = graphene.Field(PatientType)
+    user = graphene.Field(UserType)
 
     @staticmethod
     @login_required
     def mutate(root, info):
         user = info.context.user
+        if user.profile_picture:
+            user.profile_picture.delete(save=False)
+            user.profile_picture = None
+            user.save()
+        return RemoveProfilePicture(success=True, error=None, user=user)
+
+
+class UpdateProfile(graphene.Mutation):
+    class Arguments:
+        name = graphene.String()
+        email = graphene.String()
+        phone = graphene.String()
+
+    success = graphene.Boolean()
+    error = graphene.String()
+    user = graphene.Field(UserType)
+
+    @staticmethod
+    @login_required
+    def mutate(root, info, name=None, email=None, phone=None):
+        user = info.context.user
+        
         try:
-            patient = user.patient
-        except AttributeError:
-            return RemoveProfilePicture(success=False, error="Patient profile not found")
-        if patient.profile_picture:
-            patient.profile_picture.delete(save=False)
-            patient.profile_picture = None
-            patient.save()
-        return RemoveProfilePicture(success=True, error=None, patient=patient)
+            # Update name (split into first_name and last_name)
+            if name is not None:
+                name_parts = name.strip().split(None, 1)
+                user.first_name = name_parts[0] if len(name_parts) > 0 else ""
+                user.last_name = name_parts[1] if len(name_parts) > 1 else ""
+            
+            # Update email
+            if email is not None:
+                email = email.strip()
+                if email:
+                    # Check if email is already taken by another user
+                    if User.objects.filter(email=email).exclude(id=user.id).exists():
+                        return UpdateProfile(success=False, error="Email already in use", user=None)
+                    user.email = email
+                else:
+                    user.email = None
+            
+            # Update phone
+            if phone is not None:
+                phone = phone.strip()
+                if phone:
+                    # Check if phone is already taken by another user
+                    if User.objects.filter(phone_number=phone).exclude(id=user.id).exists():
+                        return UpdateProfile(success=False, error="Phone number already in use", user=None)
+                    user.phone_number = phone
+                else:
+                    user.phone_number = None
+            
+            user.save()
+            return UpdateProfile(success=True, error=None, user=user)
+            
+        except Exception as e:
+            return UpdateProfile(success=False, error=str(e), user=None)
 
 
 class UploadInsuranceLogo(graphene.Mutation):
@@ -991,6 +1026,9 @@ class Mutation(graphene.ObjectType):
 
     sign_in = SignIn.Field()
     sign_up = SignUp.Field()
+    update_profile = UpdateProfile.Field()
+    upload_profile_picture = UploadProfilePicture.Field()
+    remove_profile_picture = RemoveProfilePicture.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
