@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Picture Upload Test – Smart Doctor</title>
+    <style>
+        :root { --primary: #667eea; --primary-dark: #764ba2; --success: #4ade80; --danger: #f87171; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .card {
+            max-width: 520px;
+            margin: 40px auto;
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        h1 { font-size: 2.2rem; margin-bottom: 8px; }
+        .subtitle { opacity: 0.9; margin-bottom: 30px; }
+        .avatar {
+            width: 180px; height: 180px; border-radius: 50%; object-fit: cover;
+            border: 6px solid white; box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            margin: 20px auto; background: #333;
+        }
+        .upload-area {
+            border: 3px dashed rgba(255,255,255,0.4);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px 0;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .upload-area:hover { border-color: white; background: rgba(255,255,255,0.1); transform: translateY(-5px); }
+        .upload-text { font-size: 1.3rem; margin-top: 15px; }
+        input[type="file"] { display: none; }
+        .btn {
+            background: white; color: var(--primary); padding: 14px 36px;
+            border: none; border-radius: 50px; font-weight: bold; cursor: pointer;
+            margin: 15px; transition: 0.3s;
+        }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .status {
+            margin-top: 25px; padding: 16px; border-radius: 12px;
+            font-weight: 500; min-height: 54px; display: flex;
+            align-items: center; justify-content: center;
+        }
+        .success { background: rgba(74,222,128,0.3); }
+        .error   { background: rgba(248,113,113,0.3); }
+        .info    { background: rgba(255,255,255,0.1); }
+        .token-input {
+            width: 100%; padding: 12px; margin: 15px 0;
+            border-radius: 12px; border: none; font-family: monospace;
+            font-size: 0.9rem; background: rgba(0,0,0,0.3); color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Profile Picture Upload Test</h1>
+        <p class="subtitle">Upload and instantly see your photo</p>
+
+        <img id="avatar" class="avatar" src="https://via.placeholder.com/180/cccccc/ffffff?text=No+Photo" alt="Profile">
+
+        <p style="margin:20px 0 10px">Step 1 – Paste your JWT token here:</p>
+        <input type="text" id="token-input" class="token-input" placeholder="eyJhbGciOiJI...">
+
+        <div class="upload-area" id="upload-area">
+            <div>Drop image here or click to browse</div>
+            <div class="upload-text">JPG, PNG, WebP</div>
+        </div>
+
+        <input type="file" id="file-input" accept="image/*">
+        <button class="btn" onclick="triggerUpload()">Select Image</button>
+
+        <div id="status" class="status info">Ready</div>
+    </div>
+
+    <script>
+        const avatar = document.getElementById('avatar');
+        const fileInput = document.getElementById('file-input');
+        const uploadArea = document.getElementById('upload-area');
+        const status = document.getElementById('status');
+        const tokenInput = document.getElementById('token-input');
+
+        let token = localStorage.getItem('jwt_token') || '';
+
+        // Auto-fill input if token exists
+        if (token) tokenInput.value = token;
+
+        // Save token when user types/pastes
+        tokenInput.addEventListener('input', () => {
+            token = tokenInput.value.trim();
+            localStorage.setItem('jwt_token', token);
+            loadCurrentPhoto();
+        });
+
+        // Load current photo
+        function loadCurrentPhoto() {
+            if (!token) {
+                status.textContent = "No JWT token – paste it above!";
+                status.className = "status error";
+                return;
+            }
+            fetch('http://127.0.0.1:8000/api/profile-picture/', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.profile_picture_url) {
+                    avatar.src = data.profile_picture_url + "?t=" + Date.now();
+                    status.textContent = "Current photo loaded";
+                    status.className = "status success";
+                }
+            })
+            .catch(() => {
+                status.textContent = "Invalid/expired token";
+                status.className = "status error";
+            });
+        }
+
+        // Trigger file picker
+        function triggerUpload() {
+            if (!token) {
+                status.textContent = "Please paste your JWT token first!";
+                status.className = "status error";
+                return;
+            }
+            fileInput.click();
+        }
+
+        uploadArea.onclick = triggerUpload;
+
+        // Handle upload
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            avatar.src = URL.createObjectURL(file);
+            status.textContent = "Uploading...";
+            status.className = "status info";
+
+            const formData = new FormData();
+            formData.append('profile_picture', file);
+
+            fetch('http://127.0.0.1:8000/api/upload-profile-picture/', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success || data.profile_picture_url) {
+                    avatar.src = (data.profile_picture_url || data.profile_picture_url) + "?t=" + Date.now();
+                    status.textContent = "Uploaded successfully!";
+                    status.className = "status success";
+                } else {
+                    status.textContent = data.error || "Failed";
+                    status.className = "status error";
+                }
+            })
+            .catch(() => {
+                status.textContent = "Upload failed – check token";
+                status.className = "status error";
+            });
+        });
+
+        // Load photo on start
+        loadCurrentPhoto();
+    </script>
+</body>
+</html>

@@ -1,21 +1,44 @@
+import { SessionInitializer } from "@/components/core/session-initializer";
 import { Colors } from "@/constants/theme";
-import { ThemePreferenceProvider, useAppColorScheme } from "@/hooks/use-theme-preference";
-import { Stack } from "expo-router";
+import { apolloClient } from "@/graphql/client";
+import {
+  ThemePreferenceProvider,
+  useAppColorScheme,
+} from "@/hooks/use-theme-preference";
+import { useAuthSession } from "@/stores/useAuthSession";
+import { ApolloProvider } from "@apollo/client";
+import { Href, Stack, usePathname, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Platform, View } from "react-native";
 import "react-native-reanimated";
-import "../global.css";
+import "../src/styles/global.css";
 
-export const unstable_settings = {
-  anchor: "(auth)",
-};
+// Helpers to detect current navigation group
+function isInAuthGroup(segments: string[]): boolean {
+  return segments.length > 0 && segments[0] === "(auth)";
+}
 
-function RootLayoutContent() {
+function isInTabsGroup(segments: string[]): boolean {
+  return segments.length > 0 && segments[0] === "(tabs)";
+}
+
+const AuthNavigator = () => {
+  const router = useRouter();
+  const segments = useSegments();
+  const pathname = usePathname();
+
   const colorScheme = useAppColorScheme() ?? "light";
   const isDark = colorScheme === "dark";
   const theme = Colors[isDark ? "dark" : "light"];
+
+  const isAuthenticated = useAuthSession((s) => s.isAuthenticated);
+  const isHydrated = useAuthSession((s) => s.isHydrated);
+  const loadingSession = useAuthSession((s) => s.loadingSession);
+  const lastAuthedPath = useAuthSession((s) => s.lastAuthedPath);
+
+  const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -31,28 +54,98 @@ function RootLayoutContent() {
   useEffect(() => {
     if (Platform.OS !== "android") return;
 
-    SystemUI.setBackgroundColorAsync(theme.background).catch(() => undefined);
+    SystemUI.setBackgroundColorAsync(theme.background).catch(() => {
+      // ignored
+    });
+  }, [theme.background]);
 
-    (async () => {
-      try {
-        // Optional dependency: if installed, we can theme the Android navigation bar.
-        // Using require() avoids a hard TypeScript module dependency.
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const NavigationBar = require("expo-navigation-bar") as {
-          setBackgroundColorAsync?: (color: string) => Promise<void>;
-          setButtonStyleAsync?: (style: "light" | "dark") => Promise<void>;
-        };
-
-        await NavigationBar.setBackgroundColorAsync?.(theme.background);
-        await NavigationBar.setButtonStyleAsync?.(isDark ? "light" : "dark");
-      } catch {
-        // ignore if expo-navigation-bar isn't installed/available
+  useEffect(() => {
+    if (!isHydrated || loadingSession) {
+      if (__DEV__) {
+        console.log("[AuthNavigator] still loading → waiting", {
+          isHydrated,
+          loadingSession,
+          pathname,
+          segments,
+        });
       }
-    })();
-  }, [isDark, theme.background]);
+      return;
+    }
+
+    const inAuth = isInAuthGroup(segments);
+    const inTabs = isInTabsGroup(segments);
+
+    if (__DEV__) {
+      console.log("[AuthNavigator] checking", {
+        pathname,
+        segments,
+        isAuthenticated,
+        inAuth,
+        inTabs,
+      });
+    }
+
+    // Reset redirect guard on each major change
+    hasRedirectedRef.current = false;
+
+    if (isAuthenticated) {
+      // Authenticated → ensure we're in tabs group
+      if (!inTabs) {
+        hasRedirectedRef.current = true;
+
+        let target: Href = "/(tabs)";
+
+        if (
+          typeof lastAuthedPath === "string" &&
+          lastAuthedPath.trim() !== "" &&
+          lastAuthedPath !== "/" &&
+          !lastAuthedPath.startsWith("/(auth)")
+        ) {
+          target = lastAuthedPath as Href;
+        }
+
+        if (__DEV__) {
+          console.log("[AuthNavigator] → redirecting authenticated user to:", target);
+        }
+
+        router.replace(target);
+      }
+    } else {
+      // NOT authenticated → must be in auth group (or root/empty → redirect)
+      if (!inAuth) {
+        hasRedirectedRef.current = true;
+
+        if (__DEV__) {
+          console.log(
+            "[AuthNavigator] → redirecting unauthenticated to sign-in (caught root/empty/unknown path)"
+          );
+        }
+
+        router.replace("/(auth)/sign-in");
+      }
+      // If already in (auth) group → do nothing (correct state)
+    }
+  }, [
+    isHydrated,
+    loadingSession,
+    isAuthenticated,
+    segments,
+    lastAuthedPath,
+    router,
+    pathname,
+  ]);
+
+  return null;
+};
+
+function RootLayoutContent() {
+  const colorScheme = useAppColorScheme() ?? "light";
+  const isDark = colorScheme === "dark";
+  const theme = Colors[isDark ? "dark" : "light"];
 
   return (
     <View className={isDark ? "dark" : ""} style={{ flex: 1 }}>
+      <StatusBar style={isDark ? "light" : "dark"} />
       <Stack
         screenOptions={{
           headerStyle: {
@@ -69,8 +162,9 @@ function RootLayoutContent() {
       >
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <StatusBar style={isDark ? "light" : "dark"} />
       </Stack>
+
+      <AuthNavigator />
     </View>
   );
 }
@@ -78,7 +172,10 @@ function RootLayoutContent() {
 export default function RootLayout() {
   return (
     <ThemePreferenceProvider>
-      <RootLayoutContent />
+      <SessionInitializer />
+      <ApolloProvider client={apolloClient}>
+        <RootLayoutContent />
+      </ApolloProvider>
     </ThemePreferenceProvider>
   );
 }

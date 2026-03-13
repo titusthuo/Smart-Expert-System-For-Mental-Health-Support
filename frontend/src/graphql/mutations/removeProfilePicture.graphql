@@ -1,0 +1,15 @@
+mutation RemoveProfilePicture {
+  removeProfilePicture {
+    success
+    error
+    user {
+      id
+      username
+      email
+      name
+      phone
+      country
+      profilePictureUrl
+    }
+  }
+}

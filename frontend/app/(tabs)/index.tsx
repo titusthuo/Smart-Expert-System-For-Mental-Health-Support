@@ -1,15 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    Dimensions,
-    Image,
-    Platform,
-    ScrollView,
-    StatusBar,
-    TouchableOpacity,
-    View
+  Dimensions,
+  Image,
+  Platform,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -20,7 +20,7 @@ import { AppText, Button } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { openUrlSafely } from "@/lib/links";
 import { MOODS, MoodLabel } from "@/lib/moods";
-import { getStoredJson } from "@/lib/storage";
+import { useAuthSession } from "@/stores/useAuthSession";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -40,7 +40,8 @@ const CRISIS_HELPLINE = {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const router = useRouter();
-  const { border, brand, brandAccent, isDark, subtle, surface, text } = useAuthTheme();
+  const { border, brand, brandAccent, isDark, subtle, surface, text } =
+    useAuthTheme();
 
   const [callConfirmVisible, setCallConfirmVisible] = useState(false);
 
@@ -48,27 +49,16 @@ export default function HomePage() {
   const [infoTitle, setInfoTitle] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
 
-  const [profileName, setProfileName] = useState<string>("John Doe");
+  const session = useAuthSession((s) => s.session);
 
-  useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      try {
-        const parsed = await getStoredJson<{ name?: unknown }>("profileData");
-        if (!mounted || !parsed) return;
-        if (typeof parsed?.name === "string" && parsed.name.trim()) {
-          setProfileName(parsed.name.trim());
-        }
-      } catch {
-        // ignore
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const profileName = useMemo(() => {
+    return (
+      session?.profile?.name ||
+      session?.user?.name ||
+      session?.user?.username ||
+      "User"
+    );
+  }, [session]);
 
   const firstName = useMemo(() => {
     const parts = profileName.trim().split(/\s+/).filter(Boolean);
@@ -78,16 +68,39 @@ export default function HomePage() {
   const avatarInitials = useMemo(() => {
     const parts = profileName.trim().split(/\s+/).filter(Boolean);
     const first = parts[0]?.[0] ?? "";
-    const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? "" : "";
+    const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
     return (first + last).toUpperCase() || "U";
   }, [profileName]);
 
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
-  }, []);
+  // Greeting updates based on current time (no useMemo = always accurate)
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
+  // Daily wellness tip - rotates based on day of week (0=Sunday, 1=Monday, etc.)
+  const dailyTips = [
+    {
+      icon: "fitness-outline",
+      text: "Try 4-7-8 breathing: inhale for 4 counts, hold for 7, exhale for 8. This activates your calm response.",
+    },
+    {
+      icon: "heart-outline",
+      text: "Write down 3 things you're grateful for today. Gratitude can significantly boost your mood.",
+    },
+    {
+      icon: "leaf-outline",
+      text: "Take a 15-minute walk in nature. Even a short time outdoors can reduce stress by 15%.",
+    },
+    {
+      icon: "moon-outline",
+      text: "Digital detox 1 hour before bed. Screen-free time improves sleep quality and reduces anxiety.",
+    },
+    {
+      icon: "people-outline",
+      text: "Reach out to a friend or family member today. Social connection is vital for mental health.",
+    },
+  ];
+  const todaysTip = dailyTips[new Date().getDay() % dailyTips.length];
 
   const openInfo = useCallback((title: string, message: string) => {
     setInfoTitle(title);
@@ -95,12 +108,9 @@ export default function HomePage() {
     setInfoVisible(true);
   }, []);
 
-  const tryHaptics = useCallback(
-    (fn: () => Promise<unknown>) => {
-      fn().catch(() => undefined);
-    },
-    []
-  );
+  const tryHaptics = useCallback((fn: () => Promise<unknown>) => {
+    fn().catch(() => undefined);
+  }, []);
 
   const placeHelplineCall = useCallback(async () => {
     const url =
@@ -113,14 +123,14 @@ export default function HomePage() {
       if (!opened) {
         openInfo(
           "Unable to place call",
-          "Calling is not available on this device."
+          "Calling is not available on this device.",
         );
         return;
       }
     } catch {
       openInfo(
         "Unable to place call",
-        "Something went wrong while trying to start the call."
+        "Something went wrong while trying to start the call.",
       );
     }
   }, [openInfo]);
@@ -133,6 +143,48 @@ export default function HomePage() {
   // Tracks which mood pill is highlighted (null = none selected yet)
   const [selectedMood, setSelectedMood] = useState<MoodLabel | null>(null);
 
+  // Auto-scroll animation for mood pills
+  const moodScrollRef = useRef<ScrollView>(null);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const scrollIntervalRef = useRef<any>(null);
+  const resumeTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    let scrollPosition = 0;
+
+    const startAutoScroll = () => {
+      if (scrollIntervalRef.current) return; // Already running
+
+      scrollIntervalRef.current = setInterval(() => {
+        if (!isUserScrolling) {
+          scrollPosition += 1; // Scroll 1px right every 30ms
+          moodScrollRef.current?.scrollTo({
+            x: scrollPosition,
+            animated: false,
+          });
+
+          // Reset when reaching the end (approximate)
+          if (scrollPosition > MOODS.length * 120) {
+            scrollPosition = 0;
+          }
+        }
+      }, 30); // Smooth scroll speed
+    };
+
+    startAutoScroll();
+
+    return () => {
+      if (scrollIntervalRef.current) {
+        clearInterval(scrollIntervalRef.current);
+        scrollIntervalRef.current = null;
+      }
+      if (resumeTimeoutRef.current) {
+        clearTimeout(resumeTimeoutRef.current);
+        resumeTimeoutRef.current = null;
+      }
+    };
+  }, [isUserScrolling]);
+
   const logoImage = require("../../assets/logos/brain.jpg");
   const heroImage = require("../../assets/images/image-1.jpg");
   const gridImage1 = require("../../assets/images/image-2.png");
@@ -140,7 +192,10 @@ export default function HomePage() {
 
   const HERO_HEIGHT = SCREEN_WIDTH < 400 ? 190 : 230;
   const GRID_IMG_HEIGHT = SCREEN_WIDTH < 400 ? 120 : 148;
-  const INSIGHT_CARD_WIDTH = Math.min(320, Math.max(248, Math.round(SCREEN_WIDTH * 0.72)));
+  const INSIGHT_CARD_WIDTH = Math.min(
+    320,
+    Math.max(248, Math.round(SCREEN_WIDTH * 0.72)),
+  );
 
   // ── Mood pill tap handler ────────────────────────────────────────────────
   const handleMoodSelect = (mood: (typeof MOODS)[number]) => {
@@ -206,11 +261,7 @@ export default function HomePage() {
             accessibilityLabel="Notifications"
             activeOpacity={0.8}
           >
-            <Ionicons
-              name="notifications-outline"
-              size={20}
-              color={subtle}
-            />
+            <Ionicons name="notifications-outline" size={20} color={subtle} />
           </TouchableOpacity>
           <View
             className="w-9 h-9 rounded-full items-center justify-center border"
@@ -274,9 +325,27 @@ export default function HomePage() {
 
           {/* Pill row */}
           <ScrollView
+            ref={moodScrollRef}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: SPACING.md, gap: 10 }}
+            scrollEnabled={true} // Allow manual scrolling
+            onTouchStart={() => {
+              // Stop auto-scroll when user starts touching
+              setIsUserScrolling(true);
+              if (resumeTimeoutRef.current) {
+                clearTimeout(resumeTimeoutRef.current);
+              }
+            }}
+            onTouchEnd={() => {
+              // Resume auto-scroll 2 seconds after user stops touching
+              if (resumeTimeoutRef.current) {
+                clearTimeout(resumeTimeoutRef.current);
+              }
+              resumeTimeoutRef.current = setTimeout(() => {
+                setIsUserScrolling(false);
+              }, 2000);
+            }}
           >
             {MOODS.map((mood) => {
               const isSelected = selectedMood === mood.label;
@@ -326,15 +395,9 @@ export default function HomePage() {
           <View className="absolute inset-0" pointerEvents="none">
             <View className="flex-1" />
             <View style={{ height: HERO_HEIGHT * 0.55 }}>
-              <View
-                style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.08)" }}
-              />
-              <View
-                style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.22)" }}
-              />
-              <View
-                style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.42)" }}
-              />
+              <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.08)" }} />
+              <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.22)" }} />
+              <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.42)" }} />
             </View>
           </View>
 
@@ -354,7 +417,7 @@ export default function HomePage() {
         >
           <View className="flex-row items-center gap-2 mb-2">
             <Ionicons
-              name="bulb-outline"
+              name={todaysTip.icon as any}
               size={18}
               color={isDark ? "#4ADE80" : "#16A34A"}
             />
@@ -363,11 +426,7 @@ export default function HomePage() {
             </AppText>
           </View>
           <AppText unstyled className="text-foreground text-[13px] leading-5">
-            Try{" "}
-            <AppText unstyled className="font-bold">
-              4-7-8 breathing
-            </AppText>
-            : inhale 4, hold 7, exhale 8.
+            {todaysTip.text}
           </AppText>
         </View>
 
@@ -470,16 +529,23 @@ export default function HomePage() {
           className="rounded-2xl border p-4 flex-row items-center gap-3"
           style={{
             marginTop: SPACING.xl,
-            borderColor: isDark ? "rgba(168,85,247,0.25)" : "rgba(124,58,237,0.25)",
-            backgroundColor: isDark ? "rgba(168,85,247,0.10)" : "rgba(124,58,237,0.08)",
+            borderColor: isDark
+              ? "rgba(168,85,247,0.25)"
+              : "rgba(124,58,237,0.25)",
+            backgroundColor: isDark
+              ? "rgba(168,85,247,0.10)"
+              : "rgba(124,58,237,0.08)",
           }}
         >
-          <View className="w-10 h-10 rounded-full items-center justify-center shrink-0" style={{ backgroundColor: isDark ? "rgba(168,85,247,0.18)" : "rgba(124,58,237,0.14)" }}>
-            <Ionicons
-              name="call"
-              size={18}
-              color={brandAccent}
-            />
+          <View
+            className="w-10 h-10 rounded-full items-center justify-center shrink-0"
+            style={{
+              backgroundColor: isDark
+                ? "rgba(168,85,247,0.18)"
+                : "rgba(124,58,237,0.14)",
+            }}
+          >
+            <Ionicons name="call" size={18} color={brandAccent} />
           </View>
           <View className="flex-1">
             <AppText
@@ -509,7 +575,7 @@ export default function HomePage() {
         onConfirmCall={() => {
           setCallConfirmVisible(false);
           tryHaptics(() =>
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning),
           );
           placeHelplineCall().catch(() => undefined);
         }}

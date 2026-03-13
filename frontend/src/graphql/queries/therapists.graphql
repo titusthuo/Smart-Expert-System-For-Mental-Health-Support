@@ -1,0 +1,22 @@
+query Therapists {
+  therapists {
+    id
+    name
+    photoUrl
+    location
+    county
+    town
+    phone
+    whatsapp
+    email
+    coords {
+      lat
+      lng
+    }
+    specialization
+    bio
+    licenseNumber
+    price
+    availability
+  }
+}

@@ -2,14 +2,10 @@ import { TherapistCard } from "@/components/therapists/therapist-card";
 import { TherapistsEmpty } from "@/components/therapists/therapists-empty";
 import { TherapistsHeader } from "@/components/therapists/therapists-header";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
+import { useTherapists } from "@/hooks/useTherapists";
 import { Coords, haversineDistanceKm } from "@/lib/geo";
-import {
-    getOptionLabel,
-    locationOptions,
-    mockTherapists,
-    specializationOptions,
-    Therapist,
-} from "@/lib/therapists";
+import { getOptionLabel, locationOptions, specializationOptions } from "@/lib/therapists/options";
+import { Therapist } from "@/lib/therapists/types";
 import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -22,6 +18,7 @@ export default function TherapistsScreen() {
   const router = useRouter();
   const { reason } = useLocalSearchParams<{ reason?: string }>();
   const { isDark } = useAuthTheme();
+  const { therapists } = useTherapists();
   const [searchQuery, setSearchQuery] = useState("");
   const [specializationFilter, setSpecializationFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
@@ -80,7 +77,7 @@ export default function TherapistsScreen() {
     "All Locations",
   );
 
-  const filteredTherapists = mockTherapists.filter((therapist) => {
+  const filteredTherapists = therapists.filter((therapist) => {
     const matchesSearch =
       therapist.name.toLowerCase().includes(queryLower) ||
       therapist.specialization.some((spec) =>
@@ -102,7 +99,7 @@ export default function TherapistsScreen() {
 
   const sortedTherapists = useMemo(() => {
     return filteredTherapists
-      .map((t) => {
+      .map((t: Therapist) => {
         const distanceKm = t.coords
           ? haversineDistanceKm(userCoords, t.coords)
           : Number.POSITIVE_INFINITY;
