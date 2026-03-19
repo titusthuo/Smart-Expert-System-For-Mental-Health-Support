@@ -17,10 +17,8 @@ export type Scalars = {
   Float: { input: number; output: number; }
   Date: { input: any; output: any; }
   DateTime: { input: any; output: any; }
-  Decimal: { input: any; output: any; }
   GenericScalar: { input: any; output: any; }
   JSONString: { input: any; output: any; }
-  Time: { input: any; output: any; }
   Upload: { input: any; output: any; }
 };
 
@@ -33,136 +31,10 @@ export type AiChatMessageType = {
   text: Scalars['String']['output'];
 };
 
-export type AppointmentType = {
-  __typename?: 'AppointmentType';
-  cancellationReason: Scalars['String']['output'];
-  cancelledAt?: Maybe<Scalars['DateTime']['output']>;
-  cancelledBy?: Maybe<UserType>;
-  cost: Scalars['Decimal']['output'];
-  doctor?: Maybe<BookmarkedDoctorType>;
-  encounterMode: CoreAppointmentEncounterModeChoices;
-  endTime: Scalars['DateTime']['output'];
-  id: Scalars['ID']['output'];
-  patient: PatientType;
-  paymentCompleted: Scalars['Boolean']['output'];
-  rastucId: Scalars['String']['output'];
-  startTime: Scalars['DateTime']['output'];
-  status: CoreAppointmentStatusChoices;
-  /** Human readable status */
-  statusDisplay?: Maybe<Scalars['String']['output']>;
-};
-
-export type AvailableSlotType = {
-  __typename?: 'AvailableSlotType';
-  doctorId?: Maybe<Scalars['Int']['output']>;
-  endTime?: Maybe<Scalars['DateTime']['output']>;
-  id?: Maybe<Scalars['String']['output']>;
-  isBooked?: Maybe<Scalars['Boolean']['output']>;
-  isRecurring?: Maybe<Scalars['Boolean']['output']>;
-  startTime?: Maybe<Scalars['DateTime']['output']>;
-};
-
-export type BookmarkedDoctorType = {
-  __typename?: 'BookmarkedDoctorType';
-  appointmentSet: Array<AppointmentType>;
-  availabilities: Array<DoctorAvailabilityType>;
-  /** Get 30-minute time slots within a date range */
-  availableSlots?: Maybe<Array<Maybe<AvailableSlotType>>>;
-  bio: Scalars['String']['output'];
-  clinicVisitPrice: Scalars['Decimal']['output'];
-  country?: Maybe<CountryType>;
-  county?: Maybe<CountyType>;
-  firstName: Scalars['String']['output'];
-  fullName: Scalars['String']['output'];
-  homecarePrice: Scalars['Decimal']['output'];
-  id: Scalars['ID']['output'];
-  insuarance: Array<InsuaranceType>;
-  lastName: Scalars['String']['output'];
-  primarySpecialty?: Maybe<SpecialtyType>;
-  profilePicture?: Maybe<Scalars['String']['output']>;
-  profilePictureUrl?: Maybe<Scalars['String']['output']>;
-  subSpecialties: Array<SpecialtyType>;
-  takesPostpaidPayment: Scalars['Boolean']['output'];
-  takesPrepaidPayment: Scalars['Boolean']['output'];
-  teleconsultPrice: Scalars['Decimal']['output'];
-  title: Scalars['String']['output'];
-  user: UserType;
-};
-
-
-export type BookmarkedDoctorTypeAvailableSlotsArgs = {
-  endDate?: InputMaybe<Scalars['Date']['input']>;
-  startDate?: InputMaybe<Scalars['Date']['input']>;
-};
-
 export type CoordsType = {
   __typename?: 'CoordsType';
   lat?: Maybe<Scalars['Float']['output']>;
   lng?: Maybe<Scalars['Float']['output']>;
-};
-
-/** An enumeration. */
-export enum CoreAppointmentEncounterModeChoices {
-  /** Clinic Visit */
-  Clinic = 'CLINIC',
-  /** Homecare */
-  Home = 'HOME',
-  /** Teleconsult */
-  Tele = 'TELE'
-}
-
-/** An enumeration. */
-export enum CoreAppointmentStatusChoices {
-  /** Cancelled */
-  Cancelled = 'CANCELLED',
-  /** Completed */
-  Completed = 'COMPLETED',
-  /** Ongoing */
-  Ongoing = 'ONGOING',
-  /** Upcoming */
-  Upcoming = 'UPCOMING'
-}
-
-export type CountryType = {
-  __typename?: 'CountryType';
-  code: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  name: Scalars['String']['output'];
-};
-
-export type CountyType = {
-  __typename?: 'CountyType';
-  country: CountryType;
-  id: Scalars['ID']['output'];
-  name: Scalars['String']['output'];
-};
-
-export type DoctorAvailabilityType = {
-  __typename?: 'DoctorAvailabilityType';
-  doctor: BookmarkedDoctorType;
-  endTime?: Maybe<Scalars['DateTime']['output']>;
-  /** End time of day for recurring block (e.g., 17:00:00) */
-  endTimeOfDay: Scalars['Time']['output'];
-  id: Scalars['ID']['output'];
-  /** True if an appointment overlaps this slot */
-  isBooked?: Maybe<Scalars['Boolean']['output']>;
-  isRecurring: Scalars['Boolean']['output'];
-  /** 0=Monday ... 6=Sunday — only used if is_recurring=True */
-  recurrenceDayOfWeek?: Maybe<Scalars['Int']['output']>;
-  recurrenceEndDate?: Maybe<Scalars['Date']['output']>;
-  startTime?: Maybe<Scalars['DateTime']['output']>;
-  /** Start time of day for recurring block (e.g., 09:00:00) */
-  startTimeOfDay: Scalars['Time']['output'];
-};
-
-export type InsuaranceType = {
-  __typename?: 'InsuaranceType';
-  id: Scalars['ID']['output'];
-  insuarance: Array<BookmarkedDoctorType>;
-  logo?: Maybe<Scalars['String']['output']>;
-  /** Full URL to the insurance logo */
-  logoUrl?: Maybe<Scalars['String']['output']>;
-  name: Scalars['String']['output'];
 };
 
 export type Mutation = {
@@ -237,25 +109,6 @@ export type ObtainJsonWebToken = {
   token: Scalars['String']['output'];
 };
 
-export type PatientType = {
-  __typename?: 'PatientType';
-  aiChatMessagesLegacy: Array<AiChatMessageType>;
-  appointments: Array<AppointmentType>;
-  country?: Maybe<CountryType>;
-  county?: Maybe<CountyType>;
-  dateOfBirth?: Maybe<Scalars['Date']['output']>;
-  email?: Maybe<Scalars['String']['output']>;
-  firstName: Scalars['String']['output'];
-  gender: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  lastName: Scalars['String']['output'];
-  middleName: Scalars['String']['output'];
-  phoneNumber?: Maybe<Scalars['String']['output']>;
-  profilePicture?: Maybe<Scalars['String']['output']>;
-  profilePictureUrl?: Maybe<Scalars['String']['output']>;
-  user: UserType;
-};
-
 export type Query = {
   __typename?: 'Query';
   aiChatMessages?: Maybe<Array<Maybe<AiChatMessageType>>>;
@@ -303,15 +156,6 @@ export type SignUp = {
   success?: Maybe<Scalars['Boolean']['output']>;
   token?: Maybe<Scalars['String']['output']>;
   user?: Maybe<UserType>;
-};
-
-export type SpecialtyType = {
-  __typename?: 'SpecialtyType';
-  id: Scalars['ID']['output'];
-  name: Scalars['String']['output'];
-  primaryDoctors: Array<BookmarkedDoctorType>;
-  subspecialtyDoctors: Array<BookmarkedDoctorType>;
-  therapists: Array<TherapistType>;
 };
 
 export type TherapistReviewType = {
@@ -372,7 +216,6 @@ export type UserType = {
   isActive: Scalars['Boolean']['output'];
   lastName: Scalars['String']['output'];
   name?: Maybe<Scalars['String']['output']>;
-  patient?: Maybe<PatientType>;
   phone?: Maybe<Scalars['String']['output']>;
   phoneNumber?: Maybe<Scalars['String']['output']>;
   profilePictureUrl?: Maybe<Scalars['String']['output']>;
