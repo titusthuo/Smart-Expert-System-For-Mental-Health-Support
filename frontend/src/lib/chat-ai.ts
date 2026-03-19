@@ -1,7 +1,25 @@
-export const DEFAULT_GREETING =
-  "Hello! I'm here to support you. How are you feeling today?";
+export const GEMINI_API_KEY = "AIzaSyAlIdcUFNCi7K9LR9naaDL6_jnra9XQGX0";
 
-export function isCriticalInput(input: string) {
+export const SYSTEM_PROMPT = `You are an empathetic Mental Health Companion in the MindEase KE app (The Co-operative University of Kenya project).
+
+Your role is to provide immediate, private, non-judgmental support for stress, anxiety, depression, relationship issues, and emotional distress.
+
+Core rules you MUST follow:
+- Always start with empathy and validation.
+- Offer research-backed wellness techniques (CBT, breathing exercises, mindfulness, grounding) as general suggestions only.
+- NEVER diagnose, prescribe medication, or replace a licensed therapist.
+- Always remind the user: "I'm not a licensed professional and this is not a substitute for real therapy."
+- If the user shows signs of crisis (severe distress, self-harm, suicidal thoughts), gently urge immediate professional help, mention the Kenya Red Cross hotline 1190 or 999, and use the tool: [TOOL:SHOW_THERAPISTS]Your short explanation here[/TOOL]
+- When the user needs professional support or you think a therapist would help, use: [TOOL:SHOW_THERAPISTS]Your short explanation here[/TOOL]
+- Keep responses warm, hopeful, concise, and culturally sensitive to Kenya.
+- End by inviting the user to continue sharing.
+
+You are here to help people feel heard and supported — not to provide clinical treatment.`;
+
+export const DEFAULT_GREETING =
+  "Hi! I'm your Mental Health Companion in MindEase KE.\n\nHow are you feeling today? You can share anything — stress, anxiety, low mood, relationship worries, or just how your day is going.\n\nI'm here to listen and offer supportive tips, but remember: I'm not a licensed therapist and cannot diagnose or replace professional care.";
+
+export function isCriticalInput(input: string): boolean {
   const lower = input.toLowerCase();
 
   return (
@@ -20,26 +38,4 @@ export function isCriticalInput(input: string) {
     lower.includes("cut myself") ||
     lower.includes("overdose")
   );
-}
-
-export function getAIResponse(input: string): string {
-  const lower = input.toLowerCase();
-
-  if (lower.includes("anxious") || lower.includes("anxiety")) {
-    return "I understand that anxiety can feel overwhelming. Try this breathing exercise: Breathe in slowly for 4 counts, hold for 4, then exhale for 4. This can help calm your nervous system. Would you like to talk more about what's causing your anxiety?";
-  }
-
-  if (lower.includes("stress") || lower.includes("stressed")) {
-    return "Stress is a common experience, and it's good that you're recognizing it. Some helpful techniques include taking short breaks, practicing mindfulness, or going for a walk. What specific situations are causing you stress?";
-  }
-
-  if (lower.includes("sleep") || lower.includes("insomnia")) {
-    return "Sleep is crucial for mental health. Try establishing a consistent bedtime routine, avoiding screens an hour before bed, and creating a calm environment. How long have you been experiencing sleep difficulties?";
-  }
-
-  if (lower.includes("sad") || lower.includes("depressed")) {
-    return "I'm sorry you're feeling this way. It's important to acknowledge these feelings. Activities like exercise, connecting with friends, or engaging in hobbies can help. How long have you been feeling like this?";
-  }
-
-  return "Thank you for sharing that with me. I'm here to listen and support you. Can you tell me more about what you're experiencing? Remember, you're not alone in this journey.";
 }

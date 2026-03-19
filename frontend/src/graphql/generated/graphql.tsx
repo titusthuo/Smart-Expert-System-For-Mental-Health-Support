@@ -123,40 +123,6 @@ export enum CoreAppointmentStatusChoices {
   Upcoming = 'UPCOMING'
 }
 
-/** An enumeration. */
-export enum CoreUserNotificationNotificationTypeChoices {
-  /** Appointment */
-  Appointment = 'APPOINTMENT',
-  /** Information */
-  Info = 'INFO',
-  /** Reminder */
-  Reminder = 'REMINDER',
-  /** Success */
-  Success = 'SUCCESS',
-  /** Warning */
-  Warning = 'WARNING'
-}
-
-/** An enumeration. */
-export enum CoreWellnessArticleCategoryChoices {
-  /** Mindfulness */
-  Mindfulness = 'MINDFULNESS',
-  /** Nutrition */
-  Nutrition = 'NUTRITION',
-  /** Relationships */
-  Relationships = 'RELATIONSHIPS',
-  /** Research */
-  Research = 'RESEARCH',
-  /** Self-Care */
-  SelfCare = 'SELF_CARE',
-  /** Sleep */
-  Sleep = 'SLEEP',
-  /** Stress Management */
-  Stress = 'STRESS',
-  /** Therapy */
-  Therapy = 'THERAPY'
-}
-
 export type CountryType = {
   __typename?: 'CountryType';
   code: Scalars['String']['output'];
@@ -169,25 +135,6 @@ export type CountyType = {
   country: CountryType;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
-};
-
-export type CrisisHelplineType = {
-  __typename?: 'CrisisHelplineType';
-  countryName?: Maybe<Scalars['String']['output']>;
-  /** What this helpline offers */
-  description: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  /** Available 24/7 */
-  is247: Scalars['Boolean']['output'];
-  /** Primary helpline for this country */
-  isPrimary: Scalars['Boolean']['output'];
-  /** Comma-separated, e.g., English, Swahili */
-  languages: Scalars['String']['output'];
-  /** e.g., Kenya Red Cross, SAMH, 988 Lifeline */
-  name: Scalars['String']['output'];
-  /** e.g., 1199, 988 */
-  phoneNumber: Scalars['String']['output'];
-  website: Scalars['String']['output'];
 };
 
 export type DoctorAvailabilityType = {
@@ -208,19 +155,6 @@ export type DoctorAvailabilityType = {
   startTimeOfDay: Scalars['Time']['output'];
 };
 
-export type FeaturedBannerType = {
-  __typename?: 'FeaturedBannerType';
-  /** e.g., Learn More, Start Now */
-  actionText: Scalars['String']['output'];
-  /** Internal route or external URL */
-  actionUrl: Scalars['String']['output'];
-  displayOrder: Scalars['Int']['output'];
-  id: Scalars['ID']['output'];
-  imageUrl?: Maybe<Scalars['String']['output']>;
-  subtitle: Scalars['String']['output'];
-  title: Scalars['String']['output'];
-};
-
 export type InsuaranceType = {
   __typename?: 'InsuaranceType';
   id: Scalars['ID']['output'];
@@ -235,6 +169,7 @@ export type Mutation = {
   __typename?: 'Mutation';
   refreshToken?: Maybe<Refresh>;
   removeProfilePicture?: Maybe<RemoveProfilePicture>;
+  sendAiChatMessage?: Maybe<SendAiChatMessage>;
   signIn?: Maybe<SignIn>;
   signUp?: Maybe<SignUp>;
   /** Obtain JSON Web Token mutation */
@@ -247,6 +182,12 @@ export type Mutation = {
 
 export type MutationRefreshTokenArgs = {
   token?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationSendAiChatMessageArgs = {
+  isFromUser?: InputMaybe<Scalars['Boolean']['input']>;
+  text: Scalars['String']['input'];
 };
 
 
@@ -317,21 +258,11 @@ export type PatientType = {
 
 export type Query = {
   __typename?: 'Query';
-  crisisHelpline?: Maybe<CrisisHelplineType>;
-  featuredBanners?: Maybe<Array<Maybe<FeaturedBannerType>>>;
-  featuredWellnessArticles?: Maybe<Array<Maybe<WellnessArticleType>>>;
+  aiChatMessages?: Maybe<Array<Maybe<AiChatMessageType>>>;
   hello?: Maybe<Scalars['String']['output']>;
   me?: Maybe<UserType>;
-  myNotifications?: Maybe<Array<Maybe<UserNotificationType>>>;
   therapist?: Maybe<TherapistType>;
   therapists?: Maybe<Array<Maybe<TherapistType>>>;
-  unreadNotificationCount?: Maybe<Scalars['Int']['output']>;
-  wellnessTipOfDay?: Maybe<WellnessTipType>;
-};
-
-
-export type QueryCrisisHelplineArgs = {
-  countryName?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -351,6 +282,13 @@ export type RemoveProfilePicture = {
   error?: Maybe<Scalars['String']['output']>;
   success?: Maybe<Scalars['Boolean']['output']>;
   user?: Maybe<UserType>;
+};
+
+export type SendAiChatMessage = {
+  __typename?: 'SendAIChatMessage';
+  error?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<AiChatMessageType>;
+  success?: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type SignIn = {
@@ -424,19 +362,6 @@ export type UploadProfilePicture = {
   user?: Maybe<UserType>;
 };
 
-export type UserNotificationType = {
-  __typename?: 'UserNotificationType';
-  /** Where to navigate on tap */
-  actionUrl: Scalars['String']['output'];
-  createdAt: Scalars['DateTime']['output'];
-  icon: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  isRead: Scalars['Boolean']['output'];
-  message: Scalars['String']['output'];
-  notificationType: CoreUserNotificationNotificationTypeChoices;
-  title: Scalars['String']['output'];
-};
-
 export type UserType = {
   __typename?: 'UserType';
   country?: Maybe<Scalars['String']['output']>;
@@ -460,36 +385,13 @@ export type Verify = {
   payload: Scalars['GenericScalar']['output'];
 };
 
-export type WellnessArticleType = {
-  __typename?: 'WellnessArticleType';
-  category: CoreWellnessArticleCategoryChoices;
-  /** Full article content (optional) */
-  content: Scalars['String']['output'];
-  /** Lower numbers appear first */
-  displayOrder: Scalars['Int']['output'];
-  /** Link to external article */
-  externalUrl: Scalars['String']['output'];
-  /** Ionicons name */
-  icon: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  imageUrl?: Maybe<Scalars['String']['output']>;
-  /** Short description */
-  subtitle: Scalars['String']['output'];
-  title: Scalars['String']['output'];
-};
+export type SendAiChatMessageMutationVariables = Exact<{
+  text: Scalars['String']['input'];
+  isFromUser?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
 
-export type WellnessTipType = {
-  __typename?: 'WellnessTipType';
-  /** e.g., Breathing, Meditation, Sleep */
-  category: Scalars['String']['output'];
-  /** Short, actionable wellness advice */
-  content: Scalars['String']['output'];
-  /** Ionicons name */
-  icon: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  title: Scalars['String']['output'];
-  viewCount: Scalars['Int']['output'];
-};
+
+export type SendAiChatMessageMutation = { __typename?: 'Mutation', sendAiChatMessage?: { __typename?: 'SendAIChatMessage', success?: boolean | null, error?: string | null, message?: { __typename?: 'AIChatMessageType', id: string, text: string, isFromUser: boolean, createdAt: any } | null } | null };
 
 export type RemoveProfilePictureMutationVariables = Exact<{ [key: string]: never; }>;
 
@@ -532,10 +434,10 @@ export type UploadProfilePictureMutationVariables = Exact<{
 
 export type UploadProfilePictureMutation = { __typename?: 'Mutation', uploadProfilePicture?: { __typename?: 'UploadProfilePicture', success?: boolean | null, error?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null, profilePictureUrl?: string | null } | null } | null };
 
-export type GetHomepageContentQueryVariables = Exact<{ [key: string]: never; }>;
+export type GetAiChatMessagesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetHomepageContentQuery = { __typename?: 'Query', unreadNotificationCount?: number | null, wellnessTipOfDay?: { __typename?: 'WellnessTipType', id: string, title: string, content: string, icon: string, category: string } | null, featuredWellnessArticles?: Array<{ __typename?: 'WellnessArticleType', id: string, title: string, subtitle: string, category: CoreWellnessArticleCategoryChoices, icon: string, imageUrl?: string | null, externalUrl: string } | null> | null, crisisHelpline?: { __typename?: 'CrisisHelplineType', id: string, name: string, phoneNumber: string, description: string, is247: boolean, countryName?: string | null } | null, featuredBanners?: Array<{ __typename?: 'FeaturedBannerType', id: string, title: string, subtitle: string, imageUrl?: string | null, actionText: string, actionUrl: string } | null> | null, myNotifications?: Array<{ __typename?: 'UserNotificationType', id: string, notificationType: CoreUserNotificationNotificationTypeChoices, title: string, message: string, icon: string, isRead: boolean, createdAt: any } | null> | null };
+export type GetAiChatMessagesQuery = { __typename?: 'Query', aiChatMessages?: Array<{ __typename?: 'AIChatMessageType', id: string, text: string, isFromUser: boolean, createdAt: any } | null> | null };
 
 export type TherapistQueryVariables = Exact<{
   id: Scalars['Int']['input'];
@@ -550,6 +452,47 @@ export type TherapistsQueryVariables = Exact<{ [key: string]: never; }>;
 export type TherapistsQuery = { __typename?: 'Query', therapists?: Array<{ __typename?: 'TherapistType', id: string, name: string, photoUrl?: string | null, location: string, county: string, town: string, phone: string, whatsapp?: string | null, email?: string | null, specialization?: Array<string | null> | null, bio: string, licenseNumber?: string | null, price?: number | null, availability?: string | null, coords?: { __typename?: 'CoordsType', lat?: number | null, lng?: number | null } | null } | null> | null };
 
 
+export const SendAiChatMessageDocument = gql`
+    mutation SendAiChatMessage($text: String!, $isFromUser: Boolean = true) {
+  sendAiChatMessage(text: $text, isFromUser: $isFromUser) {
+    message {
+      id
+      text
+      isFromUser
+      createdAt
+    }
+    success
+    error
+  }
+}
+    `;
+export type SendAiChatMessageMutationFn = Apollo.MutationFunction<SendAiChatMessageMutation, SendAiChatMessageMutationVariables>;
+
+/**
+ * __useSendAiChatMessageMutation__
+ *
+ * To run a mutation, you first call `useSendAiChatMessageMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSendAiChatMessageMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [sendAiChatMessageMutation, { data, loading, error }] = useSendAiChatMessageMutation({
+ *   variables: {
+ *      text: // value for 'text'
+ *      isFromUser: // value for 'isFromUser'
+ *   },
+ * });
+ */
+export function useSendAiChatMessageMutation(baseOptions?: Apollo.MutationHookOptions<SendAiChatMessageMutation, SendAiChatMessageMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<SendAiChatMessageMutation, SendAiChatMessageMutationVariables>(SendAiChatMessageDocument, options);
+      }
+export type SendAiChatMessageMutationHookResult = ReturnType<typeof useSendAiChatMessageMutation>;
+export type SendAiChatMessageMutationResult = Apollo.MutationResult<SendAiChatMessageMutation>;
+export type SendAiChatMessageMutationOptions = Apollo.BaseMutationOptions<SendAiChatMessageMutation, SendAiChatMessageMutationVariables>;
 export const RemoveProfilePictureDocument = gql`
     mutation RemoveProfilePicture {
   removeProfilePicture {
@@ -778,87 +721,51 @@ export function useUploadProfilePictureMutation(baseOptions?: Apollo.MutationHoo
 export type UploadProfilePictureMutationHookResult = ReturnType<typeof useUploadProfilePictureMutation>;
 export type UploadProfilePictureMutationResult = Apollo.MutationResult<UploadProfilePictureMutation>;
 export type UploadProfilePictureMutationOptions = Apollo.BaseMutationOptions<UploadProfilePictureMutation, UploadProfilePictureMutationVariables>;
-export const GetHomepageContentDocument = gql`
-    query GetHomepageContent {
-  wellnessTipOfDay {
+export const GetAiChatMessagesDocument = gql`
+    query GetAiChatMessages {
+  aiChatMessages {
     id
-    title
-    content
-    icon
-    category
-  }
-  featuredWellnessArticles {
-    id
-    title
-    subtitle
-    category
-    icon
-    imageUrl
-    externalUrl
-  }
-  crisisHelpline {
-    id
-    name
-    phoneNumber
-    description
-    is247
-    countryName
-  }
-  featuredBanners {
-    id
-    title
-    subtitle
-    imageUrl
-    actionText
-    actionUrl
-  }
-  myNotifications {
-    id
-    notificationType
-    title
-    message
-    icon
-    isRead
+    text
+    isFromUser
     createdAt
   }
-  unreadNotificationCount
 }
     `;
 
 /**
- * __useGetHomepageContentQuery__
+ * __useGetAiChatMessagesQuery__
  *
- * To run a query within a React component, call `useGetHomepageContentQuery` and pass it any options that fit your needs.
- * When your component renders, `useGetHomepageContentQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useGetAiChatMessagesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetAiChatMessagesQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useGetHomepageContentQuery({
+ * const { data, loading, error } = useGetAiChatMessagesQuery({
  *   variables: {
  *   },
  * });
  */
-export function useGetHomepageContentQuery(baseOptions?: Apollo.QueryHookOptions<GetHomepageContentQuery, GetHomepageContentQueryVariables>) {
+export function useGetAiChatMessagesQuery(baseOptions?: Apollo.QueryHookOptions<GetAiChatMessagesQuery, GetAiChatMessagesQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<GetHomepageContentQuery, GetHomepageContentQueryVariables>(GetHomepageContentDocument, options);
+        return Apollo.useQuery<GetAiChatMessagesQuery, GetAiChatMessagesQueryVariables>(GetAiChatMessagesDocument, options);
       }
-export function useGetHomepageContentLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetHomepageContentQuery, GetHomepageContentQueryVariables>) {
+export function useGetAiChatMessagesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetAiChatMessagesQuery, GetAiChatMessagesQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<GetHomepageContentQuery, GetHomepageContentQueryVariables>(GetHomepageContentDocument, options);
+          return Apollo.useLazyQuery<GetAiChatMessagesQuery, GetAiChatMessagesQueryVariables>(GetAiChatMessagesDocument, options);
         }
 // @ts-ignore
-export function useGetHomepageContentSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetHomepageContentQuery, GetHomepageContentQueryVariables>): Apollo.UseSuspenseQueryResult<GetHomepageContentQuery, GetHomepageContentQueryVariables>;
-export function useGetHomepageContentSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetHomepageContentQuery, GetHomepageContentQueryVariables>): Apollo.UseSuspenseQueryResult<GetHomepageContentQuery | undefined, GetHomepageContentQueryVariables>;
-export function useGetHomepageContentSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetHomepageContentQuery, GetHomepageContentQueryVariables>) {
+export function useGetAiChatMessagesSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetAiChatMessagesQuery, GetAiChatMessagesQueryVariables>): Apollo.UseSuspenseQueryResult<GetAiChatMessagesQuery, GetAiChatMessagesQueryVariables>;
+export function useGetAiChatMessagesSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetAiChatMessagesQuery, GetAiChatMessagesQueryVariables>): Apollo.UseSuspenseQueryResult<GetAiChatMessagesQuery | undefined, GetAiChatMessagesQueryVariables>;
+export function useGetAiChatMessagesSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetAiChatMessagesQuery, GetAiChatMessagesQueryVariables>) {
           const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<GetHomepageContentQuery, GetHomepageContentQueryVariables>(GetHomepageContentDocument, options);
+          return Apollo.useSuspenseQuery<GetAiChatMessagesQuery, GetAiChatMessagesQueryVariables>(GetAiChatMessagesDocument, options);
         }
-export type GetHomepageContentQueryHookResult = ReturnType<typeof useGetHomepageContentQuery>;
-export type GetHomepageContentLazyQueryHookResult = ReturnType<typeof useGetHomepageContentLazyQuery>;
-export type GetHomepageContentSuspenseQueryHookResult = ReturnType<typeof useGetHomepageContentSuspenseQuery>;
-export type GetHomepageContentQueryResult = Apollo.QueryResult<GetHomepageContentQuery, GetHomepageContentQueryVariables>;
+export type GetAiChatMessagesQueryHookResult = ReturnType<typeof useGetAiChatMessagesQuery>;
+export type GetAiChatMessagesLazyQueryHookResult = ReturnType<typeof useGetAiChatMessagesLazyQuery>;
+export type GetAiChatMessagesSuspenseQueryHookResult = ReturnType<typeof useGetAiChatMessagesSuspenseQuery>;
+export type GetAiChatMessagesQueryResult = Apollo.QueryResult<GetAiChatMessagesQuery, GetAiChatMessagesQueryVariables>;
 export const TherapistDocument = gql`
     query Therapist($id: Int!) {
   therapist(id: $id) {
