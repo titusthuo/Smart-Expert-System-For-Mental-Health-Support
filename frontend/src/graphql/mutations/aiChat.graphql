@@ -1,0 +1,12 @@
+mutation SendAiChatMessage($text: String!, $isFromUser: Boolean = true) {
+  sendAiChatMessage(text: $text, isFromUser: $isFromUser) {
+    message {
+      id
+      text
+      isFromUser
+      createdAt
+    }
+    success
+    error
+  }
+}
