@@ -1,5 +1,12 @@
 import { getStoredString, setStoredString } from "@/lib/storage";
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 import { useColorScheme as useRNColorScheme } from "react-native";
 
 export type ThemeMode = "light" | "dark" | "system";
@@ -12,7 +19,8 @@ type ThemePreferenceContextValue = {
   hasHydrated: boolean;
 };
 
-const ThemePreferenceContext = createContext<ThemePreferenceContextValue | null>(null);
+const ThemePreferenceContext =
+  createContext<ThemePreferenceContextValue | null>(null);
 
 const STORAGE_KEY = "themeMode";
 
@@ -22,7 +30,7 @@ export function ThemePreferenceProvider({
   children: React.ReactNode;
 }) {
   const systemScheme = useRNColorScheme() ?? "light";
-  const [mode, setModeState] = useState<ThemeMode>("system");
+  const [mode, setModeState] = useState<ThemeMode>("light");
   const [hasHydrated, setHasHydrated] = useState(false);
 
   useEffect(() => {
@@ -34,6 +42,9 @@ export function ThemePreferenceProvider({
         if (!mounted) return;
         if (stored === "light" || stored === "dark" || stored === "system") {
           setModeState(stored);
+        } else {
+          // Default to light theme if no stored preference
+          setModeState("light");
         }
       } finally {
         if (mounted) setHasHydrated(true);
@@ -61,7 +72,7 @@ export function ThemePreferenceProvider({
       isDark,
       hasHydrated,
     }),
-    [hasHydrated, isDark, mode, resolvedScheme, setMode]
+    [hasHydrated, isDark, mode, resolvedScheme, setMode],
   );
 
   return (
@@ -74,7 +85,9 @@ export function ThemePreferenceProvider({
 export function useThemePreference() {
   const ctx = useContext(ThemePreferenceContext);
   if (!ctx) {
-    throw new Error("useThemePreference must be used within ThemePreferenceProvider");
+    throw new Error(
+      "useThemePreference must be used within ThemePreferenceProvider",
+    );
   }
   return ctx;
 }
