@@ -2,8 +2,8 @@ import { SessionInitializer } from "@/components/core/session-initializer";
 import { Colors } from "@/constants/theme";
 import { apolloClient } from "@/graphql/client";
 import {
-  ThemePreferenceProvider,
-  useAppColorScheme,
+    ThemePreferenceProvider,
+    useAppColorScheme,
 } from "@/hooks/use-theme-preference";
 import { useAuthSession } from "@/stores/useAuthSession";
 import { ApolloProvider } from "@apollo/client";
@@ -105,7 +105,10 @@ const AuthNavigator = () => {
         }
 
         if (__DEV__) {
-          console.log("[AuthNavigator] → redirecting authenticated user to:", target);
+          console.log(
+            "[AuthNavigator] → redirecting authenticated user to:",
+            target,
+          );
         }
 
         router.replace(target);
@@ -117,7 +120,7 @@ const AuthNavigator = () => {
 
         if (__DEV__) {
           console.log(
-            "[AuthNavigator] → redirecting unauthenticated to sign-in (caught root/empty/unknown path)"
+            "[AuthNavigator] → redirecting unauthenticated to sign-in (caught root/empty/unknown path)",
           );
         }
 
@@ -137,6 +140,18 @@ const AuthNavigator = () => {
 
   return null;
 };
+
+function SafeAuthNavigator() {
+  const router = useRouter();
+  const segments = useSegments();
+
+  // Only render AuthNavigator if navigation context is available
+  if (!router || !segments) {
+    return null;
+  }
+
+  return <AuthNavigator />;
+}
 
 function RootLayoutContent() {
   const colorScheme = useAppColorScheme() ?? "light";
@@ -164,7 +179,7 @@ function RootLayoutContent() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
 
-      <AuthNavigator />
+      <SafeAuthNavigator />
     </View>
   );
 }

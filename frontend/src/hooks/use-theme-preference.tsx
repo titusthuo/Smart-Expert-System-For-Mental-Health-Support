@@ -1,11 +1,11 @@
 import { getStoredString, setStoredString } from "@/lib/storage";
 import React, {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
 } from "react";
 import { useColorScheme as useRNColorScheme } from "react-native";
 
@@ -30,7 +30,7 @@ export function ThemePreferenceProvider({
   children: React.ReactNode;
 }) {
   const systemScheme = useRNColorScheme() ?? "light";
-  const [mode, setModeState] = useState<ThemeMode>("light");
+  const [mode, setModeState] = useState<ThemeMode>("system");
   const [hasHydrated, setHasHydrated] = useState(false);
 
   useEffect(() => {
@@ -42,9 +42,6 @@ export function ThemePreferenceProvider({
         if (!mounted) return;
         if (stored === "light" || stored === "dark" || stored === "system") {
           setModeState(stored);
-        } else {
-          // Default to light theme if no stored preference
-          setModeState("light");
         }
       } finally {
         if (mounted) setHasHydrated(true);
