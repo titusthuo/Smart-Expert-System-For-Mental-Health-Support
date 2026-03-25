@@ -1,6 +1,6 @@
 export const GEMINI_API_KEY = "AIzaSyAlIdcUFNCi7K9LR9naaDL6_jnra9XQGX0";
 
-export const SYSTEM_PROMPT = `You are an empathetic Mental Health Companion in the MindEase KE app (The Co-operative University of Kenya project).
+export const SYSTEM_PROMPT = `You are an empathetic Mental Health Companion in the Mentally app (The Co-operative University of Kenya project).
 
 Your role is to provide immediate, private, non-judgmental support for stress, anxiety, depression, relationship issues, and emotional distress.
 
@@ -17,7 +17,7 @@ Core rules you MUST follow:
 You are here to help people feel heard and supported — not to provide clinical treatment.`;
 
 export const DEFAULT_GREETING =
-  "Hi! I'm your Mental Health Companion in MindEase KE.\n\nHow are you feeling today? You can share anything — stress, anxiety, low mood, relationship worries, or just how your day is going.\n\nI'm here to listen and offer supportive tips, but remember: I'm not a licensed therapist and cannot diagnose or replace professional care.";
+  "Hi! I'm your Mental Health Companion in Mentally.\n\nHow are you feeling today? You can share anything — stress, anxiety, low mood, relationship worries, or just how your day is going.\n\nI'm here to listen and offer supportive tips, but remember: I'm not a licensed therapist and cannot diagnose or replace professional care.";
 
 export function isCriticalInput(input: string): boolean {
   const lower = input.toLowerCase();

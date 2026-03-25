@@ -22,8 +22,9 @@ except ImportError:
     CHANNELS_AVAILABLE = False
 
 from .models import (
-    User, Country, County, Notification, Insuarance, 
+    User, Country, County, Notification, 
     AIChatMessage, Therapist, TherapistReview,
+    Specialty,
 )
 
 
@@ -152,19 +153,6 @@ class UserType(DjangoObjectType):
 
 
 
-class InsuaranceType(DjangoObjectType):
-    logo_url = graphene.String(description="Full URL to the insurance logo")
-
-    class Meta:
-        model = Insuarance
-        fields = "__all__"
-
-    def resolve_logo_url(self, info):
-        if self.logo:
-            return info.context.build_absolute_uri(self.logo.url)
-        return None
-
-
 class NotificationType(graphene.ObjectType):
     id = graphene.Int(required=True)
     title = graphene.String(required=True)
@@ -178,7 +166,7 @@ class NotificationType(graphene.ObjectType):
 class AIChatMessageType(DjangoObjectType):
     class Meta:
         model = AIChatMessage
-        fields = ("id", "text", "is_from_user", "created_at")
+        fields = ("id", "text", "is_from_user", "created_at", "user")
 
 
 
@@ -349,37 +337,6 @@ class UpdateProfile(graphene.Mutation):
             return UpdateProfile(success=False, error=str(e), user=None)
 
 
-class UploadInsuranceLogo(graphene.Mutation):
-    class Arguments:
-        insurance_id = graphene.Int(required=True)
-        file = Upload(required=True)
-
-    success = graphene.Boolean()
-    error = graphene.String()
-    insurance = graphene.Field(InsuaranceType)
-
-    @staticmethod
-    @login_required
-    def mutate(root, info, insurance_id, file):
-        user = info.context.user
-        if not user.is_staff:
-            return UploadInsuranceLogo(success=False, error="Only staff can upload insurance logos")
-
-        try:
-            insurance = Insuarance.objects.get(id=insurance_id)
-        except Insuarance.DoesNotExist:
-            return UploadInsuranceLogo(success=False, error="Insurance not found")
-
-        if not file:
-            return UploadInsuranceLogo(success=False, error="No file provided")
-
-        insurance.logo = file
-        insurance.save()
-        return UploadInsuranceLogo(success=True, error=None, insurance=insurance)
-
-
-
-
 class SendAIChatMessage(graphene.Mutation):
     class Arguments:
         text = graphene.String(required=True)
@@ -411,7 +368,7 @@ class SendAIChatMessage(graphene.Mutation):
 
 
 class Query(graphene.ObjectType):
-    hello = graphene.String(default_value="Health Backend API is LIVE!")
+    hello = graphene.String(default_value="Smart Expert System for Mental Health Backend API is LIVE!")
     me = graphene.Field(UserType)
     therapists = graphene.List(TherapistType)
     therapist = graphene.Field(TherapistType, id=graphene.Int(required=True))
