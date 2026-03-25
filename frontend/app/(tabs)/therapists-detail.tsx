@@ -39,8 +39,8 @@ export default function TherapistDetailScreen() {
   };
 
   const isCrisis = reason === "crisis";
-  const appName = "MindEase KE";
-  const prefilledMessage = `Hello, I found you through ${appName} because I'm seeking support. Can we discuss next steps for support?`;
+  const appName = "Mentally";
+  const prefilledMessage = `Hello, I found your contacts through ${appName} because I'm seeking mental health support. Can we discuss next steps for mental health support?`;
 
   // Show loading state while fetching to prevent "not found" flash
   if (loading) {
