@@ -102,7 +102,7 @@ class Therapist(models.Model):
     photo = models.ImageField(upload_to='therapists/', null=True, blank=True)
 
     location = models.CharField(max_length=255)
-    county = models.CharField(max_length=120)
+    county = models.CharField(max_length=120, null=True, blank=True)
     town = models.CharField(max_length=120)
 
     phone = models.CharField(max_length=30)
