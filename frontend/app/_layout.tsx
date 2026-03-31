@@ -7,7 +7,7 @@ import {
 } from "@/hooks/use-theme-preference";
 import { useAuthSession } from "@/stores/useAuthSession";
 import { ApolloProvider } from "@apollo/client";
-import { Href, Stack, usePathname, useRouter, useSegments } from "expo-router";
+import { Href, Stack, usePathname, useRouter, useSegments, useRootNavigationState } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import { useEffect, useRef } from "react";
@@ -28,6 +28,7 @@ const AuthNavigator = () => {
   const router = useRouter();
   const segments = useSegments();
   const pathname = usePathname();
+  const navigationState = useRootNavigationState();
 
   const colorScheme = useAppColorScheme() ?? "light";
   const isDark = colorScheme === "dark";
@@ -60,6 +61,9 @@ const AuthNavigator = () => {
   }, [theme.background]);
 
   useEffect(() => {
+    // Guard: navigation tree not ready yet
+    if (!navigationState?.key) return;
+
     if (!isHydrated || loadingSession) {
       if (__DEV__) {
         console.log("[AuthNavigator] still loading → waiting", {
@@ -129,6 +133,7 @@ const AuthNavigator = () => {
       // If already in (auth) group → do nothing (correct state)
     }
   }, [
+    navigationState?.key,
     isHydrated,
     loadingSession,
     isAuthenticated,
@@ -140,18 +145,6 @@ const AuthNavigator = () => {
 
   return null;
 };
-
-function SafeAuthNavigator() {
-  const router = useRouter();
-  const segments = useSegments();
-
-  // Only render AuthNavigator if navigation context is available
-  if (!router || !segments) {
-    return null;
-  }
-
-  return <AuthNavigator />;
-}
 
 function RootLayoutContent() {
   const colorScheme = useAppColorScheme() ?? "light";
@@ -179,7 +172,7 @@ function RootLayoutContent() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
 
-      <SafeAuthNavigator />
+      <AuthNavigator />
     </View>
   );
 }

@@ -1,7 +1,8 @@
 import * as Haptics from "expo-haptics";
+import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import {
     SafeAreaView,
@@ -14,6 +15,7 @@ import { MoodBanner } from "@/components/chat/MoodBanner";
 import { TypingRow } from "@/components/chat/TypingRow";
 import { MessageBubble } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
+import { Coords } from "@/lib/geo";
 import { useAIAssistant } from "@/src/hooks/useAIAssistant";
 
 export default function ChatScreen() {
@@ -26,6 +28,54 @@ export default function ChatScreen() {
     aiGreeting?: string;
   }>();
 
+  // GPS Location state
+  const [userCoords, setUserCoords] = useState<Coords | null>(null);
+  const [locationPermissionGranted, setLocationPermissionGranted] =
+    useState(false);
+
+  // Initialize GPS location
+  useEffect(() => {
+    let isMounted = true;
+
+    async function initLocation() {
+      try {
+        // Request location permissions
+        const { status } = await Location.requestForegroundPermissionsAsync();
+
+        if (status !== "granted") {
+          console.log("Location permission denied, using fallback");
+          if (!isMounted) return;
+          setUserCoords(null); // No location available
+          setLocationPermissionGranted(false);
+          return;
+        }
+
+        // Get current position
+        const position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        if (!isMounted) return;
+        setUserCoords({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setLocationPermissionGranted(true);
+        console.log("GPS location obtained successfully");
+      } catch (error) {
+        console.warn("Failed to get location:", error);
+        if (!isMounted) return;
+        setUserCoords(null); // No location available
+        setLocationPermissionGranted(false);
+      }
+    }
+
+    initLocation();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // ── AI hook ──────────────────────────────────────────────────────────────
   const {
     messages,
@@ -35,7 +85,7 @@ export default function ChatScreen() {
     isEscalated,
     sendMessage,
     setIsEscalated,
-  } = useAIAssistant(aiGreeting);
+  } = useAIAssistant(aiGreeting, userCoords);
 
   // ── Scroll helpers ────────────────────────────────────────────────────────
   const scrollViewRef = useRef<ScrollView>(null);
@@ -117,12 +167,21 @@ export default function ChatScreen() {
                 sender={msg.sender}
                 timestamp={msg.timestamp}
                 showTherapistRecommendation={msg.showTherapistRecommendation}
-                onPressTherapist={() =>
+                onPressTherapist={() => {
+                  // Only pass GPS coordinates if location is available
+                  const params: any = { reason: "crisis" };
+
+                  if (userCoords && locationPermissionGranted) {
+                    params.lat = userCoords.lat.toString();
+                    params.lng = userCoords.lng.toString();
+                    params.useLocation = "true";
+                  }
+
                   router.push({
                     pathname: "/(tabs)/therapists",
-                    params: { reason: "crisis" },
-                  })
-                }
+                    params,
+                  });
+                }}
               />
             ))}
 
