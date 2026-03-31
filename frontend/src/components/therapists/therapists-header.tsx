@@ -1,5 +1,8 @@
 import { useAuthTheme } from "@/hooks/use-auth-theme";
-import { locationOptions, specializationOptions } from "@/lib/therapists/options";
+import {
+  locationOptions,
+  specializationOptions,
+} from "@/lib/therapists/options";
 import { MapPin, Search } from "lucide-react-native";
 import React from "react";
 import { ScrollView, TextInput, View } from "react-native";
@@ -19,6 +22,8 @@ type TherapistsHeaderProps = {
   onChangeLocation: (value: string) => void;
 
   usingFallbackLocation: boolean;
+  useLocation?: string; // New prop to indicate GPS usage from AI chat
+  resolvedLocation?: string; // Resolved city name from GPS
 };
 
 export function TherapistsHeader({
@@ -30,6 +35,8 @@ export function TherapistsHeader({
   onChangeSpecialization,
   onChangeLocation,
   usingFallbackLocation,
+  useLocation,
+  resolvedLocation,
 }: TherapistsHeaderProps) {
   const { subtle } = useAuthTheme();
 
@@ -46,7 +53,8 @@ export function TherapistsHeader({
               You&apos;re not alone
             </AppText>
             <AppText unstyled className="text-muted-foreground">
-              If you are in immediate danger, call 1190 (Kenya Red Cross Mental Health Hotline) or 999 right now.
+              If you are in immediate danger, call 1190 (Kenya Red Cross Mental
+              Health Hotline) or 999 right now.
             </AppText>
           </View>
         )}
@@ -84,9 +92,13 @@ export function TherapistsHeader({
         <View className="flex-row items-center mt-3">
           <MapPin size={14} color={subtle} />
           <AppText unstyled className="text-sm text-muted-foreground ml-1">
-            {usingFallbackLocation
-              ? "Results based on a nearby default location"
-              : "Results based on your location"}
+            {useLocation === "true" && resolvedLocation
+              ? `Showing therapists in ${resolvedLocation}`
+              : useLocation === "true"
+                ? "Showing therapists nearest to your location"
+                : usingFallbackLocation
+                  ? "Results based on a nearby default location"
+                  : "Results based on your location"}
           </AppText>
         </View>
       </View>

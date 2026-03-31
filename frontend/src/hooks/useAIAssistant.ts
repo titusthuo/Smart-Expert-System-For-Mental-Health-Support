@@ -1,7 +1,10 @@
-// frontend/src/hooks/useAIAssistant.ts
-import { useCallback, useEffect, useState } from "react";
-import { SYSTEM_PROMPT } from "../constants/aiPrompt";
+// src/hooks/useAIAssistant.ts
+import { Coords, haversineDistanceKm } from "@/lib/geo";
+import { Therapist } from "@/lib/therapists/types";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { buildSystemPrompt, resolveKenyanCity } from "../constants/aiPrompt";
 import { useAIChatMessages, useSendAIChatMessage } from "./useAIChatMessages";
+import { useTherapists } from "./useTherapists";
 
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
 
@@ -16,7 +19,10 @@ export type ChatMessage = {
   showTherapistRecommendation?: boolean;
 };
 
-export const useAIAssistant = (aiGreeting?: string) => {
+export const useAIAssistant = (
+  aiGreeting?: string,
+  userCoords?: Coords | null, // ← new param
+) => {
   const openingMessage = aiGreeting ?? DEFAULT_GREETING;
 
   const [inputValue, setInputValue] = useState("");
@@ -24,6 +30,7 @@ export const useAIAssistant = (aiGreeting?: string) => {
   const [isEscalated, setIsEscalated] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
+  // ── Backend chat history ─────────────────────────────────────────────────
   const {
     messages: backendMessages,
     loading: loadingHistory,
@@ -31,7 +38,47 @@ export const useAIAssistant = (aiGreeting?: string) => {
   } = useAIChatMessages();
   const { sendMessage: saveMessageToBackend } = useSendAIChatMessage();
 
-  // Sync with backend history; fall back to welcome message
+  // ── Therapist data ───────────────────────────────────────────────────────
+  const { therapists } = useTherapists();
+
+  // ── Resolve city name from GPS coords ────────────────────────────────────
+  const [locationName, setLocationName] = useState("Kenya");
+
+  useEffect(() => {
+    const resolveLocation = async () => {
+      if (!userCoords) {
+        setLocationName("Kenya");
+        return;
+      }
+
+      try {
+        const city = await resolveKenyanCity(userCoords);
+        setLocationName(city);
+      } catch (error) {
+        console.error("Failed to resolve location:", error);
+        setLocationName("Kenya");
+      }
+    };
+
+    resolveLocation();
+  }, [userCoords]);
+
+  // ── Sort therapists by distance from user ────────────────────────────────
+  const nearbyTherapists = useMemo(() => {
+    if (!therapists.length) return [];
+
+    return therapists
+      .map((t: Therapist) => ({
+        ...t,
+        distanceKm:
+          t.coords && userCoords
+            ? haversineDistanceKm(userCoords, t.coords)
+            : Number.POSITIVE_INFINITY,
+      }))
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+  }, [therapists, userCoords]);
+
+  // ── Sync with backend history; fall back to welcome message ─────────────
   useEffect(() => {
     if (backendMessages.length > 0) {
       const formatted: ChatMessage[] = backendMessages.map((msg: any) => ({
@@ -54,6 +101,7 @@ export const useAIAssistant = (aiGreeting?: string) => {
     }
   }, [backendMessages, loadingHistory, openingMessage]);
 
+  // ── Send message ─────────────────────────────────────────────────────────
   const sendMessage = useCallback(
     async (userText: string) => {
       if (!userText.trim() || isEscalated) return;
@@ -74,8 +122,15 @@ export const useAIAssistant = (aiGreeting?: string) => {
       try {
         await saveMessageToBackend(trimmedText, true);
 
+        // Build location-aware system prompt with nearby therapists injected
+        const systemPrompt = buildSystemPrompt(
+          nearbyTherapists,
+          locationName,
+          userCoords ?? null,
+        );
+
         const contents = [
-          { role: "model", parts: [{ text: SYSTEM_PROMPT }] },
+          { role: "model", parts: [{ text: systemPrompt }] },
           ...messages.map((msg) => ({
             role: msg.sender === "ai" ? "model" : "user",
             parts: [{ text: msg.text }],
@@ -102,7 +157,7 @@ export const useAIAssistant = (aiGreeting?: string) => {
           data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
           "I'm having trouble responding right now. Please try again.";
 
-        // ── Tool interception ────────────────────────────────────────────────
+        // ── Tool interception ────────────────────────────────────────────
         let processedText = botText;
         let showRecommendation = false;
 
@@ -139,7 +194,14 @@ export const useAIAssistant = (aiGreeting?: string) => {
         setIsTyping(false);
       }
     },
-    [messages, isEscalated, saveMessageToBackend],
+    [
+      messages,
+      isEscalated,
+      saveMessageToBackend,
+      nearbyTherapists,
+      locationName,
+      userCoords,
+    ],
   );
 
   const refreshChat = useCallback(() => refetch(), [refetch]);
