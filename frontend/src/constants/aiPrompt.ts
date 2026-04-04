@@ -40,21 +40,21 @@ Use these exact formats when appropriate:
 Here are some licensed therapists near you who can help:
 [/TOOL]
 
-You can also make specific recommendations like:
-- "Based on what you've shared about anxiety, I'd recommend **Dr. Jane Smith** in Nairobi (15km away) who specializes in anxiety and stress management."
-- "For trauma support, **Dr. John Doe** in Eldoret specializes in trauma and is 8km away from you."
+IMPORTANT: When recommending therapists, ONLY use [TOOL:SHOW_THERAPISTS]. 
+NEVER name individual therapists in your text response.
+The app will display clickable therapist profile cards automatically.
 
 The app will automatically replace these tool tags with real therapist cards based on the user's location.
 
 EXAMPLE INTERACTIONS:
 
-User feels anxious → Validate their feelings, offer a grounding technique (e.g., 5-4-3-2-1 method), suggest breathing exercises, and ask what's been triggering the anxiety. If they want professional help, recommend specific anxiety specialists in their area.
+User feels anxious → Validate their feelings, offer a grounding technique (e.g., 5-4-3-2-1 method), suggest breathing exercises, and ask what's been triggering the anxiety. If they want professional help, use [TOOL:SHOW_THERAPISTS] to show anxiety specialists in their area.
 
-User feels depressed → Acknowledge their pain, share that depression is common and treatable, offer a small actionable step (e.g., a short walk, journaling), and gently suggest speaking to a therapist. Mention specific therapists who specialize in depression near them.
+User feels depressed → Acknowledge their pain, share that depression is common and treatable, offer a small actionable step (e.g., a short walk, journaling), and gently suggest speaking to a therapist. If they want help, use [TOOL:SHOW_THERAPISTS] to show depression specialists near them.
 
-User is going through a breakup → Show empathy first, normalize the grief of loss, offer coping strategies, and remind them support is available. If they ask for therapy help, recommend therapists who specialize in grief and relationships.
+User is going through a breakup → Show empathy first, normalize the grief of loss, offer coping strategies, and remind them support is available. If they ask for therapy help, use [TOOL:SHOW_THERAPISTS] to show therapists who specialize in grief and relationships.
 
-User asks for a therapist → Review their location and needs, then make specific recommendations from the available therapists, mentioning names, specializations, and distances. Then trigger [TOOL:SHOW_THERAPISTS] and affirm their courage in seeking help.
+User asks for a therapist → Review their location and needs, then respond with support and trigger [TOOL:SHOW_THERAPISTS] to show all available therapists with their specializations and distances.
 `.trim();
 
 export const buildSystemPrompt = (
@@ -86,11 +86,8 @@ export const buildSystemPrompt = (
       })
       .join("\n");
 
-    therapistContext = `There are ${nearbyTherapists.length} licensed therapists available nearby. Here are the details:
-
-${therapistDetails}
-
-When recommending therapists, you can reference specific therapists by name and mention their specializations and locations. Use the [TOOL:SHOW_THERAPISTS] tool to display the full list with contact information.`;
+    therapistContext = `There are ${nearbyTherapists.length} licensed therapists available near the user. 
+When the user asks for therapists or professional help, respond with a brief supportive message and trigger [TOOL:SHOW_THERAPISTS] — do NOT list or name any therapists in your text. The app will display all ${nearbyTherapists.length} therapist profile cards automatically as clickable links.`;
   } else {
     therapistContext =
       "No therapists are currently available in the immediate area, but you can still suggest they consider professional help.";
@@ -125,15 +122,19 @@ export const resolveKenyanCity = async (coords: Coords): Promise<string> => {
     if (data.results && data.results.length > 0) {
       const components = data.results[0].components;
 
-      // Try to get the most specific location name
-      return (
+      // Try to get the most specific location name and normalize it
+      const rawCity =
         components.city ||
         components.town ||
         components.village ||
         components.county ||
         components.state ||
-        "Kenya"
-      );
+        "";
+
+      // Strip "County" suffix and normalize
+      const normalizedCity = rawCity.replace(/ County$/i, "").trim();
+
+      return normalizedCity || "Kenya";
     }
 
     return "Kenya";

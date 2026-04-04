@@ -14,6 +14,10 @@ export function TherapistCard({
   distance?: number; // distance in km
 }) {
   const { isDark, subtle } = useAuthTheme();
+  const locationText =
+    therapist.county && therapist.town
+      ? `${therapist.town}, ${therapist.county}`
+      : therapist.location || null;
 
   return (
     <TouchableOpacity
@@ -139,6 +143,17 @@ export function TherapistCard({
                   {therapist.availability}
                 </AppText>
               </View>
+            )}
+
+            {/* Location: County */}
+            {locationText && (
+              <AppText
+                unstyled
+                className="text-muted-foreground text-sm flex-row items-center"
+              >
+                <MapPin size={16} color={subtle} />
+                {locationText}
+              </AppText>
             )}
           </View>
         </View>

@@ -1,3 +1,4 @@
+import { SearchBar } from "@/components/SearchBar";
 import { TherapistCard } from "@/components/therapists/therapist-card";
 import { TherapistsEmpty } from "@/components/therapists/therapists-empty";
 import { TherapistsHeader } from "@/components/therapists/therapists-header";
@@ -36,6 +37,57 @@ export default function TherapistsScreen() {
   const [userCoords, setUserCoords] = useState<Coords>(FALLBACK_COORDS);
   const [usingFallbackLocation, setUsingFallbackLocation] = useState(true);
   const [resolvedLocation, setResolvedLocation] = useState<string>("");
+  const [locationLoading, setLocationLoading] = useState(false);
+
+  // Handle location button press
+  const handleLocationPress = async () => {
+    setLocationLoading(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Denied",
+          "Location permission is required to find therapists near you.",
+        );
+        return;
+      }
+
+      const position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const newCoords = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
+
+      setUserCoords(newCoords);
+      setUsingFallbackLocation(false);
+
+      // Resolve location name and auto-set filter
+      const city = await resolveKenyanCity(newCoords);
+      setResolvedLocation(city);
+
+      // Find matching location option
+      const matchingOption = locationOptions.find(
+        (option) =>
+          city.toLowerCase().includes(option.value.toLowerCase()) ||
+          option.value.toLowerCase().includes(city.toLowerCase()),
+      );
+
+      if (matchingOption) {
+        setLocationFilter(matchingOption.value);
+      }
+    } catch (error) {
+      console.error("Location error:", error);
+      Alert.alert(
+        "Location Error",
+        "Unable to get your location. Please try again.",
+      );
+    } finally {
+      setLocationLoading(false);
+    }
+  };
 
   // Use GPS coordinates from AI chat if provided
   useEffect(() => {
@@ -87,36 +139,32 @@ export default function TherapistsScreen() {
     };
   }, [lat, lng, useLocation]);
 
-  // Resolve location and auto-set filter when coming from AI chat
-  useEffect(() => {
-    if (useLocation === "true" && !usingFallbackLocation && userCoords) {
-      const resolveAndSetFilter = async () => {
-        try {
-          const city = await resolveKenyanCity(userCoords);
-          setResolvedLocation(city);
-
-          // Find matching location option
-          const matchingOption = locationOptions.find(
-            (option) =>
-              city.toLowerCase().includes(option.value.toLowerCase()) ||
-              option.value.toLowerCase().includes(city.toLowerCase()),
-          );
-
-          if (matchingOption) {
-            setLocationFilter(matchingOption.value);
-          }
-        } catch (error) {
-          console.error("Failed to resolve location:", error);
-        }
-      };
-
-      resolveAndSetFilter();
-    }
-  }, [userCoords, usingFallbackLocation, useLocation]);
-
   const queryLower = searchQuery.toLowerCase();
   const specializationLower = specializationFilter.toLowerCase();
   const locationLower = locationFilter.toLowerCase();
+
+  // Memoize filteredTherapists so useMemo dependency works correctly
+  const filteredTherapists = useMemo(() => {
+    return therapists.filter((therapist) => {
+      const matchesSearch =
+        therapist.name.toLowerCase().includes(queryLower) ||
+        therapist.specialization.some((spec) =>
+          spec.toLowerCase().includes(queryLower),
+        );
+
+      const matchesSpecialization =
+        specializationFilter === "all" ||
+        therapist.specialization.some((spec) =>
+          spec.toLowerCase().includes(specializationLower),
+        );
+
+      const matchesLocation =
+        locationFilter === "all" ||
+        therapist.location.toLowerCase().includes(locationLower);
+
+      return matchesSearch && matchesSpecialization && matchesLocation;
+    });
+  }, [therapists, searchQuery, specializationFilter, locationFilter]);
 
   const specializationLabel = getOptionLabel(
     specializationOptions,
@@ -129,53 +177,41 @@ export default function TherapistsScreen() {
     "All Locations",
   );
 
-  const filteredTherapists = therapists.filter((therapist) => {
-    const matchesSearch =
-      therapist.name.toLowerCase().includes(queryLower) ||
-      therapist.specialization.some((spec) =>
-        spec.toLowerCase().includes(queryLower),
-      );
-
-    const matchesSpecialization =
-      specializationFilter === "all" ||
-      therapist.specialization.some((spec) =>
-        spec.toLowerCase().includes(specializationLower),
-      );
-
-    const matchesLocation =
-      locationFilter === "all" ||
-      therapist.location.toLowerCase().includes(locationLower);
-
-    return matchesSearch && matchesSpecialization && matchesLocation;
-  });
-
   // When coming from AI chat with location, prioritize nearby therapists
   const sortedTherapists = useMemo(() => {
     const therapistsWithDistance = filteredTherapists.map((t: Therapist) => {
-      const distanceKm = t.coords
-        ? haversineDistanceKm(userCoords, t.coords)
-        : Number.POSITIVE_INFINITY;
+      const distanceKm =
+        t.coords && !usingFallbackLocation && userCoords
+          ? haversineDistanceKm(userCoords, t.coords)
+          : Number.POSITIVE_INFINITY;
       return { therapist: t, distanceKm };
     });
 
-    // If coming from AI chat with location, sort by distance and show nearby ones first
-    if (useLocation === "true") {
-      // Sort by distance (nearest first)
-      therapistsWithDistance.sort((a, b) => a.distanceKm - b.distanceKm);
+    // Always sort by distance
+    therapistsWithDistance.sort((a, b) => a.distanceKm - b.distanceKm);
 
-      // Return all therapists sorted by distance (user can scroll to see all)
-      return therapistsWithDistance.map((x) => x.therapist);
+    if (useLocation === "true") {
+      // Show nearby first (within 60km), then rest separated
+      const nearby = therapistsWithDistance.filter((x) => x.distanceKm <= 60);
+      const others = therapistsWithDistance.filter((x) => x.distanceKm > 60);
+
+      // If we have enough nearby, only show nearby
+      // If not enough (< 3), also include next closest ones
+      const result =
+        nearby.length >= 3
+          ? nearby
+          : [...nearby, ...others.slice(0, Math.max(0, 5 - nearby.length))];
+
+      return result.map((x) => x.therapist);
     }
 
-    // Default behavior: sort by distance but show all
-    therapistsWithDistance.sort((a, b) => a.distanceKm - b.distanceKm);
     return therapistsWithDistance.map((x) => x.therapist);
-  }, [filteredTherapists, userCoords, useLocation]);
+  }, [filteredTherapists, userCoords, usingFallbackLocation, useLocation]);
 
   const renderTherapist = ({ item }: { item: Therapist }) => {
-    // Calculate distance for display when coming from AI chat
+    // Show distance whenever we have real user coords (not fallback)
     const distance =
-      useLocation === "true" && item.coords
+      !usingFallbackLocation && item.coords && userCoords
         ? haversineDistanceKm(userCoords, item.coords)
         : undefined;
 
@@ -201,10 +237,17 @@ export default function TherapistsScreen() {
         translucent
       />
 
+      {/* Search Bar */}
+      <SearchBar
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onLocationPress={handleLocationPress}
+        locationLoading={locationLoading}
+      />
+
+      {/* Filters Section */}
       <TherapistsHeader
         reason={reason}
-        searchQuery={searchQuery}
-        onChangeSearchQuery={setSearchQuery}
         specializationLabel={specializationLabel}
         locationLabel={locationLabel}
         onChangeSpecialization={setSpecializationFilter}
