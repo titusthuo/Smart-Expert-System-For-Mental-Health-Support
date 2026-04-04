@@ -211,8 +211,6 @@ export const useAIAssistant = (
       isEscalated,
       saveMessageToBackend,
       nearbyTherapists,
-      locationName,
-      userCoords,
       systemPrompt,
     ],
   );

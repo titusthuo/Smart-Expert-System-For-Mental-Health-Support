@@ -1,8 +1,6 @@
-import { SearchBar } from "@/components/SearchBar";
 import { TherapistCard } from "@/components/therapists/therapist-card";
 import { TherapistsEmpty } from "@/components/therapists/therapists-empty";
 import { TherapistsHeader } from "@/components/therapists/therapists-header";
-import { resolveKenyanCity } from "@/constants/aiPrompt";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { useTherapists } from "@/hooks/useTherapists";
 import { Coords, haversineDistanceKm } from "@/lib/geo";
@@ -30,66 +28,15 @@ export default function TherapistsScreen() {
   }>();
   const { isDark } = useAuthTheme();
   const { therapists } = useTherapists();
-  const [searchQuery, setSearchQuery] = useState("");
+
   const [specializationFilter, setSpecializationFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
 
   const [userCoords, setUserCoords] = useState<Coords>(FALLBACK_COORDS);
   const [usingFallbackLocation, setUsingFallbackLocation] = useState(true);
-  const [resolvedLocation, setResolvedLocation] = useState<string>("");
-  const [locationLoading, setLocationLoading] = useState(false);
 
-  // Handle location button press
-  const handleLocationPress = async () => {
-    setLocationLoading(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission Denied",
-          "Location permission is required to find therapists near you.",
-        );
-        return;
-      }
 
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
-      const newCoords = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      };
-
-      setUserCoords(newCoords);
-      setUsingFallbackLocation(false);
-
-      // Resolve location name and auto-set filter
-      const city = await resolveKenyanCity(newCoords);
-      setResolvedLocation(city);
-
-      // Find matching location option
-      const matchingOption = locationOptions.find(
-        (option) =>
-          city.toLowerCase().includes(option.value.toLowerCase()) ||
-          option.value.toLowerCase().includes(city.toLowerCase()),
-      );
-
-      if (matchingOption) {
-        setLocationFilter(matchingOption.value);
-      }
-    } catch (error) {
-      console.error("Location error:", error);
-      Alert.alert(
-        "Location Error",
-        "Unable to get your location. Please try again.",
-      );
-    } finally {
-      setLocationLoading(false);
-    }
-  };
-
-  // Use GPS coordinates from AI chat if provided
+  // Use GPS coordinates from AI chat if provided, otherwise get current location
   useEffect(() => {
     if (useLocation === "true" && lat && lng) {
       const aiCoords = {
@@ -103,7 +50,6 @@ export default function TherapistsScreen() {
       }
     }
 
-    // Otherwise, get current location
     let isMounted = true;
 
     async function initLocation() {
@@ -139,33 +85,6 @@ export default function TherapistsScreen() {
     };
   }, [lat, lng, useLocation]);
 
-  const queryLower = searchQuery.toLowerCase();
-  const specializationLower = specializationFilter.toLowerCase();
-  const locationLower = locationFilter.toLowerCase();
-
-  // Memoize filteredTherapists so useMemo dependency works correctly
-  const filteredTherapists = useMemo(() => {
-    return therapists.filter((therapist) => {
-      const matchesSearch =
-        therapist.name.toLowerCase().includes(queryLower) ||
-        therapist.specialization.some((spec) =>
-          spec.toLowerCase().includes(queryLower),
-        );
-
-      const matchesSpecialization =
-        specializationFilter === "all" ||
-        therapist.specialization.some((spec) =>
-          spec.toLowerCase().includes(specializationLower),
-        );
-
-      const matchesLocation =
-        locationFilter === "all" ||
-        therapist.location.toLowerCase().includes(locationLower);
-
-      return matchesSearch && matchesSpecialization && matchesLocation;
-    });
-  }, [therapists, searchQuery, specializationFilter, locationFilter]);
-
   const specializationLabel = getOptionLabel(
     specializationOptions,
     specializationFilter,
@@ -177,26 +96,45 @@ export default function TherapistsScreen() {
     "All Locations",
   );
 
-  // When coming from AI chat with location, prioritize nearby therapists
+  // Memoized filtering — no search query, only specialization + location filters
+  const filteredTherapists = useMemo(() => {
+    const specializationLower = specializationFilter.toLowerCase();
+    const locationLower = locationFilter.toLowerCase();
+
+    return therapists.filter((therapist: Therapist) => {
+      const matchesSpecialization =
+        specializationFilter === "all" ||
+        therapist.specialization.some((spec) =>
+          spec.toLowerCase().includes(specializationLower),
+        );
+
+      const matchesLocation =
+        locationFilter === "all" ||
+        therapist.location.toLowerCase().includes(locationLower);
+
+      return matchesSpecialization && matchesLocation;
+    });
+  }, [therapists, specializationFilter, locationFilter]);
+
+  // Sort by distance from user — nearest first, always
   const sortedTherapists = useMemo(() => {
-    const therapistsWithDistance = filteredTherapists.map((t: Therapist) => {
+    const withDistance = filteredTherapists.map((t: Therapist) => {
       const distanceKm =
-        t.coords && !usingFallbackLocation && userCoords
+        t.coords && !usingFallbackLocation
           ? haversineDistanceKm(userCoords, t.coords)
           : Number.POSITIVE_INFINITY;
       return { therapist: t, distanceKm };
     });
 
-    // Always sort by distance
-    therapistsWithDistance.sort((a, b) => a.distanceKm - b.distanceKm);
+    // Always sort nearest first
+    withDistance.sort((a, b) => a.distanceKm - b.distanceKm);
 
-    if (useLocation === "true") {
-      // Show nearby first (within 60km), then rest separated
-      const nearby = therapistsWithDistance.filter((x) => x.distanceKm <= 60);
-      const others = therapistsWithDistance.filter((x) => x.distanceKm > 60);
+    // When coming from AI chat with real GPS coords:
+    // Show only therapists within 60km; if fewer than 3, pad with next closest
+    if (useLocation === "true" && !usingFallbackLocation) {
+      const nearby = withDistance.filter((x) => x.distanceKm <= 60);
+      const others = withDistance.filter((x) => x.distanceKm > 60);
 
-      // If we have enough nearby, only show nearby
-      // If not enough (< 3), also include next closest ones
       const result =
         nearby.length >= 3
           ? nearby
@@ -205,13 +143,12 @@ export default function TherapistsScreen() {
       return result.map((x) => x.therapist);
     }
 
-    return therapistsWithDistance.map((x) => x.therapist);
+    return withDistance.map((x) => x.therapist);
   }, [filteredTherapists, userCoords, usingFallbackLocation, useLocation]);
 
   const renderTherapist = ({ item }: { item: Therapist }) => {
-    // Show distance whenever we have real user coords (not fallback)
     const distance =
-      !usingFallbackLocation && item.coords && userCoords
+      !usingFallbackLocation && item.coords
         ? haversineDistanceKm(userCoords, item.coords)
         : undefined;
 
@@ -237,15 +174,7 @@ export default function TherapistsScreen() {
         translucent
       />
 
-      {/* Search Bar */}
-      <SearchBar
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onLocationPress={handleLocationPress}
-        locationLoading={locationLoading}
-      />
-
-      {/* Filters Section */}
+      {/* Filters Section — no SearchBar above it anymore */}
       <TherapistsHeader
         reason={reason}
         specializationLabel={specializationLabel}
@@ -254,7 +183,6 @@ export default function TherapistsScreen() {
         onChangeLocation={setLocationFilter}
         usingFallbackLocation={usingFallbackLocation}
         useLocation={useLocation}
-        resolvedLocation={resolvedLocation}
       />
 
       <FlatList
