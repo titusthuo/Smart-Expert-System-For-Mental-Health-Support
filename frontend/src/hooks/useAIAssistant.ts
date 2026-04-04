@@ -17,6 +17,7 @@ export type ChatMessage = {
   sender: "user" | "ai";
   timestamp: Date;
   showTherapistRecommendation?: boolean;
+  recommendedTherapists?: Therapist[];
 };
 
 export const useAIAssistant = (
@@ -65,18 +66,26 @@ export const useAIAssistant = (
 
   // ── Sort therapists by distance from user ────────────────────────────────
   const nearbyTherapists = useMemo(() => {
-    if (!therapists.length) return [];
+    if (!therapists.length || !userCoords) return [];
 
     return therapists
+      .filter((t: Therapist) => t.coords) // Only therapists with coordinates
       .map((t: Therapist) => ({
         ...t,
-        distanceKm:
-          t.coords && userCoords
-            ? haversineDistanceKm(userCoords, t.coords)
-            : Number.POSITIVE_INFINITY,
+        distanceKm: haversineDistanceKm(userCoords, t.coords!),
       }))
-      .sort((a, b) => a.distanceKm - b.distanceKm);
+      .filter((t: Therapist & { distanceKm: number }) => t.distanceKm < 50) // Within 50km
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .slice(0, 10); // Top 10 nearest
   }, [therapists, userCoords]);
+
+  // ── Rebuild system prompt when location changes ───────────────────────────
+  const systemPrompt = useMemo(() => {
+    if (!userCoords) {
+      return buildSystemPrompt([], locationName, null);
+    }
+    return buildSystemPrompt(nearbyTherapists, locationName, userCoords);
+  }, [nearbyTherapists, locationName, userCoords]);
 
   // ── Sync with backend history; fall back to welcome message ─────────────
   useEffect(() => {
@@ -123,12 +132,6 @@ export const useAIAssistant = (
         await saveMessageToBackend(trimmedText, true);
 
         // Build location-aware system prompt with nearby therapists injected
-        const systemPrompt = buildSystemPrompt(
-          nearbyTherapists,
-          locationName,
-          userCoords ?? null,
-        );
-
         const contents = [
           { role: "model", parts: [{ text: systemPrompt }] },
           ...messages.map((msg) => ({
@@ -160,13 +163,21 @@ export const useAIAssistant = (
         // ── Tool interception ────────────────────────────────────────────
         let processedText = botText;
         let showRecommendation = false;
+        let recommendedTherapists: Therapist[] = [];
 
-        if (processedText.includes("[TOOL:SHOW_THERAPISTS]")) {
-          processedText = processedText.replace(
-            /\[TOOL:SHOW_THERAPISTS\](.*?)\[\/TOOL\]/s,
-            "$1",
-          );
+        // Check for therapist recommendation tool tag
+        const toolRegex = /\[TOOL:SHOW_THERAPISTS\][\s\S]*?(?:\[\/TOOL\]|$)/;
+        const toolMatch = botText.match(toolRegex);
+
+        if (toolMatch) {
+          processedText = botText
+            .replace(toolRegex, "")
+            .replace(/\*\*[^*]+\*\*/g, "") // strip **bold** text (therapist names)
+            .replace(/\n{3,}/g, "\n\n") // clean up extra blank lines
+            .trim();
           showRecommendation = true;
+          // Include ALL nearby therapists as recommendations
+          recommendedTherapists = nearbyTherapists; // all of them, already sorted by distance
         }
 
         const aiMessage: ChatMessage = {
@@ -175,6 +186,7 @@ export const useAIAssistant = (
           sender: "ai",
           timestamp: new Date(),
           showTherapistRecommendation: showRecommendation,
+          recommendedTherapists: recommendedTherapists,
         };
 
         setMessages((prev) => [...prev, aiMessage]);
@@ -201,6 +213,7 @@ export const useAIAssistant = (
       nearbyTherapists,
       locationName,
       userCoords,
+      systemPrompt,
     ],
   );
 

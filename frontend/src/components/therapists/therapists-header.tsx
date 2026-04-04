@@ -1,11 +1,11 @@
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import {
-  locationOptions,
-  specializationOptions,
+    locationOptions,
+    specializationOptions,
 } from "@/lib/therapists/options";
-import { MapPin, Search } from "lucide-react-native";
+import { MapPin } from "lucide-react-native";
 import React from "react";
-import { ScrollView, TextInput, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
 import { AppText } from "@/components/ui";
 
@@ -13,9 +13,6 @@ import { FilterDropdown } from "./filter-dropdown";
 
 type TherapistsHeaderProps = {
   reason?: string;
-  searchQuery: string;
-  onChangeSearchQuery: (text: string) => void;
-
   specializationLabel: string;
   locationLabel: string;
   onChangeSpecialization: (value: string) => void;
@@ -28,8 +25,6 @@ type TherapistsHeaderProps = {
 
 export function TherapistsHeader({
   reason,
-  searchQuery,
-  onChangeSearchQuery,
   specializationLabel,
   locationLabel,
   onChangeSpecialization,
@@ -58,20 +53,6 @@ export function TherapistsHeader({
             </AppText>
           </View>
         )}
-
-        <View className="relative mb-4">
-          <View className="absolute left-3 top-[14px] z-10">
-            <Search size={20} color={subtle} />
-          </View>
-          <TextInput
-            placeholder="Search for therapists or specializations..."
-            value={searchQuery}
-            onChangeText={onChangeSearchQuery}
-            className="bg-card border border-border rounded-lg pl-11 py-3 text-base text-foreground"
-            placeholderTextColor={subtle}
-            accessibilityLabel="Search therapists"
-          />
-        </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View className="flex-row gap-3">

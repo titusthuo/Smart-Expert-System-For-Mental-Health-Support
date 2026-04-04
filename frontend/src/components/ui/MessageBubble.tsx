@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo } from "react";
-import { Platform, View } from "react-native";
+import { Platform, TouchableOpacity, View } from "react-native";
 
 import { AppText, Button } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
+import type { Therapist } from "@/lib/therapists/types";
 
 export type MessageBubbleProps = {
   id: string;
@@ -11,7 +12,8 @@ export type MessageBubbleProps = {
   sender: "user" | "ai";
   timestamp: Date;
   showTherapistRecommendation?: boolean;
-  onPressTherapist?: () => void;
+  recommendedTherapists?: Therapist[];
+  onPressTherapist?: (therapistId: string) => void;
 };
 
 export function MessageBubble({
@@ -19,6 +21,7 @@ export function MessageBubble({
   sender,
   timestamp,
   showTherapistRecommendation,
+  recommendedTherapists,
   onPressTherapist,
 }: MessageBubbleProps) {
   const { isDark, brand, border, surface, text: textColor } = useAuthTheme();
@@ -144,15 +147,70 @@ export function MessageBubble({
                 unstyled
                 className="text-muted-foreground text-sm leading-5 mb-4"
               >
-                I’m concerned about your safety. Please connect with a mental
+                I am concerned about your safety. Please connect with a mental
                 health professional as soon as possible. If you are in immediate
                 danger, call 1190 (Kenya Red Cross Mental Health Hotline) or 999
                 right now.
               </AppText>
 
+              {/* Individual Therapist Recommendations */}
+              {recommendedTherapists && recommendedTherapists.length > 0 && (
+                <View className="mb-4">
+                  <AppText
+                    unstyled
+                    className="text-foreground font-semibold text-sm mb-3"
+                  >
+                    Therapists near you:
+                  </AppText>
+                  {recommendedTherapists.map((therapist) => (
+                    <TouchableOpacity
+                      key={therapist.id}
+                      onPress={() => onPressTherapist?.(therapist.id)}
+                      className="mb-3 p-3 rounded-xl border"
+                      style={{
+                        borderColor: isDark
+                          ? "rgba(255,255,255,0.1)"
+                          : "rgba(0,0,0,0.1)",
+                        backgroundColor: isDark
+                          ? "rgba(255,255,255,0.05)"
+                          : "rgba(0,0,0,0.02)",
+                      }}
+                    >
+                      <View className="flex-row items-start justify-between">
+                        <View className="flex-1">
+                          <AppText
+                            unstyled
+                            className="text-foreground font-semibold text-sm"
+                          >
+                            {therapist.name}
+                          </AppText>
+                          <AppText
+                            unstyled
+                            className="text-muted-foreground text-xs mt-1"
+                          >
+                            {therapist.specialization.slice(0, 2).join(", ")}
+                          </AppText>
+                          <AppText
+                            unstyled
+                            className="text-muted-foreground text-xs mt-1"
+                          >
+                            {therapist.location}
+                          </AppText>
+                        </View>
+                        <Ionicons
+                          name="chevron-forward"
+                          size={16}
+                          color={isDark ? "#9CA3AF" : "#6B7280"}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
               <Button
-                text="Find a Therapist Now"
-                onPress={onPressTherapist}
+                text="View All Therapists"
+                onPress={() => onPressTherapist?.("")}
                 className="h-12"
                 accessibilityLabel="Find a therapist"
                 accessibilityHint="Opens the therapist directory"

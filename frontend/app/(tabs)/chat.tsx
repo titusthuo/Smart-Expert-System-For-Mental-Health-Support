@@ -15,8 +15,8 @@ import { MoodBanner } from "@/components/chat/MoodBanner";
 import { TypingRow } from "@/components/chat/TypingRow";
 import { MessageBubble } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
+import { useAIAssistant } from "@/hooks/useAIAssistant";
 import { Coords } from "@/lib/geo";
-import { useAIAssistant } from "@/src/hooks/useAIAssistant";
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -167,20 +167,34 @@ export default function ChatScreen() {
                 sender={msg.sender}
                 timestamp={msg.timestamp}
                 showTherapistRecommendation={msg.showTherapistRecommendation}
-                onPressTherapist={() => {
-                  // Only pass GPS coordinates if location is available
-                  const params: any = { reason: "crisis" };
+                recommendedTherapists={msg.recommendedTherapists}
+                onPressTherapist={(therapistId: string) => {
+                  // Handle navigation to specific therapist or all therapists
+                  if (therapistId) {
+                    // Navigate to specific therapist detail page
+                    router.push({
+                      pathname: "/(tabs)/therapists-detail",
+                      params: {
+                        id: therapistId,
+                        reason: "crisis",
+                        from: "chat",
+                      },
+                    });
+                  } else {
+                    // Navigate to all therapists page with location
+                    const params: any = { reason: "crisis" };
 
-                  if (userCoords && locationPermissionGranted) {
-                    params.lat = userCoords.lat.toString();
-                    params.lng = userCoords.lng.toString();
-                    params.useLocation = "true";
+                    if (userCoords && locationPermissionGranted) {
+                      params.lat = userCoords.lat.toString();
+                      params.lng = userCoords.lng.toString();
+                      params.useLocation = "true";
+                    }
+
+                    router.push({
+                      pathname: "/(tabs)/therapists",
+                      params,
+                    });
                   }
-
-                  router.push({
-                    pathname: "/(tabs)/therapists",
-                    params,
-                  });
                 }}
               />
             ))}
