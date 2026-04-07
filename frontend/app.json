@@ -29,7 +29,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "MindEase KE uses your location to sort nearby therapists."
+          "locationWhenInUsePermission": "Mentally uses your location to sort nearby therapists."
         }
       ],
       [

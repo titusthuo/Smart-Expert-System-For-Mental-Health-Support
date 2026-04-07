@@ -19,11 +19,11 @@ class UploadProfilePictureView(APIView):
         if 'profile_picture' not in request.FILES:
             return Response({"error": "No image provided"}, status=400)
 
-        patient = request.user.patient
-        patient.profile_picture = request.FILES['profile_picture']
-        patient.save()
+        user = request.user
+        user.profile_picture = request.FILES['profile_picture']
+        user.save()
 
-        photo_url = request.build_absolute_uri(patient.profile_picture.url)
+        photo_url = request.build_absolute_uri(user.profile_picture.url)
 
         return Response({
             "success": True,
@@ -37,9 +37,9 @@ class GetProfilePictureView(APIView):
     @method_decorator(csrf_exempt)
     def get(self, request):
         try:
-            patient = request.user.patient
-            if patient.profile_picture:
-                return Response({"profile_picture_url": request.build_absolute_uri(patient.profile_picture.url)})
+            user = request.user
+            if user.profile_picture:
+                return Response({"profile_picture_url": request.build_absolute_uri(user.profile_picture.url)})
             return Response({"profile_picture_url": None})
         except:
             return Response({"profile_picture_url": None})
