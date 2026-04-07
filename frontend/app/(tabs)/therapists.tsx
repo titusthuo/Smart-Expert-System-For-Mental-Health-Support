@@ -4,7 +4,11 @@ import { TherapistsHeader } from "@/components/therapists/therapists-header";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { useTherapists } from "@/hooks/useTherapists";
 import { Coords, haversineDistanceKm } from "@/lib/geo";
-import { getOptionLabel, locationOptions, specializationOptions } from "@/lib/therapists/options";
+import {
+  getOptionLabel,
+  locationOptions,
+  specializationOptions,
+} from "@/lib/therapists/options";
 import { Therapist } from "@/lib/therapists/types";
 import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -16,17 +20,36 @@ const FALLBACK_COORDS: Coords = { lat: -1.176, lng: 36.756 };
 
 export default function TherapistsScreen() {
   const router = useRouter();
-  const { reason } = useLocalSearchParams<{ reason?: string }>();
+  const { reason, lat, lng, useLocation } = useLocalSearchParams<{
+    reason?: string;
+    lat?: string;
+    lng?: string;
+    useLocation?: string;
+  }>();
   const { isDark } = useAuthTheme();
   const { therapists } = useTherapists();
-  const [searchQuery, setSearchQuery] = useState("");
+
   const [specializationFilter, setSpecializationFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
 
   const [userCoords, setUserCoords] = useState<Coords>(FALLBACK_COORDS);
   const [usingFallbackLocation, setUsingFallbackLocation] = useState(true);
 
+
+  // Use GPS coordinates from AI chat if provided, otherwise get current location
   useEffect(() => {
+    if (useLocation === "true" && lat && lng) {
+      const aiCoords = {
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
+      };
+      if (!isNaN(aiCoords.lat) && !isNaN(aiCoords.lng)) {
+        setUserCoords(aiCoords);
+        setUsingFallbackLocation(false);
+        return;
+      }
+    }
+
     let isMounted = true;
 
     async function initLocation() {
@@ -60,11 +83,7 @@ export default function TherapistsScreen() {
     return () => {
       isMounted = false;
     };
-  }, []);
-
-  const queryLower = searchQuery.toLowerCase();
-  const specializationLower = specializationFilter.toLowerCase();
-  const locationLower = locationFilter.toLowerCase();
+  }, [lat, lng, useLocation]);
 
   const specializationLabel = getOptionLabel(
     specializationOptions,
@@ -77,49 +96,75 @@ export default function TherapistsScreen() {
     "All Locations",
   );
 
-  const filteredTherapists = therapists.filter((therapist) => {
-    const matchesSearch =
-      therapist.name.toLowerCase().includes(queryLower) ||
-      therapist.specialization.some((spec) =>
-        spec.toLowerCase().includes(queryLower),
-      );
+  // Memoized filtering — no search query, only specialization + location filters
+  const filteredTherapists = useMemo(() => {
+    const specializationLower = specializationFilter.toLowerCase();
+    const locationLower = locationFilter.toLowerCase();
 
-    const matchesSpecialization =
-      specializationFilter === "all" ||
-      therapist.specialization.some((spec) =>
-        spec.toLowerCase().includes(specializationLower),
-      );
+    return therapists.filter((therapist: Therapist) => {
+      const matchesSpecialization =
+        specializationFilter === "all" ||
+        therapist.specialization.some((spec) =>
+          spec.toLowerCase().includes(specializationLower),
+        );
 
-    const matchesLocation =
-      locationFilter === "all" ||
-      therapist.location.toLowerCase().includes(locationLower);
+      const matchesLocation =
+        locationFilter === "all" ||
+        therapist.location.toLowerCase().includes(locationLower);
 
-    return matchesSearch && matchesSpecialization && matchesLocation;
-  });
+      return matchesSpecialization && matchesLocation;
+    });
+  }, [therapists, specializationFilter, locationFilter]);
 
+  // Sort by distance from user — nearest first, always
   const sortedTherapists = useMemo(() => {
-    return filteredTherapists
-      .map((t: Therapist) => {
-        const distanceKm = t.coords
+    const withDistance = filteredTherapists.map((t: Therapist) => {
+      const distanceKm =
+        t.coords && !usingFallbackLocation
           ? haversineDistanceKm(userCoords, t.coords)
           : Number.POSITIVE_INFINITY;
-        return { therapist: t, distanceKm };
-      })
-      .sort((a, b) => a.distanceKm - b.distanceKm)
-      .map((x) => x.therapist);
-  }, [filteredTherapists, userCoords]);
+      return { therapist: t, distanceKm };
+    });
 
-  const renderTherapist = ({ item }: { item: Therapist }) => (
-    <TherapistCard
-      therapist={item}
-      onPress={() =>
-        router.push({
-          pathname: "/(tabs)/therapists-detail",
-          params: { id: item.id, reason, from: "therapists" },
-        })
-      }
-    />
-  );
+    // Always sort nearest first
+    withDistance.sort((a, b) => a.distanceKm - b.distanceKm);
+
+    // When coming from AI chat with real GPS coords:
+    // Show only therapists within 60km; if fewer than 3, pad with next closest
+    if (useLocation === "true" && !usingFallbackLocation) {
+      const nearby = withDistance.filter((x) => x.distanceKm <= 60);
+      const others = withDistance.filter((x) => x.distanceKm > 60);
+
+      const result =
+        nearby.length >= 3
+          ? nearby
+          : [...nearby, ...others.slice(0, Math.max(0, 5 - nearby.length))];
+
+      return result.map((x) => x.therapist);
+    }
+
+    return withDistance.map((x) => x.therapist);
+  }, [filteredTherapists, userCoords, usingFallbackLocation, useLocation]);
+
+  const renderTherapist = ({ item }: { item: Therapist }) => {
+    const distance =
+      !usingFallbackLocation && item.coords
+        ? haversineDistanceKm(userCoords, item.coords)
+        : undefined;
+
+    return (
+      <TherapistCard
+        therapist={item}
+        distance={distance}
+        onPress={() =>
+          router.push({
+            pathname: "/(tabs)/therapists-detail",
+            params: { id: item.id, reason, from: "therapists" },
+          })
+        }
+      />
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -129,15 +174,15 @@ export default function TherapistsScreen() {
         translucent
       />
 
+      {/* Filters Section — no SearchBar above it anymore */}
       <TherapistsHeader
         reason={reason}
-        searchQuery={searchQuery}
-        onChangeSearchQuery={setSearchQuery}
         specializationLabel={specializationLabel}
         locationLabel={locationLabel}
         onChangeSpecialization={setSpecializationFilter}
         onChangeLocation={setLocationFilter}
         usingFallbackLocation={usingFallbackLocation}
+        useLocation={useLocation}
       />
 
       <FlatList
@@ -149,9 +194,7 @@ export default function TherapistsScreen() {
           paddingVertical: 24,
           paddingBottom: 100,
         }}
-        ListEmptyComponent={
-          <TherapistsEmpty />
-        }
+        ListEmptyComponent={<TherapistsEmpty />}
       />
     </SafeAreaView>
   );

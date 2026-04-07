@@ -1,5 +1,12 @@
 import { getStoredString, setStoredString } from "@/lib/storage";
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useColorScheme as useRNColorScheme } from "react-native";
 
 export type ThemeMode = "light" | "dark" | "system";
@@ -12,7 +19,8 @@ type ThemePreferenceContextValue = {
   hasHydrated: boolean;
 };
 
-const ThemePreferenceContext = createContext<ThemePreferenceContextValue | null>(null);
+const ThemePreferenceContext =
+  createContext<ThemePreferenceContextValue | null>(null);
 
 const STORAGE_KEY = "themeMode";
 
@@ -61,7 +69,7 @@ export function ThemePreferenceProvider({
       isDark,
       hasHydrated,
     }),
-    [hasHydrated, isDark, mode, resolvedScheme, setMode]
+    [hasHydrated, isDark, mode, resolvedScheme, setMode],
   );
 
   return (
@@ -74,7 +82,9 @@ export function ThemePreferenceProvider({
 export function useThemePreference() {
   const ctx = useContext(ThemePreferenceContext);
   if (!ctx) {
-    throw new Error("useThemePreference must be used within ThemePreferenceProvider");
+    throw new Error(
+      "useThemePreference must be used within ThemePreferenceProvider",
+    );
   }
   return ctx;
 }

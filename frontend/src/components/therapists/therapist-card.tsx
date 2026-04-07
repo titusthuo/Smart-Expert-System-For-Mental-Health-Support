@@ -7,11 +7,17 @@ import { Image, TouchableOpacity, View } from "react-native";
 export function TherapistCard({
   therapist,
   onPress,
+  distance,
 }: {
   therapist: Therapist;
   onPress: () => void;
+  distance?: number; // distance in km
 }) {
   const { isDark, subtle } = useAuthTheme();
+  const locationText =
+    therapist.county && therapist.town
+      ? `${therapist.town}, ${therapist.county}`
+      : therapist.location || null;
 
   return (
     <TouchableOpacity
@@ -29,18 +35,44 @@ export function TherapistCard({
         <View className="flex-1">
           <View className="mb-3">
             <View>
-              <AppText unstyled className="text-lg font-semibold leading-6 text-foreground" numberOfLines={2}>
+              <AppText
+                unstyled
+                className="text-lg font-semibold leading-6 text-foreground"
+                numberOfLines={2}
+              >
                 {therapist.name}
               </AppText>
               <View className="mt-1 flex-row items-start">
                 <MapPin size={12} color={subtle} />
-                <AppText unstyled className="ml-1 flex-1 text-sm leading-5 text-muted-foreground" numberOfLines={2}>
+                <AppText
+                  unstyled
+                  className="ml-1 flex-1 text-sm leading-5 text-muted-foreground"
+                  numberOfLines={2}
+                >
                   {therapist.location}
                 </AppText>
               </View>
 
+              {/* Show distance when provided (from GPS) */}
+              {distance !== undefined && (
+                <View className="mt-1 flex-row items-center">
+                  <MapPin size={12} color="#10B981" />
+                  <AppText
+                    unstyled
+                    className="ml-1 text-sm leading-5 text-green-600 font-medium"
+                  >
+                    {distance < 1
+                      ? `${Math.round(distance * 1000)}m away`
+                      : `${distance.toFixed(1)}km away`}
+                  </AppText>
+                </View>
+              )}
+
               {!!therapist.licenseNumber && (
-                <AppText unstyled className="mt-2 text-xs text-muted-foreground">
+                <AppText
+                  unstyled
+                  className="mt-2 text-xs text-muted-foreground"
+                >
                   License: {therapist.licenseNumber}
                 </AppText>
               )}
@@ -52,15 +84,25 @@ export function TherapistCard({
 
           <View className="flex-row flex-wrap gap-2 mb-2">
             {therapist.specialization.map((spec) => (
-              <View key={spec} className="bg-brandSoft px-2.5 py-1 rounded-full max-w-full">
-                <AppText unstyled className="text-xs text-brand font-medium max-w-full flex-shrink">
+              <View
+                key={spec}
+                className="bg-brandSoft px-2.5 py-1 rounded-full max-w-full"
+              >
+                <AppText
+                  unstyled
+                  className="text-xs text-brand font-medium max-w-full flex-shrink"
+                >
                   {spec}
                 </AppText>
               </View>
             ))}
           </View>
 
-          <AppText unstyled className="mb-3 text-sm leading-5 text-foreground" numberOfLines={2}>
+          <AppText
+            unstyled
+            className="mb-3 text-sm leading-5 text-foreground"
+            numberOfLines={2}
+          >
             {therapist.bio}
           </AppText>
 
@@ -72,7 +114,10 @@ export function TherapistCard({
                     size={16}
                     color={isDark ? "#E5E7EB" : "#111827"}
                   />
-                  <AppText unstyled className="text-foreground font-semibold ml-1 flex-shrink">
+                  <AppText
+                    unstyled
+                    className="text-foreground font-semibold ml-1 flex-shrink"
+                  >
                     {`KES ${therapist.price.toLocaleString()}/session`}
                   </AppText>
                 </>
@@ -98,6 +143,17 @@ export function TherapistCard({
                   {therapist.availability}
                 </AppText>
               </View>
+            )}
+
+            {/* Location: County */}
+            {locationText && (
+              <AppText
+                unstyled
+                className="text-muted-foreground text-sm flex-row items-center"
+              >
+                <MapPin size={16} color={subtle} />
+                {locationText}
+              </AppText>
             )}
           </View>
         </View>

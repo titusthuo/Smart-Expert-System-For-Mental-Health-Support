@@ -65,7 +65,7 @@ export function ChatInput({
 
       <AppText unstyled className="text-center text-xs text-muted-foreground mt-3 opacity-70">
         {isEscalated
-          ? "For your safety, MindEase KE has paused the chat. If you are in immediate danger, call 1190 or 999 right now."
+          ? "For your safety, Mentally has paused the chat. If you are in immediate danger, call 1190 or 999 right now."
           : "This AI provides general wellness support. For urgent help, contact emergency services."}
       </AppText>
     </View>

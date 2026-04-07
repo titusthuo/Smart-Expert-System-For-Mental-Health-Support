@@ -2,12 +2,12 @@ import { SessionInitializer } from "@/components/core/session-initializer";
 import { Colors } from "@/constants/theme";
 import { apolloClient } from "@/graphql/client";
 import {
-  ThemePreferenceProvider,
-  useAppColorScheme,
+    ThemePreferenceProvider,
+    useAppColorScheme,
 } from "@/hooks/use-theme-preference";
 import { useAuthSession } from "@/stores/useAuthSession";
 import { ApolloProvider } from "@apollo/client";
-import { Href, Stack, usePathname, useRouter, useSegments } from "expo-router";
+import { Href, Stack, usePathname, useRouter, useSegments, useRootNavigationState } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import { useEffect, useRef } from "react";
@@ -28,6 +28,7 @@ const AuthNavigator = () => {
   const router = useRouter();
   const segments = useSegments();
   const pathname = usePathname();
+  const navigationState = useRootNavigationState();
 
   const colorScheme = useAppColorScheme() ?? "light";
   const isDark = colorScheme === "dark";
@@ -60,6 +61,9 @@ const AuthNavigator = () => {
   }, [theme.background]);
 
   useEffect(() => {
+    // Guard: navigation tree not ready yet
+    if (!navigationState?.key) return;
+
     if (!isHydrated || loadingSession) {
       if (__DEV__) {
         console.log("[AuthNavigator] still loading → waiting", {
@@ -105,7 +109,10 @@ const AuthNavigator = () => {
         }
 
         if (__DEV__) {
-          console.log("[AuthNavigator] → redirecting authenticated user to:", target);
+          console.log(
+            "[AuthNavigator] → redirecting authenticated user to:",
+            target,
+          );
         }
 
         router.replace(target);
@@ -117,7 +124,7 @@ const AuthNavigator = () => {
 
         if (__DEV__) {
           console.log(
-            "[AuthNavigator] → redirecting unauthenticated to sign-in (caught root/empty/unknown path)"
+            "[AuthNavigator] → redirecting unauthenticated to sign-in (caught root/empty/unknown path)",
           );
         }
 
@@ -126,6 +133,7 @@ const AuthNavigator = () => {
       // If already in (auth) group → do nothing (correct state)
     }
   }, [
+    navigationState?.key,
     isHydrated,
     loadingSession,
     isAuthenticated,

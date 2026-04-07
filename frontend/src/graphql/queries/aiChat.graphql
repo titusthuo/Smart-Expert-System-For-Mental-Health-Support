@@ -1,0 +1,8 @@
+query GetAiChatMessages {
+  aiChatMessages {
+    id
+    text
+    isFromUser
+    createdAt
+  }
+}
