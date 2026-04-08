@@ -1,7 +1,7 @@
 import { ActivitySummaryCard } from "@/components/profile/activity-summary-card";
 import {
-  AppearanceCard,
-  ThemeMode,
+    AppearanceCard,
+    ThemeMode,
 } from "@/components/profile/appearance-card";
 import { EmergencyResourcesCard } from "@/components/profile/emergency-resources-card";
 import { LogoutButton } from "@/components/profile/logout-button";
@@ -11,16 +11,16 @@ import { LogoutConfirmModal } from "@/components/profile/modals/logout-confirm-m
 import { PhotoConfirmModal } from "@/components/profile/modals/photo-confirm-modal";
 import { PhotoViewerModal } from "@/components/profile/modals/photo-viewer-modal";
 import {
-  ProfileData,
-  ProfileFormCard,
+    ProfileData,
+    ProfileFormCard,
 } from "@/components/profile/profile-form-card";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { SettingsCard } from "@/components/profile/settings-card";
 import { apolloClient } from "@/graphql/client";
 import {
-  useRemoveProfilePictureMutation,
-  useUpdateProfileMutation,
-  useUploadProfilePictureMutation,
+    useRemoveProfilePictureMutation,
+    useUpdateProfileMutation,
+    useUploadProfilePictureMutation,
 } from "@/graphql/generated/graphql";
 import { useThemePreference } from "@/hooks/use-theme-preference";
 import { useAuthSession } from "@/stores/useAuthSession";
@@ -30,7 +30,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// Import ReactNativeFile using require for compatibility
+// @ts-ignore - apollo-upload-client types issue
 const { ReactNativeFile } = require("apollo-upload-client");
 // import { useNavigation } from '@react-navigation/native'; // alternative
 

@@ -15,7 +15,7 @@
     "@apollo/client": "^3.10.8",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "^3.0.1",
-    "apollo-upload-client": "^17.0.0",
+    "apollo-upload-client": "^14.0.0",
     "babel-preset-expo": "^54.0.10",
     "expo": "~54.0.33",
     "expo-constants": "~18.0.13",
@@ -47,6 +47,7 @@
     "react-native-svg": "^15.15.3",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.5.1",
+    "react-refresh": "^0.18.0",
     "zustand": "^4.5.2"
   },
   "devDependencies": {
@@ -56,6 +57,7 @@
     "@graphql-codegen/typescript-react-apollo": "^4.3.2",
     "@types/apollo-upload-client": "^19.0.0",
     "@types/react": "~19.1.0",
+    "@types/react-refresh": "^0.14.7",
     "autoprefixer": "^10.4.24",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
