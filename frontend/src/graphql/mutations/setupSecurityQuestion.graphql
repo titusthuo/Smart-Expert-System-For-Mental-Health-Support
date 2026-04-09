@@ -1,0 +1,7 @@
+mutation SetupSecurityQuestion($question: String!, $answer: String!) {
+  setupSecurityQuestion(question: $question, answer: $answer) {
+    success
+    error
+    message
+  }
+}

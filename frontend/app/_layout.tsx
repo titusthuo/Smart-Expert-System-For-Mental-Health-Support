@@ -1,16 +1,24 @@
+import { SecurityQuestionProvider } from "@/components/auth/security-question-provider";
 import { SessionInitializer } from "@/components/core/session-initializer";
 import { Colors } from "@/constants/theme";
 import { apolloClient } from "@/graphql/client";
 import {
-    ThemePreferenceProvider,
-    useAppColorScheme,
+  ThemePreferenceProvider,
+  useAppColorScheme,
 } from "@/hooks/use-theme-preference";
 import { useAuthSession } from "@/stores/useAuthSession";
 import { ApolloProvider } from "@apollo/client";
-import { Href, Stack, usePathname, useRouter, useSegments, useRootNavigationState } from "expo-router";
+import {
+  Href,
+  Stack,
+  usePathname,
+  useRootNavigationState,
+  useRouter,
+  useSegments,
+} from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Platform, View } from "react-native";
 import "react-native-reanimated";
 import "../src/styles/global.css";
@@ -29,6 +37,7 @@ const AuthNavigator = () => {
   const segments = useSegments();
   const pathname = usePathname();
   const navigationState = useRootNavigationState();
+  const [isMounted, setIsMounted] = useState(false);
 
   const colorScheme = useAppColorScheme() ?? "light";
   const isDark = colorScheme === "dark";
@@ -40,6 +49,11 @@ const AuthNavigator = () => {
   const lastAuthedPath = useAuthSession((s) => s.lastAuthedPath);
 
   const hasRedirectedRef = useRef(false);
+
+  // Mark component as mounted after first render
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -61,6 +75,9 @@ const AuthNavigator = () => {
   }, [theme.background]);
 
   useEffect(() => {
+    // Guard: component not mounted yet
+    if (!isMounted) return;
+
     // Guard: navigation tree not ready yet
     if (!navigationState?.key) return;
 
@@ -133,6 +150,7 @@ const AuthNavigator = () => {
       // If already in (auth) group → do nothing (correct state)
     }
   }, [
+    isMounted,
     navigationState?.key,
     isHydrated,
     loadingSession,
@@ -152,28 +170,30 @@ function RootLayoutContent() {
   const theme = Colors[isDark ? "dark" : "light"];
 
   return (
-    <View className={isDark ? "dark" : ""} style={{ flex: 1 }}>
-      <StatusBar style={isDark ? "light" : "dark"} />
-      <Stack
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: theme.card,
-          },
-          headerTintColor: theme.foreground,
-          headerTitleStyle: {
-            fontWeight: "bold",
-          },
-          contentStyle: {
-            backgroundColor: theme.background,
-          },
-        }}
-      >
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
+    <SecurityQuestionProvider>
+      <View className={isDark ? "dark" : ""} style={{ flex: 1 }}>
+        <StatusBar style={isDark ? "light" : "dark"} />
+        <Stack
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: theme.card,
+            },
+            headerTintColor: theme.foreground,
+            headerTitleStyle: {
+              fontWeight: "bold",
+            },
+            contentStyle: {
+              backgroundColor: theme.background,
+            },
+          }}
+        >
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack>
 
-      <AuthNavigator />
-    </View>
+        <AuthNavigator />
+      </View>
+    </SecurityQuestionProvider>
   );
 }
 

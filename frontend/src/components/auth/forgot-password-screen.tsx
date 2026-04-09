@@ -1,9 +1,12 @@
-import { AuthFeedbackModal, useAuthFeedback } from "@/components/auth/auth-feedback";
+import {
+  AuthFeedbackModal,
+  useAuthFeedback,
+} from "@/components/auth/auth-feedback";
 import { AuthScreenShell } from "@/components/auth/auth-shell";
 import { AppText, Button, Input } from "@/components/ui";
+import { useForgotPasswordMutation } from "@/graphql/generated/graphql";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import { TouchableOpacity, View } from "react-native";
@@ -18,6 +21,8 @@ export function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+
+  const [forgotPasswordMutation] = useForgotPasswordMutation();
 
   const trimmedEmail = email.trim();
 
@@ -37,34 +42,9 @@ export function ForgotPasswordScreen() {
   const canSubmit = !sent && !loading && !!trimmedEmail && !emailError;
 
   const handleSubmit = useCallback(async () => {
-    if (!trimmedEmail) {
-      await feedback.show({
-        title: "Required",
-        message: "Please enter your email address.",
-        variant: "error",
-        haptic: "error",
-      });
-      return;
-    }
-
-    if (emailError) {
-      await feedback.show({
-        title: "Invalid email",
-        message: emailError,
-        variant: "error",
-        haptic: "error",
-      });
-      return;
-    }
-
-    setLoading(true);
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    setTimeout(() => {
-      setLoading(false);
-      setSent(true);
-    }, 900);
-  }, [emailError, feedback, trimmedEmail]);
+    // Redirect to the new username-based forgot password flow
+    router.push("/(auth)/forgot-password-username");
+  }, [router]);
 
   return (
     <>
@@ -170,10 +150,7 @@ export function ForgotPasswordScreen() {
               accessibilityRole="button"
               accessibilityLabel="Try a different email"
             >
-              <AppText
-                variant="body"
-                className="text-sm text-muted-foreground"
-              >
+              <AppText variant="body" className="text-sm text-muted-foreground">
                 Wrong email?{" "}
                 <AppText variant="link" className="font-medium">
                   Try again

@@ -24,7 +24,7 @@ except ImportError:
 from .models import (
     User, Country, County, Notification, 
     AIChatMessage, Therapist, TherapistReview,
-    Specialty,
+    Specialty, PasswordReset, SecurityQuestion, PasswordResetOTP,
 )
 
 
@@ -365,6 +365,389 @@ class SendAIChatMessage(graphene.Mutation):
         return SendAIChatMessage(message=message, success=True, error=None)
 
 
+class ForgotPassword(graphene.Mutation):
+    class Arguments:
+        email = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    error = graphene.String()
+    message = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, email):
+        email = email.lower().strip()
+        
+        # Always return success to prevent email enumeration attacks
+        success_message = "If an account with this email exists, a password reset link has been sent."
+        
+        try:
+            user = User.objects.get(email__iexact=email)
+            
+            # Invalidate any existing reset tokens for this user
+            PasswordReset.objects.filter(user=user, is_used=False).update(is_used=True)
+            
+            # Create new reset token
+            reset_token = uuid.uuid4()
+            expires_at = timezone.now() + timedelta(minutes=30)  # 30 minute expiry
+            
+            PasswordReset.objects.create(
+                user=user,
+                token=reset_token,
+                expires_at=expires_at
+            )
+            
+            # Send email with reset link
+            from django.core.mail import send_mail
+            from django.conf import settings
+            
+            reset_link = f"http://localhost:8081/reset-password/{reset_token}"
+            
+            try:
+                send_mail(
+                    subject='Password Reset Request - Smart Expert Mental Health Support',
+                    message=f'''
+Hello,
+
+You requested a password reset for your Smart Expert Mental Health Support account.
+
+Click the link below to reset your password:
+{reset_link}
+
+This link will expire in 30 minutes.
+
+If you didn't request this password reset, please ignore this email.
+
+Best regards,
+Smart Expert Mental Health Support Team
+                    '''.strip(),
+                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@smarthealth.com'),
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+                print(f"Password reset email sent to {email}")
+                print(f"Reset link: {reset_link}")
+            except Exception as e:
+                print(f"Failed to send email to {email}: {str(e)}")
+                # Still continue - token is created, user can get link from console if needed
+            
+        except User.DoesNotExist:
+            # Don't reveal that email doesn't exist
+            pass
+        
+        return ForgotPassword(
+            success=True, 
+            message=success_message,
+            error=None
+        )
+
+
+class ForgotPasswordRest(graphene.Mutation):
+    class Arguments:
+        email = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    message = graphene.String()
+    error = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, email):
+        import requests
+        from django.conf import settings
+        
+        try:
+            # Call the REST API endpoint
+            response = requests.post(
+                f"{getattr(settings, 'BASE_URL', 'http://127.0.0.1:8000')}/api/password_reset/",
+                json={'email': email},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return ForgotPasswordRest(
+                    success=True,
+                    message=data.get('detail', 'If an account with this email exists, a password reset link has been sent.'),
+                    error=None
+                )
+            else:
+                return ForgotPasswordRest(
+                    success=False,
+                    error="Failed to send password reset email",
+                    message=None
+                )
+                
+        except Exception as e:
+            return ForgotPasswordRest(
+                success=False,
+                error=f"Network error: {str(e)}",
+                message=None
+            )
+
+
+class ResetPassword(graphene.Mutation):
+    class Arguments:
+        token = graphene.String(required=True)
+        new_password = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    error = graphene.String()
+    message = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, token, new_password):
+        try:
+            reset_obj = PasswordReset.objects.get(token=token, is_used=False)
+            
+            if not reset_obj.is_valid():
+                return ResetPassword(
+                    success=False,
+                    error="Invalid or expired reset token"
+                )
+            
+            # Validate password
+            if len(new_password) < 8:
+                return ResetPassword(
+                    success=False,
+                    error="Password must be at least 8 characters long"
+                )
+            
+            # Update user password
+            user = reset_obj.user
+            user.set_password(new_password)
+            user.save()
+            
+            # Mark token as used
+            reset_obj.is_used = True
+            reset_obj.save()
+            
+            # Invalidate all other reset tokens for this user
+            PasswordReset.objects.filter(user=user, is_used=False).update(is_used=True)
+            
+            return ResetPassword(
+                success=True,
+                message="Password has been reset successfully. You can now sign in with your new password.",
+                error=None
+            )
+            
+        except PasswordReset.DoesNotExist:
+            return ResetPassword(
+                success=False,
+                error="Invalid reset token"
+            )
+
+
+class ResetPasswordRest(graphene.Mutation):
+    class Arguments:
+        token = graphene.String(required=True)
+        password = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    message = graphene.String()
+    error = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, token, password):
+        import requests
+        from django.conf import settings
+        
+        try:
+            # Call the REST API endpoint
+            response = requests.post(
+                f"{getattr(settings, 'BASE_URL', 'http://127.0.0.1:8000')}/api/password_reset/confirm/",
+                json={'token': token, 'password': password},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return ResetPasswordRest(
+                    success=True,
+                    message=data.get('detail', 'Password has been reset successfully.'),
+                    error=None
+                )
+            else:
+                data = response.json()
+                return ResetPasswordRest(
+                    success=False,
+                    error=data.get('detail', 'Failed to reset password'),
+                    message=None
+                )
+                
+        except Exception as e:
+            return ResetPasswordRest(
+                success=False,
+                error=str(e)
+            )
+
+
+class SetupSecurityQuestion(graphene.Mutation):
+    class Arguments:
+        question = graphene.String(required=True)
+        answer = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    error = graphene.String()
+    message = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, question, answer):
+        user = info.context.user
+        
+        if not user.is_authenticated:
+            return SetupSecurityQuestion(
+                success=False,
+                error="Authentication required"
+            )
+        
+        if not question or not answer:
+            return SetupSecurityQuestion(
+                success=False,
+                error="Question and answer are required"
+            )
+        
+        try:
+            sq, created = SecurityQuestion.objects.get_or_create(user=user)
+            sq.question = question
+            sq.set_answer(answer)
+            sq.save()
+            
+            return SetupSecurityQuestion(
+                success=True,
+                message="Security question saved successfully",
+                error=None
+            )
+        except Exception as e:
+            return SetupSecurityQuestion(
+                success=False,
+                error=str(e)
+            )
+
+
+class GetSecurityQuestion(graphene.Mutation):
+    class Arguments:
+        username = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    error = graphene.String()
+    question = graphene.String()
+    question_key = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, username):
+        try:
+            user = User.objects.get(username=username)
+            sq = user.security_question
+            
+            return GetSecurityQuestion(
+                success=True,
+                question=sq.get_question_display(),
+                question_key=sq.question,
+                error=None
+            )
+        except (User.DoesNotExist, SecurityQuestion.DoesNotExist):
+            return GetSecurityQuestion(
+                success=False,
+                error="User not found or no security question set",
+                question=None,
+                question_key=None
+            )
+
+
+class VerifySecurityAnswer(graphene.Mutation):
+    class Arguments:
+        username = graphene.String(required=True)
+        answer = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    error = graphene.String()
+    message = graphene.String()
+    otp = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, username, answer):
+        try:
+            user = User.objects.get(username=username)
+            sq = user.security_question
+            
+            if not sq.check_answer(answer):
+                return VerifySecurityAnswer(
+                    success=False,
+                    error="Incorrect answer. Try again.",
+                    message=None,
+                    otp=None
+                )
+            
+            # Correct answer - generate OTP
+            PasswordResetOTP.objects.filter(user=user, is_used=False).delete()
+            otp = PasswordResetOTP.generate_otp()
+            PasswordResetOTP.objects.create(user=user, otp=otp)
+            
+            return VerifySecurityAnswer(
+                success=True,
+                message="Answer correct! Use the OTP below to reset your password.",
+                otp=otp,  # Returned directly for demo
+                error=None
+            )
+            
+        except (User.DoesNotExist, SecurityQuestion.DoesNotExist):
+            return VerifySecurityAnswer(
+                success=False,
+                error="User not found or no security question set",
+                message=None,
+                otp=None
+            )
+
+
+class ResetPasswordWithOTP(graphene.Mutation):
+    class Arguments:
+        username = graphene.String(required=True)
+        otp = graphene.String(required=True)
+        new_password = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    error = graphene.String()
+    message = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, username, otp, new_password):
+        if len(new_password) < 8:
+            return ResetPasswordWithOTP(
+                success=False,
+                error="Password must be at least 8 characters long"
+            )
+        
+        try:
+            user = User.objects.get(username=username)
+            otp_record = PasswordResetOTP.objects.filter(
+                user=user, otp=otp, is_used=False
+            ).latest('created_at')
+            
+            if not otp_record.is_valid():
+                return ResetPasswordWithOTP(
+                    success=False,
+                    error="OTP has expired. Please start over."
+                )
+            
+            # Reset password
+            user.set_password(new_password)
+            user.save()
+            
+            # Mark OTP as used
+            otp_record.is_used = True
+            otp_record.save()
+            
+            return ResetPasswordWithOTP(
+                success=True,
+                message="Password reset successful! Please log in.",
+                error=None
+            )
+            
+        except (User.DoesNotExist, PasswordResetOTP.DoesNotExist):
+            return ResetPasswordWithOTP(
+                success=False,
+                error="Invalid OTP or user."
+            )
+
 
 
 class Query(graphene.ObjectType):
@@ -404,6 +787,16 @@ class Mutation(graphene.ObjectType):
     upload_profile_picture = UploadProfilePicture.Field()
     remove_profile_picture = RemoveProfilePicture.Field()
     send_ai_chat_message = SendAIChatMessage.Field()
+    forgot_password = ForgotPassword.Field()
+    reset_password = ResetPassword.Field()
+    forgot_password_rest = ForgotPasswordRest.Field()
+    reset_password_rest = ResetPasswordRest.Field()
+    
+    # Security Question & OTP System
+    setup_security_question = SetupSecurityQuestion.Field()
+    get_security_question = GetSecurityQuestion.Field()
+    verify_security_answer = VerifySecurityAnswer.Field()
+    reset_password_with_otp = ResetPasswordWithOTP.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)

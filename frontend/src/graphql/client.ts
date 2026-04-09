@@ -6,7 +6,7 @@ import { createUploadLink } from "apollo-upload-client";
 import { useAuthSession } from "@/stores/useAuthSession";
 
 const graphqlUri =
-  process.env.EXPO_PUBLIC_GRAPHQL_URL ?? "http://127.0.0.1:8000/graphql/";
+  process.env.EXPO_PUBLIC_GRAPHQL_URL ?? "http://127.0.0.1:8001/graphql/";
 
 const uploadLink = createUploadLink({
   uri: graphqlUri,

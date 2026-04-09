@@ -2,6 +2,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.files.storage import default_storage
+from django.utils import timezone
+import random
+import string
 
 
 class Country(models.Model):
@@ -133,6 +136,30 @@ class Therapist(models.Model):
         return self.name
 
 
+class PasswordReset(models.Model):
+    """Store password reset tokens with expiry"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='password_resets')
+    token = models.UUIDField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['token', 'is_used']),
+            models.Index(fields=['user', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"Reset for {self.user.email or self.user.username} - {self.token}"
+
+    def is_valid(self):
+        """Check if token is still valid (not used and not expired)"""
+        from django.utils import timezone
+        return not self.is_used and timezone.now() < self.expires_at
+
+
 class TherapistReview(models.Model):
     therapist = models.ForeignKey(Therapist, on_delete=models.CASCADE, related_name='reviews')
     author = models.CharField(max_length=120)
@@ -146,3 +173,50 @@ class TherapistReview(models.Model):
 
     def __str__(self):
         return f"{self.author} ({self.rating})"
+
+
+class SecurityQuestion(models.Model):
+    """Store user's security question and answer for password recovery"""
+    QUESTIONS = [
+        ('mother_maiden', "What is your mother's maiden name?"),
+        ('first_pet', "What was the name of your first pet?"),
+        ('primary_school', "What primary school did you attend?"),
+        ('childhood_city', "What city did you grow up in?"),
+        ('first_car', "What was your first car?"),
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='security_question')
+    question = models.CharField(max_length=50, choices=QUESTIONS)
+    answer = models.CharField(max_length=255)  # store lowercased for easy comparison
+
+    def set_answer(self, raw_answer):
+        """Set answer in normalized format"""
+        self.answer = raw_answer.lower().strip()
+
+    def check_answer(self, raw_answer):
+        """Check if answer matches (case-insensitive)"""
+        return self.answer == raw_answer.lower().strip()
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_question_display()}"
+
+
+class PasswordResetOTP(models.Model):
+    """Store OTP codes for password reset"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    def is_valid(self):
+        """Check if OTP is still valid (10 minutes expiry)"""
+        expiry = self.created_at + timezone.timedelta(minutes=10)
+        return timezone.now() < expiry and not self.is_used
+
+    @staticmethod
+    def generate_otp():
+        """Generate 6-digit OTP"""
+        return str(random.randint(100000, 999999))
+
+    def __str__(self):
+        return f"{self.user.username} - {self.otp}"

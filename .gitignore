@@ -30,8 +30,10 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# local env files - NEVER COMMIT THESE!
+.env
 .env*.local
+.env.*
 
 # typescript
 *.tsbuildinfo
@@ -42,6 +44,11 @@ app-example
 /ios
 /android
 
+# Python virtual environment
+backend/venv/
+venv/
+.env/
+
 # Django databases
 backend/db.sqlite3
 backend/db.sqlite3-journal
@@ -51,3 +58,10 @@ backend/db.sqlite3-journal
 # Django media files (user uploads)
 backend/media/*
 !backend/media/.gitkeep
+
+# Build artifacts
+build/
+
+# Log files
+*.log
+Logs/
