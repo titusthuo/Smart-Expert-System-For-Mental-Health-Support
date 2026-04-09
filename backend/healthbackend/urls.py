@@ -11,8 +11,9 @@ urlpatterns = [
     path('*', TemplateView.as_view(template_name="not-found.html"), name="not-found"),
     path('profile-upload-test/', TemplateView.as_view(template_name="profile-upload-test.html")),
     path('admin/', admin.site.urls),
-    path('graphql/', CustomGraphQLView.as_view(graphiql=True), name="graphql"),  # ⭐ Use custom view (no csrf_exempt needed, it's in the view)
+    path('graphql/', CustomGraphQLView.as_view(graphiql=True), name="graphql"),  # Use custom view (no csrf_exempt needed, it's in the view)
     path('api/', include('core.urls')),
+    path('api/password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset')),
 ]
 
 if settings.DEBUG:

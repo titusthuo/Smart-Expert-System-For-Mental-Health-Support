@@ -2,9 +2,9 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import {
-  getStoredString,
-  removeStoredItem,
-  setStoredString,
+    getStoredString,
+    removeStoredItem,
+    setStoredString,
 } from "@/lib/storage";
 
 export type Session = {
@@ -31,6 +31,7 @@ export type AuthSessionState = {
   isAuthenticated: boolean;
   isHydrated: boolean;
   lastAuthedPath: string | null;
+  securityQuestionSetup: boolean;
 };
 
 export type AuthSessionActions = {
@@ -42,6 +43,7 @@ export type AuthSessionActions = {
   setIsHydrated: (hydrated: boolean) => void;
   setIsAuthenticated: (authenticated: boolean) => void;
   setLastAuthedPath: (path: string | null) => void;
+  setSecurityQuestionSetup: (setup: boolean) => void;
 };
 
 export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
@@ -52,6 +54,7 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
       isAuthenticated: false,
       isHydrated: false,
       lastAuthedPath: null,
+      securityQuestionSetup: false,
 
       setSession: async (updates) => {
         set((state) => {
@@ -92,6 +95,7 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
           isAuthenticated: false,
           loadingSession: false,
           lastAuthedPath: null,
+          securityQuestionSetup: false,
         });
         await removeStoredItem("authToken");
       },
@@ -100,6 +104,8 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
       setIsHydrated: (isHydrated) => set({ isHydrated }),
       setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
       setLastAuthedPath: (lastAuthedPath) => set({ lastAuthedPath }),
+      setSecurityQuestionSetup: (securityQuestionSetup) =>
+        set({ securityQuestionSetup }),
     }),
     {
       name: "authSession",
@@ -118,6 +124,7 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
       partialize: (state) => ({
         session: state.session,
         lastAuthedPath: state.lastAuthedPath,
+        securityQuestionSetup: state.securityQuestionSetup,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;

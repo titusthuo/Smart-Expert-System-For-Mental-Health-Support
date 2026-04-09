@@ -22,6 +22,9 @@ type SignUpInput = {
 export function useSignUp() {
   const [mutate, state] = useSignUpMutation();
   const setSession = useAuthSession((s) => s.setSession);
+  const setSecurityQuestionSetup = useAuthSession(
+    (s) => s.setSecurityQuestionSetup,
+  );
 
   const signUp = useCallback(
     async ({
@@ -84,6 +87,9 @@ export function useSignUp() {
           },
           profile: profileData,
         });
+
+        // Reset security question setup flag for new users
+        setSecurityQuestionSetup(false);
       }
 
       return {
@@ -93,7 +99,7 @@ export function useSignUp() {
         success: true,
       };
     },
-    [mutate, setSession],
+    [mutate, setSession, setSecurityQuestionSetup],
   );
 
   return {

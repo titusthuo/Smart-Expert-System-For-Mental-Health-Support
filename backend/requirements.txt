@@ -8,6 +8,7 @@ channels-redis>=4.2
 redis>=5.0
 graphene-django>=3.2
 django-graphql-jwt>=0.4.0
+python-dotenv                   # for loading environment variables from .env file
 
 # Optional but highly recommended extras
 gunicorn                        # for production
