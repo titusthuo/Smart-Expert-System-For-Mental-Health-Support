@@ -158,7 +158,7 @@ export const useAIAssistant = (
         const data = await res.json();
         let botText =
           data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
-          "I'm having trouble responding right now. Please try again.";
+          "I'm having trouble responding right now. Please try again later.";
 
         // ── Tool interception ────────────────────────────────────────────
         let processedText = botText;
