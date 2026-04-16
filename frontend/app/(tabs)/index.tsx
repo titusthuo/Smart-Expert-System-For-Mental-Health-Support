@@ -50,6 +50,7 @@ export default function HomePage() {
   const [infoMessage, setInfoMessage] = useState("");
 
   const session = useAuthSession((s) => s.session);
+  const profilePhotoUri = session?.profile?.photoUri ?? null;
 
   const profileName = useMemo(() => {
     return (
@@ -264,13 +265,21 @@ export default function HomePage() {
             <Ionicons name="notifications-outline" size={20} color={subtle} />
           </TouchableOpacity>
           <View
-            className="w-9 h-9 rounded-full items-center justify-center border"
+            className="w-9 h-9 rounded-full items-center justify-center border overflow-hidden"
             style={{ backgroundColor: brand, borderColor: border }}
             accessibilityLabel="Profile"
           >
-            <AppText unstyled className="text-white font-bold text-[13px]">
-              {avatarInitials}
-            </AppText>
+            {profilePhotoUri ? (
+              <Image
+                source={{ uri: profilePhotoUri }}
+                style={{ width: "100%", height: "100%" }}
+                resizeMode="cover"
+              />
+            ) : (
+              <AppText unstyled className="text-white font-bold text-[13px]">
+                {avatarInitials}
+              </AppText>
+            )}
           </View>
         </View>
       </View>
@@ -296,9 +305,7 @@ export default function HomePage() {
             {greeting}
             {firstName ? `, ${firstName}` : ""} 👋
           </AppText>
-          <AppText unstyled className="text-muted-foreground text-sm leading-5">
-            How are you feeling right now? I’m here with you.
-          </AppText>
+
         </View>
 
         {/* ── Mood check-in section ─────────────────── */}
@@ -362,9 +369,6 @@ export default function HomePage() {
                   accessibilityRole="button"
                   accessibilityLabel={`Mood: ${mood.label}`}
                 >
-                  <AppText unstyled className="text-base">
-                    {mood.emoji}
-                  </AppText>
                   <AppText
                     unstyled
                     className="text-sm font-semibold"

@@ -28,7 +28,7 @@ export function ChatInput({
   return (
     <View
       className="border-t border-border bg-card px-4 pt-3"
-      style={{ paddingBottom: Math.max(16, insets.bottom + 16) }}
+      style={{ paddingBottom: Math.max(insets.bottom, 8) }}
     >
       <View className="flex-row items-end">
         <TextInput

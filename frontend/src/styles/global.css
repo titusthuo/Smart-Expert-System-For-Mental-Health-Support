@@ -23,10 +23,6 @@
     --info: 217 91% 56%; /* #3B82F6 */
     --radius: 0.625rem;
 
-    /* Chart colors – approximated */
-
-    /* Sidebar extras – keep if you use them */
-
     --font-size: 16px;
     --font-weight-medium: 500;
     --font-weight-normal: 400;
@@ -50,10 +46,6 @@
     --error-soft: 0 40% 25%;
     --warning: 36 92% 60%;
     --info: 217 91% 65%;
-
-    /* Charts in dark mode */
-
-    /* Sidebar dark */
 
     --font-weight-medium: 500;
     --font-weight-normal: 400;
@@ -109,11 +101,6 @@
     line-height: 1.5;
   }
 
-  .font-rounded {
-    font-family:
-      "ui-rounded", "SF Pro Rounded", "Hiragino Maru Gothic ProN", Meiryo,
-      "MS PGothic", sans-serif;
-  }
   .font-sans {
     font-family:
       system-ui,
@@ -127,10 +114,5 @@
   }
   .font-serif {
     font-family: Georgia, "Times New Roman", serif;
-  }
-  .font-mono {
-    font-family:
-      SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
-      monospace;
   }
 }

@@ -1,10 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo } from "react";
-import { Platform, TouchableOpacity, View } from "react-native";
+import { Image, Platform, TouchableOpacity, View } from "react-native";
 
 import { AppText, Button } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import type { Therapist } from "@/lib/therapists/types";
+import { useAuthSession } from "@/stores/useAuthSession";
+
+const mentallyLogo = require("../../../assets/logos/brain.jpg");
 
 export type MessageBubbleProps = {
   id: string;
@@ -25,6 +28,20 @@ export function MessageBubble({
   onPressTherapist,
 }: MessageBubbleProps) {
   const { isDark, brand, border, surface, text: textColor } = useAuthTheme();
+  const session = useAuthSession((s) => s.session);
+  const profilePhotoUri = session?.profile?.photoUri ?? null;
+
+  const initials = useMemo(() => {
+    const name =
+      session?.profile?.name ||
+      session?.user?.name ||
+      session?.user?.username ||
+      "U";
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    const first = parts[0]?.[0] ?? "";
+    const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
+    return (first + last).toUpperCase() || "U";
+  }, [session]);
 
   const warningColor = "#EAB308";
 
@@ -54,13 +71,14 @@ export function MessageBubble({
       >
         {!isUser && (
           <View
-            className="w-8 h-8 rounded-full items-center justify-center mr-2 mb-1 shrink-0"
-            style={{ backgroundColor: brand }}
+            className="w-8 h-8 rounded-full items-center justify-center mr-2 mb-1 shrink-0 overflow-hidden border border-border"
             accessibilityLabel="Assistant"
           >
-            <AppText unstyled className="text-white font-bold text-[10px]">
-              AI
-            </AppText>
+            <Image
+              source={mentallyLogo}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+            />
           </View>
         )}
 
@@ -107,17 +125,21 @@ export function MessageBubble({
 
         {isUser && (
           <View
-            className="w-8 h-8 rounded-full items-center justify-center ml-2 mb-1 shrink-0"
-            style={{
-              backgroundColor: isDark
-                ? "rgba(168,85,247,0.35)"
-                : "rgba(124,58,237,0.35)",
-            }}
+            className="w-8 h-8 rounded-full items-center justify-center ml-2 mb-1 shrink-0 overflow-hidden"
+            style={{ backgroundColor: brand }}
             accessibilityLabel="You"
           >
-            <AppText unstyled className="text-white font-bold text-[10px]">
-              You
-            </AppText>
+            {profilePhotoUri ? (
+              <Image
+                source={{ uri: profilePhotoUri }}
+                style={{ width: "100%", height: "100%" }}
+                resizeMode="cover"
+              />
+            ) : (
+              <AppText unstyled className="text-white font-bold text-[10px]">
+                {initials}
+              </AppText>
+            )}
           </View>
         )}
       </View>

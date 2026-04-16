@@ -149,24 +149,3 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
   ),
 );
 
-export const waitForSession = async (): Promise<Session> => {
-  const store = useAuthSession.getState();
-  if (store.isHydrated && !store.loadingSession) {
-    return store.session;
-  }
-
-  return await new Promise((resolve) => {
-    const unsubscribe = useAuthSession.subscribe((state) => {
-      if (state.isHydrated && !state.loadingSession) {
-        unsubscribe();
-        resolve(state.session);
-      }
-    });
-  });
-};
-
-export const selectSession = (state: AuthSessionState & AuthSessionActions) =>
-  state.session;
-export const selectIsAuthenticated = (
-  state: AuthSessionState & AuthSessionActions,
-) => state.isAuthenticated;
