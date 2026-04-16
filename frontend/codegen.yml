@@ -1,14 +1,15 @@
-overwrite: true
+# @graphql-codegen/cli@5.0.4
 schema: http://127.0.0.1:8000/graphql/
+overwrite: true
 documents:
-  - 'src/graphql/queries/**/*.graphql'
-  - 'src/graphql/mutations/**/*.graphql'
+  - "src/graphql/queries/**/*.graphql"
+  - "src/graphql/mutations/**/*.graphql"
 generates:
   src/graphql/generated/graphql.tsx:
     plugins:
-      - 'typescript'
-      - 'typescript-operations'
-      - 'typescript-react-apollo'
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-react-apollo"
     config:
       withHooks: true
       withHOC: false

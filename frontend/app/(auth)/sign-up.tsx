@@ -1,27 +1,29 @@
 import { useRouter } from "expo-router";
 import {
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    View,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
-    AuthFeedbackModal,
-    useAuthFeedback,
+  AuthFeedbackModal,
+  useAuthFeedback,
 } from "@/components/auth/auth-feedback";
 
 import { AuthSignUpTab } from "@/components/auth/auth-sign-up-tab";
 import { AppText, Card } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
+import { useSignUp } from "@/hooks/useSignUp";
 
 export default function SignUpScreen() {
   const router = useRouter();
   const { isDark } = useAuthTheme();
   const feedback = useAuthFeedback();
+  const { signUp } = useSignUp();
 
   const logoImage = require("../../assets/logos/brain.jpg");
 
@@ -79,6 +81,8 @@ export default function SignUpScreen() {
                       })
                       .catch(() => undefined)
                   }
+                  onNavigate={(route) => router.push(route)}
+                  signUp={signUp}
                 />
               </Card>
 

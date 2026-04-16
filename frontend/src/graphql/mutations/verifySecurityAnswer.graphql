@@ -1,0 +1,8 @@
+mutation VerifySecurityAnswer($username: String!, $answer: String!) {
+  verifySecurityAnswer(username: $username, answer: $answer) {
+    success
+    error
+    message
+    otp
+  }
+}

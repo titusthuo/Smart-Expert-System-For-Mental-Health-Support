@@ -1,5 +1,7 @@
 mutation SignIn($username: String!, $password: String!) {
   signIn(username: $username, password: $password) {
+    success
+    error
     token
     user {
       id

@@ -3,13 +3,13 @@ import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-    Dimensions,
-    Image,
-    Platform,
-    ScrollView,
-    StatusBar,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Image,
+  Platform,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 

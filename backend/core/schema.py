@@ -1,5 +1,8 @@
-# core/schema.py
+import logging
+
 import graphene
+
+logger = logging.getLogger(__name__)
 from graphene_django import DjangoObjectType
 import graphql_jwt
 from graphql_jwt.decorators import login_required
@@ -24,7 +27,7 @@ except ImportError:
 from .models import (
     User, Country, County, Notification, 
     AIChatMessage, Therapist, TherapistReview,
-    Specialty,
+    Specialty, PasswordReset, SecurityQuestion, PasswordResetOTP,
 )
 
 
@@ -42,8 +45,6 @@ class CountyType(DjangoObjectType):
     class Meta:
         model = County
         fields = ("id", "name", "country")
-
-
 
 
 class TherapistReviewType(DjangoObjectType):
@@ -103,9 +104,13 @@ class TherapistType(DjangoObjectType):
         return self.full_bio
 
     def resolve_reviews(self, info):
+        if hasattr(self, '_review_count'):
+            return self._review_count
         return self.reviews.count()
 
     def resolve_rating(self, info):
+        if hasattr(self, '_avg_rating'):
+            return float(self._avg_rating) if self._avg_rating is not None else 0.0
         agg = self.reviews.aggregate(avg=models.Avg('rating'))
         avg = agg.get('avg')
         return float(avg) if avg is not None else 0.0
@@ -143,36 +148,10 @@ class UserType(DjangoObjectType):
         return None
 
 
-
-
-
-
-
-
-
-
-
-
-class NotificationType(graphene.ObjectType):
-    id = graphene.Int(required=True)
-    title = graphene.String(required=True)
-    description = graphene.String(required=True)
-    createdAt = graphene.DateTime(required=True)
-    isRead = graphene.Boolean(required=True)
-
-
-
-
 class AIChatMessageType(DjangoObjectType):
     class Meta:
         model = AIChatMessage
         fields = ("id", "text", "is_from_user", "created_at", "user")
-
-
-
-
-
-
 
 
 class SignIn(graphene.Mutation):
@@ -182,6 +161,8 @@ class SignIn(graphene.Mutation):
 
     token = graphene.String()
     user = graphene.Field(UserType)
+    success = graphene.Boolean()
+    error = graphene.String()
 
     @staticmethod
     def mutate(root, info, username, password):
@@ -199,9 +180,9 @@ class SignIn(graphene.Mutation):
             except User.DoesNotExist:
                 pass
         if not user:
-            raise Exception("Invalid credentials")
+            return SignIn(success=False, error="Invalid credentials", token=None, user=None)
         token = get_token(user)
-        return SignIn(token=token, user=user)
+        return SignIn(success=True, token=token, user=user, error=None)
 
 
 class SignUp(graphene.Mutation):
@@ -224,6 +205,13 @@ class SignUp(graphene.Mutation):
             return SignUp(success=False, error="Username already taken")
         if User.objects.filter(email__iexact=email).exists():
             return SignUp(success=False, error="Email already registered")
+
+        try:
+            from django.contrib.auth.password_validation import validate_password
+            validate_password(password)
+        except ValidationError as e:
+            return SignUp(success=False, error=" ".join(e.messages))
+
         username = username.lower().strip()
         email = email.lower().strip()
         first_name = first_name.strip()
@@ -245,10 +233,6 @@ class SignUp(graphene.Mutation):
 
         token = get_token(user)
         return SignUp(success=True, error=None, token=token, user=user)
-
-
-
-
 
 
 class UploadProfilePicture(graphene.Mutation):
@@ -334,7 +318,8 @@ class UpdateProfile(graphene.Mutation):
             return UpdateProfile(success=True, error=None, user=user)
             
         except Exception as e:
-            return UpdateProfile(success=False, error=str(e), user=None)
+            logger.exception("UpdateProfile failed for user %s", info.context.user)
+            return UpdateProfile(success=False, error="An unexpected error occurred.", user=None)
 
 
 class SendAIChatMessage(graphene.Mutation):
@@ -365,6 +350,305 @@ class SendAIChatMessage(graphene.Mutation):
         return SendAIChatMessage(message=message, success=True, error=None)
 
 
+class ForgotPassword(graphene.Mutation):
+    class Arguments:
+        email = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    error = graphene.String()
+    message = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, email):
+        email = email.lower().strip()
+        
+        # Always return success to prevent email enumeration attacks
+        success_message = "If an account with this email exists, a password reset link has been sent."
+        
+        try:
+            user = User.objects.get(email__iexact=email)
+            
+            # Invalidate any existing reset tokens for this user
+            PasswordReset.objects.filter(user=user, is_used=False).update(is_used=True)
+            
+            # Create new reset token
+            reset_token = uuid.uuid4()
+            expires_at = timezone.now() + timedelta(minutes=30)  # 30 minute expiry
+            
+            PasswordReset.objects.create(
+                user=user,
+                token=reset_token,
+                expires_at=expires_at
+            )
+            
+            # Send email with reset link
+            from django.core.mail import send_mail
+            from django.conf import settings as django_settings
+            frontend_url = getattr(django_settings, 'FRONTEND_URL', 'http://localhost:8081')
+            reset_link = f"{frontend_url}/reset-password/{reset_token}"
+            
+            try:
+                send_mail(
+                    subject='Password Reset Request - Smart Expert Mental Health Support',
+                    message=f'''
+Hello,
+
+You requested a password reset for your Smart Expert Mental Health Support account.
+
+Click the link below to reset your password:
+{reset_link}
+
+This link will expire in 30 minutes.
+
+If you didn't request this password reset, please ignore this email.
+
+Best regards,
+Smart Expert Mental Health Support Team
+                    '''.strip(),
+                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@smarthealth.com'),
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+                logger.info("Password reset email sent to %s", email)
+            except Exception as e:
+                logger.error("Failed to send email to %s: %s", email, e)
+                # Still continue - token is created, user can get link from console if needed
+            
+        except User.DoesNotExist:
+            # Don't reveal that email doesn't exist
+            pass
+        
+        return ForgotPassword(
+            success=True, 
+            message=success_message,
+            error=None
+        )
+
+
+
+
+class ResetPassword(graphene.Mutation):
+    class Arguments:
+        token = graphene.String(required=True)
+        new_password = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    error = graphene.String()
+    message = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, token, new_password):
+        try:
+            reset_obj = PasswordReset.objects.get(token=token, is_used=False)
+            
+            if not reset_obj.is_valid():
+                return ResetPassword(
+                    success=False,
+                    error="Invalid or expired reset token"
+                )
+            
+            # Validate password
+            if len(new_password) < 8:
+                return ResetPassword(
+                    success=False,
+                    error="Password must be at least 8 characters long"
+                )
+            
+            # Update user password
+            user = reset_obj.user
+            user.set_password(new_password)
+            user.save()
+            
+            # Mark token as used
+            reset_obj.is_used = True
+            reset_obj.save()
+            
+            # Invalidate all other reset tokens for this user
+            PasswordReset.objects.filter(user=user, is_used=False).update(is_used=True)
+            
+            return ResetPassword(
+                success=True,
+                message="Password has been reset successfully. You can now sign in with your new password.",
+                error=None
+            )
+            
+        except PasswordReset.DoesNotExist:
+            return ResetPassword(
+                success=False,
+                error="Invalid reset token"
+            )
+
+
+
+
+class SetupSecurityQuestion(graphene.Mutation):
+    class Arguments:
+        question = graphene.String(required=True)
+        answer = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    error = graphene.String()
+    message = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, question, answer):
+        user = info.context.user
+        
+        if not user.is_authenticated:
+            return SetupSecurityQuestion(
+                success=False,
+                error="Authentication required"
+            )
+        
+        if not question or not answer:
+            return SetupSecurityQuestion(
+                success=False,
+                error="Question and answer are required"
+            )
+        
+        try:
+            sq, created = SecurityQuestion.objects.get_or_create(user=user)
+            sq.question = question
+            sq.set_answer(answer)
+            sq.save()
+            
+            return SetupSecurityQuestion(
+                success=True,
+                message="Security question saved successfully",
+                error=None
+            )
+        except Exception as e:
+            logger.exception("SetupSecurityQuestion failed for user %s", info.context.user)
+            return SetupSecurityQuestion(
+                success=False,
+                error="An unexpected error occurred."
+            )
+
+
+class GetSecurityQuestion(graphene.Mutation):
+    class Arguments:
+        username = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    error = graphene.String()
+    question = graphene.String()
+    question_key = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, username):
+        try:
+            user = User.objects.get(username=username)
+            sq = user.security_question
+            
+            return GetSecurityQuestion(
+                success=True,
+                question=sq.get_question_display(),
+                question_key=sq.question,
+                error=None
+            )
+        except (User.DoesNotExist, SecurityQuestion.DoesNotExist):
+            return GetSecurityQuestion(
+                success=False,
+                error="User not found or no security question set",
+                question=None,
+                question_key=None
+            )
+
+
+class VerifySecurityAnswer(graphene.Mutation):
+    class Arguments:
+        username = graphene.String(required=True)
+        answer = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    error = graphene.String()
+    message = graphene.String()
+    otp = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, username, answer):
+        try:
+            user = User.objects.get(username=username)
+            sq = user.security_question
+            
+            if not sq.check_answer(answer):
+                return VerifySecurityAnswer(
+                    success=False,
+                    error="Incorrect answer. Try again.",
+                    message=None,
+                    otp=None
+                )
+            
+            # Correct answer - generate OTP
+            PasswordResetOTP.objects.filter(user=user, is_used=False).delete()
+            otp = PasswordResetOTP.generate_otp()
+            PasswordResetOTP.objects.create(user=user, otp=otp)
+            
+            return VerifySecurityAnswer(
+                success=True,
+                message="Answer correct! Use the OTP below to reset your password.",
+                otp=otp,
+                error=None
+            )
+            
+        except (User.DoesNotExist, SecurityQuestion.DoesNotExist):
+            return VerifySecurityAnswer(
+                success=False,
+                error="User not found or no security question set",
+                message=None,
+                otp=None
+            )
+
+
+class ResetPasswordWithOTP(graphene.Mutation):
+    class Arguments:
+        username = graphene.String(required=True)
+        otp = graphene.String(required=True)
+        new_password = graphene.String(required=True)
+
+    success = graphene.Boolean()
+    error = graphene.String()
+    message = graphene.String()
+
+    @staticmethod
+    def mutate(root, info, username, otp, new_password):
+        if len(new_password) < 8:
+            return ResetPasswordWithOTP(
+                success=False,
+                error="Password must be at least 8 characters long"
+            )
+        
+        try:
+            user = User.objects.get(username=username)
+            otp_record = PasswordResetOTP.objects.filter(
+                user=user, otp=otp, is_used=False
+            ).latest('created_at')
+            
+            if not otp_record.is_valid():
+                return ResetPasswordWithOTP(
+                    success=False,
+                    error="OTP has expired. Please start over."
+                )
+            
+            # Reset password
+            user.set_password(new_password)
+            user.save()
+            
+            # Mark OTP as used
+            otp_record.is_used = True
+            otp_record.save()
+            
+            return ResetPasswordWithOTP(
+                success=True,
+                message="Password reset successful! Please log in.",
+                error=None
+            )
+            
+        except (User.DoesNotExist, PasswordResetOTP.DoesNotExist):
+            return ResetPasswordWithOTP(
+                success=False,
+                error="Invalid OTP or user."
+            )
 
 
 class Query(graphene.ObjectType):
@@ -378,11 +662,26 @@ class Query(graphene.ObjectType):
         return info.context.user if info.context.user.is_authenticated else None
 
     def resolve_therapists(self, info):
-        return Therapist.objects.all()
+        return (
+            Therapist.objects
+            .prefetch_related('specialization', 'reviews')
+            .annotate(
+                _review_count=models.Count('reviews'),
+                _avg_rating=models.Avg('reviews__rating'),
+            )
+        )
 
     def resolve_therapist(self, info, id):
         try:
-            return Therapist.objects.get(pk=id)
+            return (
+                Therapist.objects
+                .prefetch_related('specialization', 'reviews')
+                .annotate(
+                    _review_count=models.Count('reviews'),
+                    _avg_rating=models.Avg('reviews__rating'),
+                )
+                .get(pk=id)
+            )
         except Therapist.DoesNotExist:
             return None
 
@@ -404,6 +703,13 @@ class Mutation(graphene.ObjectType):
     upload_profile_picture = UploadProfilePicture.Field()
     remove_profile_picture = RemoveProfilePicture.Field()
     send_ai_chat_message = SendAIChatMessage.Field()
+    forgot_password = ForgotPassword.Field()
+    reset_password = ResetPassword.Field()
+    # Security Question & OTP System
+    setup_security_question = SetupSecurityQuestion.Field()
+    get_security_question = GetSecurityQuestion.Field()
+    verify_security_answer = VerifySecurityAnswer.Field()
+    reset_password_with_otp = ResetPasswordWithOTP.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)

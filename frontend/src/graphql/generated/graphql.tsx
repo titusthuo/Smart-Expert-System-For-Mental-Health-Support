@@ -1,5 +1,5 @@
-import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
+import { gql } from '@apollo/client';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -29,6 +29,7 @@ export type AiChatMessageType = {
   /** True if message is from the user, False if from AI */
   isFromUser: Scalars['Boolean']['output'];
   text: Scalars['String']['output'];
+  user: UserType;
 };
 
 export type CoordsType = {
@@ -37,18 +38,63 @@ export type CoordsType = {
   lng?: Maybe<Scalars['Float']['output']>;
 };
 
+export type ForgotPassword = {
+  __typename?: 'ForgotPassword';
+  error?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type ForgotPasswordRest = {
+  __typename?: 'ForgotPasswordRest';
+  error?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type GetSecurityQuestion = {
+  __typename?: 'GetSecurityQuestion';
+  error?: Maybe<Scalars['String']['output']>;
+  question?: Maybe<Scalars['String']['output']>;
+  questionKey?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
+  forgotPassword?: Maybe<ForgotPassword>;
+  forgotPasswordRest?: Maybe<ForgotPasswordRest>;
+  getSecurityQuestion?: Maybe<GetSecurityQuestion>;
   refreshToken?: Maybe<Refresh>;
   removeProfilePicture?: Maybe<RemoveProfilePicture>;
+  resetPassword?: Maybe<ResetPassword>;
+  resetPasswordRest?: Maybe<ResetPasswordRest>;
+  resetPasswordWithOtp?: Maybe<ResetPasswordWithOtp>;
   sendAiChatMessage?: Maybe<SendAiChatMessage>;
+  setupSecurityQuestion?: Maybe<SetupSecurityQuestion>;
   signIn?: Maybe<SignIn>;
   signUp?: Maybe<SignUp>;
   /** Obtain JSON Web Token mutation */
   tokenAuth?: Maybe<ObtainJsonWebToken>;
   updateProfile?: Maybe<UpdateProfile>;
   uploadProfilePicture?: Maybe<UploadProfilePicture>;
+  verifySecurityAnswer?: Maybe<VerifySecurityAnswer>;
   verifyToken?: Maybe<Verify>;
+};
+
+
+export type MutationForgotPasswordArgs = {
+  email: Scalars['String']['input'];
+};
+
+
+export type MutationForgotPasswordRestArgs = {
+  email: Scalars['String']['input'];
+};
+
+
+export type MutationGetSecurityQuestionArgs = {
+  username: Scalars['String']['input'];
 };
 
 
@@ -57,9 +103,34 @@ export type MutationRefreshTokenArgs = {
 };
 
 
+export type MutationResetPasswordArgs = {
+  newPassword: Scalars['String']['input'];
+  token: Scalars['String']['input'];
+};
+
+
+export type MutationResetPasswordRestArgs = {
+  password: Scalars['String']['input'];
+  token: Scalars['String']['input'];
+};
+
+
+export type MutationResetPasswordWithOtpArgs = {
+  newPassword: Scalars['String']['input'];
+  otp: Scalars['String']['input'];
+  username: Scalars['String']['input'];
+};
+
+
 export type MutationSendAiChatMessageArgs = {
   isFromUser?: InputMaybe<Scalars['Boolean']['input']>;
   text: Scalars['String']['input'];
+};
+
+
+export type MutationSetupSecurityQuestionArgs = {
+  answer: Scalars['String']['input'];
+  question: Scalars['String']['input'];
 };
 
 
@@ -94,6 +165,12 @@ export type MutationUpdateProfileArgs = {
 
 export type MutationUploadProfilePictureArgs = {
   file: Scalars['Upload']['input'];
+};
+
+
+export type MutationVerifySecurityAnswerArgs = {
+  answer: Scalars['String']['input'];
+  username: Scalars['String']['input'];
 };
 
 
@@ -137,6 +214,27 @@ export type RemoveProfilePicture = {
   user?: Maybe<UserType>;
 };
 
+export type ResetPassword = {
+  __typename?: 'ResetPassword';
+  error?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type ResetPasswordRest = {
+  __typename?: 'ResetPasswordRest';
+  error?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type ResetPasswordWithOtp = {
+  __typename?: 'ResetPasswordWithOTP';
+  error?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
 export type SendAiChatMessage = {
   __typename?: 'SendAIChatMessage';
   error?: Maybe<Scalars['String']['output']>;
@@ -144,8 +242,17 @@ export type SendAiChatMessage = {
   success?: Maybe<Scalars['Boolean']['output']>;
 };
 
+export type SetupSecurityQuestion = {
+  __typename?: 'SetupSecurityQuestion';
+  error?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
 export type SignIn = {
   __typename?: 'SignIn';
+  error?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
   token?: Maybe<Scalars['String']['output']>;
   user?: Maybe<UserType>;
 };
@@ -172,7 +279,7 @@ export type TherapistType = {
   availability?: Maybe<Scalars['String']['output']>;
   bio: Scalars['String']['output'];
   coords?: Maybe<CoordsType>;
-  county: Scalars['String']['output'];
+  county?: Maybe<Scalars['String']['output']>;
   email?: Maybe<Scalars['String']['output']>;
   experience: Scalars['String']['output'];
   fullBio?: Maybe<Scalars['String']['output']>;
@@ -228,6 +335,14 @@ export type Verify = {
   payload: Scalars['GenericScalar']['output'];
 };
 
+export type VerifySecurityAnswer = {
+  __typename?: 'VerifySecurityAnswer';
+  error?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  otp?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
 export type SendAiChatMessageMutationVariables = Exact<{
   text: Scalars['String']['input'];
   isFromUser?: InputMaybe<Scalars['Boolean']['input']>;
@@ -236,10 +351,64 @@ export type SendAiChatMessageMutationVariables = Exact<{
 
 export type SendAiChatMessageMutation = { __typename?: 'Mutation', sendAiChatMessage?: { __typename?: 'SendAIChatMessage', success?: boolean | null, error?: string | null, message?: { __typename?: 'AIChatMessageType', id: string, text: string, isFromUser: boolean, createdAt: any } | null } | null };
 
+export type ForgotPasswordMutationVariables = Exact<{
+  email: Scalars['String']['input'];
+}>;
+
+
+export type ForgotPasswordMutation = { __typename?: 'Mutation', forgotPassword?: { __typename?: 'ForgotPassword', success?: boolean | null, message?: string | null, error?: string | null } | null };
+
+export type ForgotPasswordRestMutationVariables = Exact<{
+  email: Scalars['String']['input'];
+}>;
+
+
+export type ForgotPasswordRestMutation = { __typename?: 'Mutation', forgotPasswordRest?: { __typename?: 'ForgotPasswordRest', success?: boolean | null, message?: string | null, error?: string | null } | null };
+
+export type GetSecurityQuestionMutationVariables = Exact<{
+  username: Scalars['String']['input'];
+}>;
+
+
+export type GetSecurityQuestionMutation = { __typename?: 'Mutation', getSecurityQuestion?: { __typename?: 'GetSecurityQuestion', success?: boolean | null, error?: string | null, question?: string | null, questionKey?: string | null } | null };
+
 export type RemoveProfilePictureMutationVariables = Exact<{ [key: string]: never; }>;
 
 
 export type RemoveProfilePictureMutation = { __typename?: 'Mutation', removeProfilePicture?: { __typename?: 'RemoveProfilePicture', success?: boolean | null, error?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null, profilePictureUrl?: string | null } | null } | null };
+
+export type ResetPasswordMutationVariables = Exact<{
+  token: Scalars['String']['input'];
+  newPassword: Scalars['String']['input'];
+}>;
+
+
+export type ResetPasswordMutation = { __typename?: 'Mutation', resetPassword?: { __typename?: 'ResetPassword', success?: boolean | null, message?: string | null, error?: string | null } | null };
+
+export type ResetPasswordRestMutationVariables = Exact<{
+  token: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+}>;
+
+
+export type ResetPasswordRestMutation = { __typename?: 'Mutation', resetPasswordRest?: { __typename?: 'ResetPasswordRest', success?: boolean | null, message?: string | null, error?: string | null } | null };
+
+export type ResetPasswordWithOtpMutationVariables = Exact<{
+  username: Scalars['String']['input'];
+  otp: Scalars['String']['input'];
+  newPassword: Scalars['String']['input'];
+}>;
+
+
+export type ResetPasswordWithOtpMutation = { __typename?: 'Mutation', resetPasswordWithOtp?: { __typename?: 'ResetPasswordWithOTP', success?: boolean | null, error?: string | null, message?: string | null } | null };
+
+export type SetupSecurityQuestionMutationVariables = Exact<{
+  question: Scalars['String']['input'];
+  answer: Scalars['String']['input'];
+}>;
+
+
+export type SetupSecurityQuestionMutation = { __typename?: 'Mutation', setupSecurityQuestion?: { __typename?: 'SetupSecurityQuestion', success?: boolean | null, error?: string | null, message?: string | null } | null };
 
 export type SignInMutationVariables = Exact<{
   username: Scalars['String']['input'];
@@ -247,7 +416,7 @@ export type SignInMutationVariables = Exact<{
 }>;
 
 
-export type SignInMutation = { __typename?: 'Mutation', signIn?: { __typename?: 'SignIn', token?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null, profilePictureUrl?: string | null } | null } | null };
+export type SignInMutation = { __typename?: 'Mutation', signIn?: { __typename?: 'SignIn', success?: boolean | null, error?: string | null, token?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null, profilePictureUrl?: string | null } | null } | null };
 
 export type SignUpMutationVariables = Exact<{
   firstName: Scalars['String']['input'];
@@ -277,6 +446,14 @@ export type UploadProfilePictureMutationVariables = Exact<{
 
 export type UploadProfilePictureMutation = { __typename?: 'Mutation', uploadProfilePicture?: { __typename?: 'UploadProfilePicture', success?: boolean | null, error?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null, profilePictureUrl?: string | null } | null } | null };
 
+export type VerifySecurityAnswerMutationVariables = Exact<{
+  username: Scalars['String']['input'];
+  answer: Scalars['String']['input'];
+}>;
+
+
+export type VerifySecurityAnswerMutation = { __typename?: 'Mutation', verifySecurityAnswer?: { __typename?: 'VerifySecurityAnswer', success?: boolean | null, error?: string | null, message?: string | null, otp?: string | null } | null };
+
 export type GetAiChatMessagesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -287,12 +464,12 @@ export type TherapistQueryVariables = Exact<{
 }>;
 
 
-export type TherapistQuery = { __typename?: 'Query', therapist?: { __typename?: 'TherapistType', id: string, name: string, photoUrl?: string | null, location: string, county: string, town: string, phone: string, whatsapp?: string | null, email?: string | null, specialization?: Array<string | null> | null, bio: string, fullBio?: string | null, qualifications: any, experience: string, licenseNumber?: string | null, price?: number | null, availability?: string | null, coords?: { __typename?: 'CoordsType', lat?: number | null, lng?: number | null } | null } | null };
+export type TherapistQuery = { __typename?: 'Query', therapist?: { __typename?: 'TherapistType', id: string, name: string, photoUrl?: string | null, location: string, county?: string | null, town: string, phone: string, whatsapp?: string | null, email?: string | null, specialization?: Array<string | null> | null, bio: string, fullBio?: string | null, qualifications: any, experience: string, licenseNumber?: string | null, price?: number | null, availability?: string | null, coords?: { __typename?: 'CoordsType', lat?: number | null, lng?: number | null } | null } | null };
 
 export type TherapistsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type TherapistsQuery = { __typename?: 'Query', therapists?: Array<{ __typename?: 'TherapistType', id: string, name: string, photoUrl?: string | null, location: string, county: string, town: string, phone: string, whatsapp?: string | null, email?: string | null, specialization?: Array<string | null> | null, bio: string, licenseNumber?: string | null, price?: number | null, availability?: string | null, coords?: { __typename?: 'CoordsType', lat?: number | null, lng?: number | null } | null } | null> | null };
+export type TherapistsQuery = { __typename?: 'Query', therapists?: Array<{ __typename?: 'TherapistType', id: string, name: string, photoUrl?: string | null, location: string, county?: string | null, town: string, phone: string, whatsapp?: string | null, email?: string | null, specialization?: Array<string | null> | null, bio: string, licenseNumber?: string | null, price?: number | null, availability?: string | null, coords?: { __typename?: 'CoordsType', lat?: number | null, lng?: number | null } | null } | null> | null };
 
 
 export const SendAiChatMessageDocument = gql`
@@ -336,6 +513,112 @@ export function useSendAiChatMessageMutation(baseOptions?: Apollo.MutationHookOp
 export type SendAiChatMessageMutationHookResult = ReturnType<typeof useSendAiChatMessageMutation>;
 export type SendAiChatMessageMutationResult = Apollo.MutationResult<SendAiChatMessageMutation>;
 export type SendAiChatMessageMutationOptions = Apollo.BaseMutationOptions<SendAiChatMessageMutation, SendAiChatMessageMutationVariables>;
+export const ForgotPasswordDocument = gql`
+    mutation ForgotPassword($email: String!) {
+  forgotPassword(email: $email) {
+    success
+    message
+    error
+  }
+}
+    `;
+export type ForgotPasswordMutationFn = Apollo.MutationFunction<ForgotPasswordMutation, ForgotPasswordMutationVariables>;
+
+/**
+ * __useForgotPasswordMutation__
+ *
+ * To run a mutation, you first call `useForgotPasswordMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useForgotPasswordMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [forgotPasswordMutation, { data, loading, error }] = useForgotPasswordMutation({
+ *   variables: {
+ *      email: // value for 'email'
+ *   },
+ * });
+ */
+export function useForgotPasswordMutation(baseOptions?: Apollo.MutationHookOptions<ForgotPasswordMutation, ForgotPasswordMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<ForgotPasswordMutation, ForgotPasswordMutationVariables>(ForgotPasswordDocument, options);
+      }
+export type ForgotPasswordMutationHookResult = ReturnType<typeof useForgotPasswordMutation>;
+export type ForgotPasswordMutationResult = Apollo.MutationResult<ForgotPasswordMutation>;
+export type ForgotPasswordMutationOptions = Apollo.BaseMutationOptions<ForgotPasswordMutation, ForgotPasswordMutationVariables>;
+export const ForgotPasswordRestDocument = gql`
+    mutation ForgotPasswordRest($email: String!) {
+  forgotPasswordRest(email: $email) {
+    success
+    message
+    error
+  }
+}
+    `;
+export type ForgotPasswordRestMutationFn = Apollo.MutationFunction<ForgotPasswordRestMutation, ForgotPasswordRestMutationVariables>;
+
+/**
+ * __useForgotPasswordRestMutation__
+ *
+ * To run a mutation, you first call `useForgotPasswordRestMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useForgotPasswordRestMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [forgotPasswordRestMutation, { data, loading, error }] = useForgotPasswordRestMutation({
+ *   variables: {
+ *      email: // value for 'email'
+ *   },
+ * });
+ */
+export function useForgotPasswordRestMutation(baseOptions?: Apollo.MutationHookOptions<ForgotPasswordRestMutation, ForgotPasswordRestMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<ForgotPasswordRestMutation, ForgotPasswordRestMutationVariables>(ForgotPasswordRestDocument, options);
+      }
+export type ForgotPasswordRestMutationHookResult = ReturnType<typeof useForgotPasswordRestMutation>;
+export type ForgotPasswordRestMutationResult = Apollo.MutationResult<ForgotPasswordRestMutation>;
+export type ForgotPasswordRestMutationOptions = Apollo.BaseMutationOptions<ForgotPasswordRestMutation, ForgotPasswordRestMutationVariables>;
+export const GetSecurityQuestionDocument = gql`
+    mutation GetSecurityQuestion($username: String!) {
+  getSecurityQuestion(username: $username) {
+    success
+    error
+    question
+    questionKey
+  }
+}
+    `;
+export type GetSecurityQuestionMutationFn = Apollo.MutationFunction<GetSecurityQuestionMutation, GetSecurityQuestionMutationVariables>;
+
+/**
+ * __useGetSecurityQuestionMutation__
+ *
+ * To run a mutation, you first call `useGetSecurityQuestionMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useGetSecurityQuestionMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [getSecurityQuestionMutation, { data, loading, error }] = useGetSecurityQuestionMutation({
+ *   variables: {
+ *      username: // value for 'username'
+ *   },
+ * });
+ */
+export function useGetSecurityQuestionMutation(baseOptions?: Apollo.MutationHookOptions<GetSecurityQuestionMutation, GetSecurityQuestionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<GetSecurityQuestionMutation, GetSecurityQuestionMutationVariables>(GetSecurityQuestionDocument, options);
+      }
+export type GetSecurityQuestionMutationHookResult = ReturnType<typeof useGetSecurityQuestionMutation>;
+export type GetSecurityQuestionMutationResult = Apollo.MutationResult<GetSecurityQuestionMutation>;
+export type GetSecurityQuestionMutationOptions = Apollo.BaseMutationOptions<GetSecurityQuestionMutation, GetSecurityQuestionMutationVariables>;
 export const RemoveProfilePictureDocument = gql`
     mutation RemoveProfilePicture {
   removeProfilePicture {
@@ -378,9 +661,156 @@ export function useRemoveProfilePictureMutation(baseOptions?: Apollo.MutationHoo
 export type RemoveProfilePictureMutationHookResult = ReturnType<typeof useRemoveProfilePictureMutation>;
 export type RemoveProfilePictureMutationResult = Apollo.MutationResult<RemoveProfilePictureMutation>;
 export type RemoveProfilePictureMutationOptions = Apollo.BaseMutationOptions<RemoveProfilePictureMutation, RemoveProfilePictureMutationVariables>;
+export const ResetPasswordDocument = gql`
+    mutation ResetPassword($token: String!, $newPassword: String!) {
+  resetPassword(token: $token, newPassword: $newPassword) {
+    success
+    message
+    error
+  }
+}
+    `;
+export type ResetPasswordMutationFn = Apollo.MutationFunction<ResetPasswordMutation, ResetPasswordMutationVariables>;
+
+/**
+ * __useResetPasswordMutation__
+ *
+ * To run a mutation, you first call `useResetPasswordMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useResetPasswordMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [resetPasswordMutation, { data, loading, error }] = useResetPasswordMutation({
+ *   variables: {
+ *      token: // value for 'token'
+ *      newPassword: // value for 'newPassword'
+ *   },
+ * });
+ */
+export function useResetPasswordMutation(baseOptions?: Apollo.MutationHookOptions<ResetPasswordMutation, ResetPasswordMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<ResetPasswordMutation, ResetPasswordMutationVariables>(ResetPasswordDocument, options);
+      }
+export type ResetPasswordMutationHookResult = ReturnType<typeof useResetPasswordMutation>;
+export type ResetPasswordMutationResult = Apollo.MutationResult<ResetPasswordMutation>;
+export type ResetPasswordMutationOptions = Apollo.BaseMutationOptions<ResetPasswordMutation, ResetPasswordMutationVariables>;
+export const ResetPasswordRestDocument = gql`
+    mutation ResetPasswordRest($token: String!, $password: String!) {
+  resetPasswordRest(token: $token, password: $password) {
+    success
+    message
+    error
+  }
+}
+    `;
+export type ResetPasswordRestMutationFn = Apollo.MutationFunction<ResetPasswordRestMutation, ResetPasswordRestMutationVariables>;
+
+/**
+ * __useResetPasswordRestMutation__
+ *
+ * To run a mutation, you first call `useResetPasswordRestMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useResetPasswordRestMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [resetPasswordRestMutation, { data, loading, error }] = useResetPasswordRestMutation({
+ *   variables: {
+ *      token: // value for 'token'
+ *      password: // value for 'password'
+ *   },
+ * });
+ */
+export function useResetPasswordRestMutation(baseOptions?: Apollo.MutationHookOptions<ResetPasswordRestMutation, ResetPasswordRestMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<ResetPasswordRestMutation, ResetPasswordRestMutationVariables>(ResetPasswordRestDocument, options);
+      }
+export type ResetPasswordRestMutationHookResult = ReturnType<typeof useResetPasswordRestMutation>;
+export type ResetPasswordRestMutationResult = Apollo.MutationResult<ResetPasswordRestMutation>;
+export type ResetPasswordRestMutationOptions = Apollo.BaseMutationOptions<ResetPasswordRestMutation, ResetPasswordRestMutationVariables>;
+export const ResetPasswordWithOtpDocument = gql`
+    mutation ResetPasswordWithOtp($username: String!, $otp: String!, $newPassword: String!) {
+  resetPasswordWithOtp(username: $username, otp: $otp, newPassword: $newPassword) {
+    success
+    error
+    message
+  }
+}
+    `;
+export type ResetPasswordWithOtpMutationFn = Apollo.MutationFunction<ResetPasswordWithOtpMutation, ResetPasswordWithOtpMutationVariables>;
+
+/**
+ * __useResetPasswordWithOtpMutation__
+ *
+ * To run a mutation, you first call `useResetPasswordWithOtpMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useResetPasswordWithOtpMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [resetPasswordWithOtpMutation, { data, loading, error }] = useResetPasswordWithOtpMutation({
+ *   variables: {
+ *      username: // value for 'username'
+ *      otp: // value for 'otp'
+ *      newPassword: // value for 'newPassword'
+ *   },
+ * });
+ */
+export function useResetPasswordWithOtpMutation(baseOptions?: Apollo.MutationHookOptions<ResetPasswordWithOtpMutation, ResetPasswordWithOtpMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<ResetPasswordWithOtpMutation, ResetPasswordWithOtpMutationVariables>(ResetPasswordWithOtpDocument, options);
+      }
+export type ResetPasswordWithOtpMutationHookResult = ReturnType<typeof useResetPasswordWithOtpMutation>;
+export type ResetPasswordWithOtpMutationResult = Apollo.MutationResult<ResetPasswordWithOtpMutation>;
+export type ResetPasswordWithOtpMutationOptions = Apollo.BaseMutationOptions<ResetPasswordWithOtpMutation, ResetPasswordWithOtpMutationVariables>;
+export const SetupSecurityQuestionDocument = gql`
+    mutation SetupSecurityQuestion($question: String!, $answer: String!) {
+  setupSecurityQuestion(question: $question, answer: $answer) {
+    success
+    error
+    message
+  }
+}
+    `;
+export type SetupSecurityQuestionMutationFn = Apollo.MutationFunction<SetupSecurityQuestionMutation, SetupSecurityQuestionMutationVariables>;
+
+/**
+ * __useSetupSecurityQuestionMutation__
+ *
+ * To run a mutation, you first call `useSetupSecurityQuestionMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSetupSecurityQuestionMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [setupSecurityQuestionMutation, { data, loading, error }] = useSetupSecurityQuestionMutation({
+ *   variables: {
+ *      question: // value for 'question'
+ *      answer: // value for 'answer'
+ *   },
+ * });
+ */
+export function useSetupSecurityQuestionMutation(baseOptions?: Apollo.MutationHookOptions<SetupSecurityQuestionMutation, SetupSecurityQuestionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<SetupSecurityQuestionMutation, SetupSecurityQuestionMutationVariables>(SetupSecurityQuestionDocument, options);
+      }
+export type SetupSecurityQuestionMutationHookResult = ReturnType<typeof useSetupSecurityQuestionMutation>;
+export type SetupSecurityQuestionMutationResult = Apollo.MutationResult<SetupSecurityQuestionMutation>;
+export type SetupSecurityQuestionMutationOptions = Apollo.BaseMutationOptions<SetupSecurityQuestionMutation, SetupSecurityQuestionMutationVariables>;
 export const SignInDocument = gql`
     mutation SignIn($username: String!, $password: String!) {
   signIn(username: $username, password: $password) {
+    success
+    error
     token
     user {
       id
@@ -564,6 +994,43 @@ export function useUploadProfilePictureMutation(baseOptions?: Apollo.MutationHoo
 export type UploadProfilePictureMutationHookResult = ReturnType<typeof useUploadProfilePictureMutation>;
 export type UploadProfilePictureMutationResult = Apollo.MutationResult<UploadProfilePictureMutation>;
 export type UploadProfilePictureMutationOptions = Apollo.BaseMutationOptions<UploadProfilePictureMutation, UploadProfilePictureMutationVariables>;
+export const VerifySecurityAnswerDocument = gql`
+    mutation VerifySecurityAnswer($username: String!, $answer: String!) {
+  verifySecurityAnswer(username: $username, answer: $answer) {
+    success
+    error
+    message
+    otp
+  }
+}
+    `;
+export type VerifySecurityAnswerMutationFn = Apollo.MutationFunction<VerifySecurityAnswerMutation, VerifySecurityAnswerMutationVariables>;
+
+/**
+ * __useVerifySecurityAnswerMutation__
+ *
+ * To run a mutation, you first call `useVerifySecurityAnswerMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useVerifySecurityAnswerMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [verifySecurityAnswerMutation, { data, loading, error }] = useVerifySecurityAnswerMutation({
+ *   variables: {
+ *      username: // value for 'username'
+ *      answer: // value for 'answer'
+ *   },
+ * });
+ */
+export function useVerifySecurityAnswerMutation(baseOptions?: Apollo.MutationHookOptions<VerifySecurityAnswerMutation, VerifySecurityAnswerMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<VerifySecurityAnswerMutation, VerifySecurityAnswerMutationVariables>(VerifySecurityAnswerDocument, options);
+      }
+export type VerifySecurityAnswerMutationHookResult = ReturnType<typeof useVerifySecurityAnswerMutation>;
+export type VerifySecurityAnswerMutationResult = Apollo.MutationResult<VerifySecurityAnswerMutation>;
+export type VerifySecurityAnswerMutationOptions = Apollo.BaseMutationOptions<VerifySecurityAnswerMutation, VerifySecurityAnswerMutationVariables>;
 export const GetAiChatMessagesDocument = gql`
     query GetAiChatMessages {
   aiChatMessages {

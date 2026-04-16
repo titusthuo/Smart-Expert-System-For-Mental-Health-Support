@@ -1,22 +1,18 @@
-# healthbackend/asgi.py
 import os
+
 from django.core.asgi import get_asgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'healthbackend.settings')
 
-# THIS IS THE MAGIC LINE
-application = get_asgi_application()
+django_asgi_app = get_asgi_application()
 
-# Add this at the bottom — ONLY IF YOU HAVE routing.py
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-import core.routing  # your routing file
+import core.routing
 
 application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
+    "http": django_asgi_app,
     "websocket": AuthMiddlewareStack(
-        URLRouter(
-            core.routing.websocket_urlpatterns
-        )
+        URLRouter(core.routing.websocket_urlpatterns)
     ),
 })
