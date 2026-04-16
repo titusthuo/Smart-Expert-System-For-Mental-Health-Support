@@ -24,8 +24,13 @@ export function useSignIn() {
       });
 
       const payload = res.data?.signIn;
-      const token = payload?.token;
-      const user = payload?.user;
+
+      if (!payload?.success) {
+        throw new Error(payload?.error || "Sign in failed");
+      }
+
+      const token = payload.token;
+      const user = payload.user;
 
       if (!token || !user) {
         throw new Error("Sign in failed");

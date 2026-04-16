@@ -36,7 +36,6 @@
     "graphql": "^16.9.0",
     "lucide-react-native": "^0.576.0",
     "nativewind": "^4.2.2",
-    "prettier-plugin-tailwindcss": "^0.5.14",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
@@ -50,15 +49,17 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
-    "@graphql-codegen/cli": "^5.0.4",
-    "@graphql-codegen/typescript": "^4.1.2",
-    "@graphql-codegen/typescript-operations": "^4.4.1",
+    "@graphql-codegen/cli": "^6.2.1",
+    "@graphql-codegen/typescript": "^5.0.9",
+    "@graphql-codegen/typescript-operations": "^5.0.9",
     "@graphql-codegen/typescript-react-apollo": "^4.3.2",
     "@types/apollo-upload-client": "^19.0.0",
     "@types/react": "~19.1.0",
     "autoprefixer": "^10.4.24",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "expo-module-scripts": "^3.0.5",
+    "prettier-plugin-tailwindcss": "^0.5.14",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",
     "typescript": "~5.9.2"

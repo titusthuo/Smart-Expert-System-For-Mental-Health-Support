@@ -1,0 +1,8 @@
+mutation GetSecurityQuestion($username: String!) {
+  getSecurityQuestion(username: $username) {
+    success
+    error
+    question
+    questionKey
+  }
+}

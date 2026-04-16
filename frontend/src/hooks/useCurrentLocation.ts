@@ -1,4 +1,3 @@
-// src/lib/hooks/useCurrentLocation.ts
 import * as Location from "expo-location";
 import { useState } from "react";
 import { Alert } from "react-native";

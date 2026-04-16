@@ -153,7 +153,14 @@ export const useAIAssistant = (
           },
         );
 
-        if (!res.ok) throw new Error(`Gemini API error: ${res.status}`);
+        if (!res.ok) {
+          if (res.status === 503) {
+            throw new Error("The AI service is temporarily unavailable. Please try again in a moment.");
+          } else if (res.status === 429) {
+            throw new Error("Too many requests. Please wait a moment and try again.");
+          }
+          throw new Error("Unable to reach the AI service. Please try again later.");
+        }
 
         const data = await res.json();
         let botText =

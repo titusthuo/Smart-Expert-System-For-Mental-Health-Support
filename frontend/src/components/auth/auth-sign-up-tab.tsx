@@ -3,11 +3,11 @@ import React, { useCallback, useMemo, useState } from "react";
 import { TouchableOpacity, View } from "react-native";
 
 import {
-  AppText,
-  Button,
-  Input,
-  PasswordRequirements,
-  PasswordStrength,
+    AppText,
+    Button,
+    Input,
+    PasswordRequirements,
+    PasswordStrength,
 } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { useSignUp } from "@/hooks/useSignUp";
@@ -32,15 +32,47 @@ type FormData = {
   confirmPassword: string;
 };
 
-export function AuthSignUpTab({
-  onShowFeedback,
-  onSignedUp,
-}: {
-  onShowFeedback: ShowFeedback;
+type AuthSignUpTabProps = {
   onSignedUp: () => void;
-}) {
+  onShowFeedback: ShowFeedback;
+  onNavigate: (route: any) => void;
+  signUp: (opts: {
+    firstName: string;
+    lastName: string;
+    username: string;
+    email: string;
+    country: string;
+    password: string;
+  }) => Promise<{
+    token: string | null;
+    user: {
+      __typename?: "UserType";
+      id: string;
+      username: string;
+      email?: string | null;
+      name?: string | null;
+      phone?: string | null;
+      country?: string | null;
+      profilePictureUrl?: string | null;
+    } | null;
+    profileData: {
+      name: string;
+      email: string;
+      phone: string;
+      photoUri: string | null;
+    } | null;
+    success: boolean;
+  }>;
+};
+
+export function AuthSignUpTab({
+  onSignedUp,
+  onShowFeedback,
+  onNavigate,
+  signUp,
+}: AuthSignUpTabProps) {
   const { border, brand, surface } = useAuthTheme();
-  const { signUp } = useSignUp();
+  const { signUp: signUpHook } = useSignUp();
 
   const [form, setForm] = useState<FormData>({
     firstName: "",
@@ -160,6 +192,8 @@ export function AuthSignUpTab({
         country: form.country.trim(),
         password: form.password,
       });
+
+      // Show success message and then redirect to security question setup
       onSignedUp();
     } catch (e) {
       await onShowFeedback({
@@ -183,6 +217,7 @@ export function AuthSignUpTab({
     form.lastName,
     form.password,
     form.username,
+    onNavigate,
     onShowFeedback,
     onSignedUp,
     signUp,

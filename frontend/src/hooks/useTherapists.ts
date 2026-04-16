@@ -3,24 +3,12 @@ import {
     useTherapistsQuery,
 } from "@/graphql/generated/graphql";
 import { Therapist } from "@/lib/therapists/types";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 
 const FALLBACK_THERAPIST_PHOTO = require("../../assets/images/therapists/Therapists-image.jpg");
 
 export function useTherapists() {
   const { data, loading, error, ...queryState } = useTherapistsQuery();
-
-  useEffect(() => {
-    console.log("[useTherapists] fetch state", {
-      loading,
-      error: error?.message ?? null,
-      count: data?.therapists?.length ?? 0,
-    });
-
-    if (data?.therapists?.length) {
-      console.log("[useTherapists] therapists payload", data.therapists);
-    }
-  }, [data, error, loading]);
 
   const therapists = useMemo<Therapist[]>(() => {
     const items = (data?.therapists ?? []) as NonNullable<
@@ -38,7 +26,7 @@ export function useTherapists() {
           ? { uri: therapist.photoUrl }
           : FALLBACK_THERAPIST_PHOTO,
         location: therapist.location,
-        county: therapist.county,
+        county: therapist.county ?? '',
         town: therapist.town,
         phone: therapist.phone,
         whatsapp: therapist.whatsapp ?? undefined,
