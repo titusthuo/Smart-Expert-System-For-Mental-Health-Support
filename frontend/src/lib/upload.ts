@@ -1,4 +1,4 @@
-// @ts-ignore - apollo-upload-client types issue
+// @ts-expect-error — @types/apollo-upload-client exists but conflicts with package exports
 import { ReactNativeFile } from "apollo-upload-client";
 
 /**

@@ -19,6 +19,7 @@ import { AuthSignInTab } from "@/components/auth/auth-sign-in-tab";
 import { AuthSignUpTab } from "@/components/auth/auth-sign-up-tab";
 import { AppText, Card, TabStrip } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
+import { useSignUp } from "@/hooks/useSignUp";
 
 type AuthTabsProps = {
   initialTab: "signIn" | "signUp";

@@ -1,5 +1,5 @@
-import { gql } from '@apollo/client';
 import * as Apollo from '@apollo/client';
+import { gql } from '@apollo/client';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -251,6 +251,8 @@ export type SetupSecurityQuestion = {
 
 export type SignIn = {
   __typename?: 'SignIn';
+  error?: Maybe<Scalars['String']['output']>;
+  success?: Maybe<Scalars['Boolean']['output']>;
   token?: Maybe<Scalars['String']['output']>;
   user?: Maybe<UserType>;
 };
@@ -414,7 +416,7 @@ export type SignInMutationVariables = Exact<{
 }>;
 
 
-export type SignInMutation = { __typename?: 'Mutation', signIn?: { __typename?: 'SignIn', token?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null, profilePictureUrl?: string | null } | null } | null };
+export type SignInMutation = { __typename?: 'Mutation', signIn?: { __typename?: 'SignIn', success?: boolean | null, error?: string | null, token?: string | null, user?: { __typename?: 'UserType', id: string, username: string, email?: string | null, name?: string | null, phone?: string | null, country?: string | null, profilePictureUrl?: string | null } | null } | null };
 
 export type SignUpMutationVariables = Exact<{
   firstName: Scalars['String']['input'];
@@ -807,6 +809,8 @@ export type SetupSecurityQuestionMutationOptions = Apollo.BaseMutationOptions<Se
 export const SignInDocument = gql`
     mutation SignIn($username: String!, $password: String!) {
   signIn(username: $username, password: $password) {
+    success
+    error
     token
     user {
       id

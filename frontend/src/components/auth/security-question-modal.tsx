@@ -5,12 +5,12 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import {
-  Modal,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 const SECURITY_QUESTIONS = [
@@ -60,7 +60,6 @@ export function SecurityQuestionModal({
       });
 
       if (data?.setupSecurityQuestion?.success) {
-        console.log("Security question set up successfully");
         onComplete();
       } else {
         setError(
@@ -69,7 +68,6 @@ export function SecurityQuestionModal({
         );
       }
     } catch (error: any) {
-      console.error("Failed to set up security question:", error);
       setError(
         error.message ||
           "Failed to set up security question. Please try again.",

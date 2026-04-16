@@ -1,6 +1,6 @@
 import { useTherapistQuery } from "@/graphql/generated/graphql";
 import { TherapistDetail } from "@/lib/therapists/types";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 
 const FALLBACK_THERAPIST_PHOTO = require("../../assets/images/therapists/Therapists-image.jpg");
 
@@ -12,19 +12,6 @@ export function useTherapist(id?: string) {
     variables: { id: isValidTherapistId ? therapistId : 0 },
     skip: !isValidTherapistId,
   });
-
-  useEffect(() => {
-    console.log("[useTherapist] fetch state", {
-      id,
-      loading,
-      error: error?.message ?? null,
-      hasTherapist: Boolean(data?.therapist),
-    });
-
-    if (data?.therapist) {
-      console.log("[useTherapist] therapist payload", data.therapist);
-    }
-  }, [data, error, id, loading]);
 
   const therapist = useMemo<TherapistDetail | undefined>(() => {
     const item = data?.therapist;
@@ -41,7 +28,7 @@ export function useTherapist(id?: string) {
       name: item.name,
       photo: item.photoUrl ? { uri: item.photoUrl } : FALLBACK_THERAPIST_PHOTO,
       location: item.location,
-      county: item.county,
+      county: item.county ?? '',
       town: item.town,
       phone: item.phone,
       whatsapp: item.whatsapp ?? undefined,

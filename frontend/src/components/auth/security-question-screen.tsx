@@ -36,7 +36,6 @@ export function SecurityQuestionScreen() {
       });
 
       if (data?.verifySecurityAnswer?.success) {
-        // Navigate to OTP screen with the OTP
         router.push({
           pathname: "/(auth)/otp-verification",
           params: {

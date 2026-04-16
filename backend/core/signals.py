@@ -1,5 +1,8 @@
-# core/signals.py
+import logging
+
 from django.dispatch import receiver
+
+logger = logging.getLogger(__name__)
 from django_rest_passwordreset.signals import reset_password_token_created
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -11,12 +14,12 @@ def password_reset_token_created(sender, instance, reset_password_token, *args, 
     """
     Handles password reset token creation and sends email with custom reset URL
     """
-    # Create context for email templates
+    frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:8081')
     context = {
         "current_user": reset_password_token.user,
         "username": reset_password_token.user.username,
         "email": reset_password_token.user.email,
-        "reset_password_url": f"http://localhost:8081/reset-password/{reset_password_token.key}",
+        "reset_password_url": f"{frontend_url}/reset-password/{reset_password_token.key}",
     }
 
     # Render email templates
@@ -34,8 +37,6 @@ def password_reset_token_created(sender, instance, reset_password_token, *args, 
     
     try:
         msg.send()
-        print(f"Password reset email sent to {reset_password_token.user.email}")
-        print(f"Reset link: {context['reset_password_url']}")
+        logger.info("Password reset email sent to %s", reset_password_token.user.email)
     except Exception as e:
-        print(f"Failed to send email to {reset_password_token.user.email}: {str(e)}")
-        # The token is still created, user can get link from console if needed
+        logger.error("Failed to send email to %s: %s", reset_password_token.user.email, e)

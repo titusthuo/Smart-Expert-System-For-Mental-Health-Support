@@ -25,6 +25,7 @@ export function useSignUp() {
   const setSecurityQuestionSetup = useAuthSession(
     (s) => s.setSecurityQuestionSetup,
   );
+  const setLastAuthedPath = useAuthSession((s) => s.setLastAuthedPath);
 
   const signUp = useCallback(
     async ({
@@ -75,6 +76,10 @@ export function useSignUp() {
       }
 
       if (token && user && profileData) {
+        // Mark that user came from sign-up so the security question modal appears
+        setLastAuthedPath("/(auth)/sign-up");
+        setSecurityQuestionSetup(false);
+
         await setSession({
           jwt: token,
           user: {
@@ -87,9 +92,6 @@ export function useSignUp() {
           },
           profile: profileData,
         });
-
-        // Reset security question setup flag for new users
-        setSecurityQuestionSetup(false);
       }
 
       return {
@@ -99,7 +101,7 @@ export function useSignUp() {
         success: true,
       };
     },
-    [mutate, setSession, setSecurityQuestionSetup],
+    [mutate, setSession, setSecurityQuestionSetup, setLastAuthedPath],
   );
 
   return {
