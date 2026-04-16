@@ -7,25 +7,16 @@ from graphene_django import DjangoObjectType
 import graphql_jwt
 from graphql_jwt.decorators import login_required
 from graphql_jwt.shortcuts import get_token
-from datetime import timedelta, datetime, time, date
+from datetime import timedelta
 from django.contrib.auth import authenticate
 from django.db import models
 from django.utils import timezone
-from decimal import Decimal
 from django.core.exceptions import ValidationError
 import uuid
 from graphene_file_upload.scalars import Upload
 
-# Import channels only if available (for notifications)
-try:
-    from channels.layers import get_channel_layer
-    from asgiref.sync import async_to_sync
-    CHANNELS_AVAILABLE = True
-except ImportError:
-    CHANNELS_AVAILABLE = False
-
 from .models import (
-    User, Country, County, Notification, 
+    User, Country, County,
     AIChatMessage, Therapist, TherapistReview,
     Specialty, PasswordReset, SecurityQuestion, PasswordResetOTP,
 )

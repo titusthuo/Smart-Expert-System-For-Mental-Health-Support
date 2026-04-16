@@ -1,9 +1,11 @@
 import React, { useMemo } from "react";
-import { TouchableOpacity, View } from "react-native";
+import { Image, TouchableOpacity, View } from "react-native";
 
 import { AppText } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { useAuthSession } from "@/stores/useAuthSession";
+
+const mentallyLogo = require("../../../assets/logos/brain.jpg");
 
 type ChatHeaderProps = {
   mood?: string;
@@ -13,6 +15,7 @@ type ChatHeaderProps = {
 export function ChatHeader({ mood, onPressProfile }: ChatHeaderProps) {
   const { brand, border } = useAuthTheme();
   const session = useAuthSession((s) => s.session);
+  const profilePhotoUri = session?.profile?.photoUri ?? null;
 
   const profileName = useMemo(() => {
     return (
@@ -35,13 +38,14 @@ export function ChatHeader({ mood, onPressProfile }: ChatHeaderProps) {
       <View className="flex-row items-center">
         <View className="relative">
           <View
-            className="w-11 h-11 rounded-full items-center justify-center"
-            style={{ backgroundColor: brand }}
+            className="w-11 h-11 rounded-full items-center justify-center overflow-hidden border border-border"
             accessibilityLabel="AI assistant avatar"
           >
-            <AppText unstyled className="text-white font-bold text-sm">
-              AI
-            </AppText>
+            <Image
+              source={mentallyLogo}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+            />
           </View>
           <View className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-card" />
         </View>
@@ -72,7 +76,7 @@ export function ChatHeader({ mood, onPressProfile }: ChatHeaderProps) {
       </View>
 
       <TouchableOpacity
-        className="w-9 h-9 rounded-full items-center justify-center border"
+        className="w-9 h-9 rounded-full items-center justify-center border overflow-hidden"
         onPress={onPressProfile}
         accessibilityRole="button"
         accessibilityLabel="Profile"
@@ -80,9 +84,17 @@ export function ChatHeader({ mood, onPressProfile }: ChatHeaderProps) {
         activeOpacity={0.8}
         style={{ backgroundColor: brand, borderColor: border }}
       >
-        <AppText unstyled className="text-white font-bold text-[12px]">
-          {initials}
-        </AppText>
+        {profilePhotoUri ? (
+          <Image
+            source={{ uri: profilePhotoUri }}
+            style={{ width: "100%", height: "100%" }}
+            resizeMode="cover"
+          />
+        ) : (
+          <AppText unstyled className="text-white font-bold text-[12px]">
+            {initials}
+          </AppText>
+        )}
       </TouchableOpacity>
     </View>
   );

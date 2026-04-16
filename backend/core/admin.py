@@ -2,14 +2,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
-from django import forms
-from django.core.files.base import ContentFile
 from django.utils.html import format_html
-from datetime import datetime, timedelta, time
-from django.utils import timezone
-import os
 from .models import (
-    User, Country, County, Notification,
+    User, Country, County,
     AIChatMessage,
     Therapist, TherapistReview, Specialty,
 )

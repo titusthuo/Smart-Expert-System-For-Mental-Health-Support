@@ -84,24 +84,3 @@ export async function removeStoredItem(key: string): Promise<void> {
   await backend().removeItem(key);
 }
 
-export async function getStoredJson<T>(key: string): Promise<T | null> {
-  const stored = await getStoredString(key);
-  if (!stored) return null;
-
-  try {
-    return JSON.parse(stored) as T;
-  } catch {
-    return null;
-  }
-}
-
-export async function setStoredJson(
-  key: string,
-  value: unknown,
-): Promise<void> {
-  try {
-    await setStoredString(key, JSON.stringify(value));
-  } catch {
-    // ignore
-  }
-}

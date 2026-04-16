@@ -141,11 +141,9 @@ export default function ChatScreen() {
         )}
 
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           className="flex-1"
-          keyboardVerticalOffset={
-            Platform.OS === "ios" ? insets.bottom + 90 : insets.bottom + 24
-          }
+          keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 10 : 0}
         >
           <ScrollView
             ref={scrollViewRef}
@@ -153,7 +151,7 @@ export default function ChatScreen() {
             contentContainerStyle={{
               paddingHorizontal: 16,
               paddingTop: 24,
-              paddingBottom: 88 + insets.bottom,
+              paddingBottom: 16,
             }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
