@@ -1,5 +1,3 @@
-// src/hooks/useAIChatMessages.ts
-
 import { useMutation, useQuery } from "@apollo/client";
 import {
     GetAiChatMessagesDocument,

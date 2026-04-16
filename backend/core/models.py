@@ -1,7 +1,6 @@
-# core/models.py
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.core.files.storage import default_storage
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils import timezone
 import random
 import string
@@ -32,12 +31,10 @@ class User(AbstractUser):
         return self.email or self.phone_number or str(self.id)
     
     def save(self, *args, **kwargs):
-        # Clean up old profile picture when uploading new one
         try:
             old = User.objects.get(pk=self.pk)
             if old.profile_picture and old.profile_picture != self.profile_picture:
-                if default_storage.exists(old.profile_picture.path):
-                    default_storage.delete(old.profile_picture.path)
+                old.profile_picture.delete(save=False)
         except User.DoesNotExist:
             pass
         super().save(*args, **kwargs)
@@ -55,19 +52,11 @@ class County(models.Model):
         return f"{self.name}, {self.country.name}"
 
 
-
 class Specialty(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.name
-
-
-
-
-
-
-
 
 
 class Notification(models.Model):
@@ -163,7 +152,7 @@ class PasswordReset(models.Model):
 class TherapistReview(models.Model):
     therapist = models.ForeignKey(Therapist, on_delete=models.CASCADE, related_name='reviews')
     author = models.CharField(max_length=120)
-    rating = models.IntegerField()
+    rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     date = models.DateField()
     comment = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -187,15 +176,17 @@ class SecurityQuestion(models.Model):
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='security_question')
     question = models.CharField(max_length=50, choices=QUESTIONS)
-    answer = models.CharField(max_length=255)  # store lowercased for easy comparison
+    answer = models.CharField(max_length=255)
 
     def set_answer(self, raw_answer):
-        """Set answer in normalized format"""
-        self.answer = raw_answer.lower().strip()
+        """Hash and store the answer (case-insensitive)"""
+        from django.contrib.auth.hashers import make_password
+        self.answer = make_password(raw_answer.lower().strip())
 
     def check_answer(self, raw_answer):
         """Check if answer matches (case-insensitive)"""
-        return self.answer == raw_answer.lower().strip()
+        from django.contrib.auth.hashers import check_password
+        return check_password(raw_answer.lower().strip(), self.answer)
 
     def __str__(self):
         return f"{self.user.username} - {self.get_question_display()}"

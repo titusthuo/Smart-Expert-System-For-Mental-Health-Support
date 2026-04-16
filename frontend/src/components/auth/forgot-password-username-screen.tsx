@@ -1,18 +1,16 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
-import { useGetSecurityQuestionMutation } from '@/graphql/generated/graphql';
 import { AuthScreenShell } from '@/components/auth/auth-shell';
 import { AppText, Button, Input } from '@/components/ui';
+import { useGetSecurityQuestionMutation } from '@/graphql/generated/graphql';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+    Alert,
+    StyleSheet,
+    TouchableOpacity,
+    View
+} from 'react-native';
 
 export function ForgotPasswordUsernameScreen() {
   const router = useRouter();
@@ -43,7 +41,7 @@ export function ForgotPasswordUsernameScreen() {
           params: {
             username: username.trim(),
             question: data.getSecurityQuestion.question,
-            questionKey: data.getSecurityQuestion.question_key,
+            questionKey: data.getSecurityQuestion.questionKey,
           },
         });
       } else {

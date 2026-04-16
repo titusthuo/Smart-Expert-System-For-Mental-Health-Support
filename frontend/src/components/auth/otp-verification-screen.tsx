@@ -22,7 +22,6 @@ export function OTPVerificationScreen() {
       return;
     }
 
-    // Navigate to new password screen
     router.push({
       pathname: "/(auth)/new-password",
       params: {
@@ -35,23 +34,17 @@ export function OTPVerificationScreen() {
   return (
     <AuthScreenShell title="Enter OTP" onBack={() => router.back()}>
       <View style={styles.container}>
-        {/* Demo OTP Display Box */}
-        <View style={styles.demoBox}>
-          <View style={styles.demoHeader}>
-            <Ionicons name="flask-outline" size={20} color="#F97316" />
-            <AppText variant="body" style={styles.demoLabel}>
-              DEMO MODE
+        <View style={styles.otpDisplayBox}>
+          <View style={styles.otpDisplayHeader}>
+            <Ionicons name="key-outline" size={20} color="#4F46E5" />
+            <AppText variant="body" style={styles.otpDisplayLabel}>
+              YOUR VERIFICATION CODE
             </AppText>
           </View>
-          <AppText variant="body" style={styles.demoSubLabel}>
-            In production, this code would be sent via SMS.
-            {"\n"}
-            Your reset code is:
-          </AppText>
-          <AppText variant="heading" style={styles.otpDisplay}>
+          <AppText variant="heading" style={styles.otpDisplayCode}>
             {otp}
           </AppText>
-          <AppText variant="hint" style={styles.demoNote}>
+          <AppText variant="hint" style={styles.otpDisplayNote}>
             This code expires in 10 minutes
           </AppText>
         </View>
@@ -113,7 +106,7 @@ export function OTPVerificationScreen() {
 
         <View style={styles.footer}>
           <AppText variant="hint" style={styles.footerText}>
-            Didn't receive the code? Check your demo box above.
+            Enter the code displayed above to verify your identity.
           </AppText>
         </View>
       </View>
@@ -126,40 +119,35 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
   },
-  demoBox: {
-    backgroundColor: "#FFF7ED",
+  otpDisplayBox: {
+    backgroundColor: "#EEF2FF",
     borderWidth: 1.5,
-    borderColor: "#F97316",
+    borderColor: "#4F46E5",
     borderRadius: 12,
     padding: 20,
     marginBottom: 24,
     alignItems: "center",
   },
-  demoHeader: {
+  otpDisplayHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 8,
   },
-  demoLabel: {
-    color: "#C2410C",
+  otpDisplayLabel: {
+    color: "#4338CA",
     fontWeight: "bold",
     marginLeft: 8,
+    fontSize: 12,
   },
-  demoSubLabel: {
-    color: "#92400E",
-    textAlign: "center",
-    marginBottom: 12,
-    fontSize: 13,
-  },
-  otpDisplay: {
+  otpDisplayCode: {
     fontSize: 32,
     fontWeight: "bold",
     color: "#1F2937",
     letterSpacing: 6,
     marginBottom: 8,
   },
-  demoNote: {
-    color: "#92400E",
+  otpDisplayNote: {
+    color: "#6366F1",
     textAlign: "center",
     fontSize: 12,
   },

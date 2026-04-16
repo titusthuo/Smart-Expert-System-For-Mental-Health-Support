@@ -1,14 +1,14 @@
 import {
-  AuthFeedbackModal,
-  useAuthFeedback,
+    AuthFeedbackModal,
+    useAuthFeedback,
 } from "@/components/auth/auth-feedback";
 import { AuthScreenShell } from "@/components/auth/auth-shell";
 import {
-  AppText,
-  Button,
-  Input,
-  PasswordRequirements,
-  PasswordStrength,
+    AppText,
+    Button,
+    Input,
+    PasswordRequirements,
+    PasswordStrength,
 } from "@/components/ui";
 import { useResetPasswordMutation } from "@/graphql/generated/graphql";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
@@ -40,26 +40,11 @@ export function ResetPasswordScreen() {
   const resetToken =
     urlToken === "reset-password" || !urlToken ? manualToken : urlToken;
 
-  // Debug: Log the token to see if it's being read correctly
-  console.log("Reset token from URL:", urlToken);
-  console.log("Raw token param:", token);
-  console.log("Manual token:", manualToken);
-  console.log("Final reset token:", resetToken);
-
   const hasConfirm = confirmPwd.length > 0;
   const pwdMatch = hasConfirm && newPwd === confirmPwd;
   const pwdMismatch = hasConfirm && newPwd !== confirmPwd;
 
   const submitEnabled = !loading && canSubmit && pwdMatch && !!resetToken;
-
-  // Debug: Log submit conditions
-  console.log("Submit conditions:", {
-    loading,
-    canSubmit,
-    pwdMatch,
-    resetToken,
-    submitEnabled,
-  });
 
   const submitError = useMemo(() => {
     if (!resetToken)
@@ -95,19 +80,12 @@ export function ResetPasswordScreen() {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     try {
-      console.log("Calling resetPassword mutation with:", {
-        token: resetToken,
-        newPassword: newPwd,
-      });
-
       const { data } = await resetPasswordMutation({
         variables: {
           token: resetToken,
           newPassword: newPwd,
         },
       });
-
-      console.log("Reset password response:", data);
 
       if (data?.resetPassword?.success) {
         setResetSuccess(true);
@@ -125,10 +103,6 @@ export function ResetPasswordScreen() {
         );
       }
     } catch (error: any) {
-      console.log("Reset password error details:", error);
-      console.log("Error message:", error.message);
-      console.log("Error object:", JSON.stringify(error, null, 2));
-
       await feedback.show({
         title: "Reset Failed",
         message: error.message || "Failed to reset password. Please try again.",

@@ -1,5 +1,3 @@
-# core/views.py
-
 from graphene_file_upload.django import FileUploadGraphQLView
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -10,7 +8,6 @@ from core.models import User
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CustomGraphQLView(FileUploadGraphQLView):
-    # ⭐ THIS IS THE CORRECT WAY TO OVERRIDE THE TEMPLATE
     def get_graphiql_template(self):
         from django.template.loader import get_template
         return get_template("graphql/modern_graphiql.html")
