@@ -171,11 +171,10 @@ export default function ChatScreen() {
                   if (therapistId) {
                     // Navigate to specific therapist detail page
                     router.push({
-                      pathname: "/(tabs)/therapists-detail",
+                      pathname: "/therapist-detail",
                       params: {
                         id: therapistId,
                         reason: "crisis",
-                        from: "chat",
                       },
                     });
                   } else {

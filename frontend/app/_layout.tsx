@@ -115,9 +115,12 @@ const AuthNavigator = () => {
     // Reset redirect guard on each major change
     hasRedirectedRef.current = false;
 
+    // therapist-detail is a top-level route accessed from tabs; don't redirect away
+    const inTherapistDetail = segments.length > 0 && segments[0] === "therapist-detail";
+
     if (isAuthenticated) {
-      // Authenticated → ensure we're in tabs group
-      if (!inTabs) {
+      // Authenticated → ensure we're in tabs group (or viewing a detail page)
+      if (!inTabs && !inTherapistDetail) {
         hasRedirectedRef.current = true;
 
         let target: Href = "/(tabs)";
@@ -223,6 +226,16 @@ function RootLayoutContent() {
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="therapist-detail"
+            options={{
+              headerShown: false,
+              presentation: "transparentModal",
+              animation: "slide_from_bottom",
+              gestureEnabled: true,
+              gestureDirection: "vertical",
+            }}
+          />
         </Stack>
 
         <SafeAuthNavigator />

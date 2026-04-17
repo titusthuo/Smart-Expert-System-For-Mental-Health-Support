@@ -7,29 +7,25 @@ import { ArrowLeft, Award, DollarSign, MapPin } from "lucide-react-native";
 import {
     Alert,
     Image,
+    Pressable,
     ScrollView,
     StatusBar,
+    StyleSheet,
     TouchableOpacity,
     View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TherapistDetailScreen() {
   const router = useRouter();
-  const { id, reason, from } = useLocalSearchParams<{
+  const { id, reason } = useLocalSearchParams<{
     id?: string;
     reason?: string;
-    from?: string;
   }>();
   const { isDark, brand, subtle } = useAuthTheme();
   const { therapist, loading } = useTherapist(id);
 
   const handleBackPress = () => {
-    if (from === "therapists") {
-      router.replace("/(tabs)/therapists");
-      return;
-    }
-
     if (router.canGoBack()) {
       router.back();
       return;
@@ -42,38 +38,45 @@ export default function TherapistDetailScreen() {
   const appName = "Mentally";
   const prefilledMessage = `Hello, I found your contacts through ${appName} because I'm seeking mental health support. Can we discuss next steps for mental health support?`;
 
-  // Show loading state while fetching to prevent "not found" flash
-  if (loading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background justify-center items-center">
-        <AppText className="text-muted-foreground">Loading...</AppText>
-      </SafeAreaView>
-    );
-  }
+  const insets = useSafeAreaInsets();
 
-  if (!therapist) {
-    return (
-      <SafeAreaView className="flex-1 bg-background justify-center items-center p-6">
-        <View className="bg-card rounded-xl p-8 items-center shadow-sm border border-border">
-          <AppText className="text-foreground text-lg mb-4">
-            Therapist not found
-          </AppText>
-          <TouchableOpacity
-            onPress={() => router.replace("/(tabs)/therapists")}
-            className="bg-brand px-6 py-3 rounded-lg"
-          >
-            <AppText className="text-white font-medium">
-              Back to Therapists
-            </AppText>
-          </TouchableOpacity>
+  // Sheet content for loading/error/detail states
+  const renderSheetContent = () => {
+    if (loading) {
+      return (
+        <View className="flex-1 justify-center items-center py-20">
+          <AppText className="text-muted-foreground">Loading...</AppText>
         </View>
-      </SafeAreaView>
-    );
-  }
+      );
+    }
+
+    if (!therapist) {
+      return (
+        <View className="flex-1 justify-center items-center p-6">
+          <View className="bg-card rounded-xl p-8 items-center shadow-sm border border-border">
+            <AppText className="text-foreground text-lg mb-4">
+              Therapist not found
+            </AppText>
+            <TouchableOpacity
+              onPress={handleBackPress}
+              className="bg-brand px-6 py-3 rounded-lg"
+            >
+              <AppText className="text-white font-medium">
+                Go Back
+              </AppText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    return renderDetail();
+  };
 
   const normalizePhoneDigits = (value: string) => value.replace(/[^\d]/g, "");
 
   const handleCall = async () => {
+    if (!therapist) return;
     const digits = normalizePhoneDigits(therapist.phone);
     if (!digits) {
       Alert.alert(
@@ -92,6 +95,7 @@ export default function TherapistDetailScreen() {
   };
 
   const handleWhatsApp = async () => {
+    if (!therapist) return;
     const source = therapist.whatsapp ?? therapist.phone;
     const digits = normalizePhoneDigits(source);
     if (!digits) {
@@ -115,7 +119,7 @@ export default function TherapistDetailScreen() {
   };
 
   const handleEmail = async () => {
-    if (!therapist.email) {
+    if (!therapist?.email) {
       Alert.alert(
         "Missing contact",
         "No email is available for this therapist.",
@@ -136,28 +140,12 @@ export default function TherapistDetailScreen() {
     }
   };
 
-  return (
-    <SafeAreaView className="flex-1 bg-background">
-      <StatusBar
-        barStyle={isDark ? "light-content" : "dark-content"}
-        backgroundColor="transparent"
-        translucent
-      />
+  const renderDetail = () => {
+    if (!therapist) return null;
 
-      {/* Sticky Header */}
-      <View className="bg-card border-b border-border">
-        <View className="flex-row items-center px-4 py-4">
-          <TouchableOpacity onPress={handleBackPress}>
-            <ArrowLeft size={24} color={isDark ? "#E5E7EB" : "#111827"} />
-          </TouchableOpacity>
-          <AppText className="text-xl font-semibold text-foreground ml-4">
-            Therapist Details
-          </AppText>
-        </View>
-      </View>
-
-      <ScrollView className="flex-1">
-        <View className="px-4 py-6 space-y-6 pb-32">
+    return (
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <View className="px-4 py-4 space-y-6" style={{ paddingBottom: insets.bottom + 32 }}>
           {isCrisis && (
             <View className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
               <AppText className="text-foreground font-semibold mb-2">
@@ -316,6 +304,93 @@ export default function TherapistDetailScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    );
+  };
+
+  return (
+    <View style={modalStyles.container}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
+
+      {/* Backdrop — tap to dismiss */}
+      <Pressable style={modalStyles.backdrop} onPress={handleBackPress} />
+
+      {/* Sheet */}
+      <View
+        style={[
+          modalStyles.sheet,
+          {
+            backgroundColor: isDark ? "hsl(0, 0%, 9%)" : "hsl(0, 0%, 100%)",
+            paddingTop: 0,
+          },
+        ]}
+      >
+        {/* Drag handle */}
+        <View style={modalStyles.handleRow}>
+          <View
+            style={[
+              modalStyles.handle,
+              { backgroundColor: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.2)" },
+            ]}
+          />
+        </View>
+
+        {/* Header */}
+        <View
+          style={[
+            modalStyles.header,
+            {
+              borderBottomColor: isDark ? "hsl(0, 0%, 17%)" : "hsl(0, 0%, 90%)",
+            },
+          ]}
+        >
+          <TouchableOpacity onPress={handleBackPress} hitSlop={8}>
+            <ArrowLeft size={24} color={isDark ? "#E5E7EB" : "#111827"} />
+          </TouchableOpacity>
+          <AppText className="text-xl font-semibold text-foreground ml-4">
+            Therapist Details
+          </AppText>
+        </View>
+
+        {renderSheetContent()}
+      </View>
+    </View>
   );
 }
+
+const modalStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  sheet: {
+    flex: 1,
+    marginTop: 48,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: "hidden",
+  },
+  handleRow: {
+    alignItems: "center",
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+  },
+});

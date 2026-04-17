@@ -5,9 +5,9 @@ import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { useTherapists } from "@/hooks/useTherapists";
 import { Coords, haversineDistanceKm } from "@/lib/geo";
 import {
-  getOptionLabel,
-  locationOptions,
-  specializationOptions,
+    getOptionLabel,
+    locationOptions,
+    specializationOptions,
 } from "@/lib/therapists/options";
 import { Therapist } from "@/lib/therapists/types";
 import * as Location from "expo-location";
@@ -158,8 +158,8 @@ export default function TherapistsScreen() {
         distance={distance}
         onPress={() =>
           router.push({
-            pathname: "/(tabs)/therapists-detail",
-            params: { id: item.id, reason, from: "therapists" },
+            pathname: "/therapist-detail",
+            params: { id: item.id, reason },
           })
         }
       />

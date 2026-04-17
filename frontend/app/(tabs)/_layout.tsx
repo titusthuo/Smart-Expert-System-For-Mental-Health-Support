@@ -83,12 +83,6 @@ export default function TabLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="therapists-detail"
-        options={{
-          href: null,
-        }}
-      />
     </Tabs>
   );
 }
