@@ -1,5 +1,6 @@
 import { AuthScreenShell } from "@/components/auth/auth-shell";
 import { AppText, Button, Input } from "@/components/ui";
+import { AuthPalette } from "@/constants/theme";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -36,7 +37,7 @@ export function OTPVerificationScreen() {
       <View style={styles.container}>
         <View style={styles.otpDisplayBox}>
           <View style={styles.otpDisplayHeader}>
-            <Ionicons name="key-outline" size={20} color="#4F46E5" />
+            <Ionicons name="key-outline" size={20} color={theme.brand} />
             <AppText variant="body" style={styles.otpDisplayLabel}>
               YOUR VERIFICATION CODE
             </AppText>
@@ -50,13 +51,13 @@ export function OTPVerificationScreen() {
         </View>
 
         <View style={styles.iconContainer}>
-          <Ionicons name="phone-portrait-outline" size={48} color="#4F46E5" />
+          <Ionicons name="phone-portrait-outline" size={48} color={theme.brand} />
         </View>
 
         <AppText variant="heading" style={styles.title}>
           Enter Verification Code
         </AppText>
-        <AppText variant="body" style={styles.subtitle}>
+        <AppText variant="body" style={[styles.subtitle, { color: theme.subtle }]}>
           Type the 6-digit code shown above to continue.
         </AppText>
 
@@ -105,7 +106,7 @@ export function OTPVerificationScreen() {
         </View>
 
         <View style={styles.footer}>
-          <AppText variant="hint" style={styles.footerText}>
+          <AppText variant="hint" style={[styles.footerText, { color: theme.subtle }]}>
             Enter the code displayed above to verify your identity.
           </AppText>
         </View>
@@ -120,9 +121,9 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   otpDisplayBox: {
-    backgroundColor: "#EEF2FF",
+    backgroundColor: AuthPalette.brandSoft,
     borderWidth: 1.5,
-    borderColor: "#4F46E5",
+    borderColor: AuthPalette.brand,
     borderRadius: 12,
     padding: 20,
     marginBottom: 24,
@@ -134,7 +135,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   otpDisplayLabel: {
-    color: "#4338CA",
+    color: AuthPalette.brand,
     fontWeight: "bold",
     marginLeft: 8,
     fontSize: 12,
@@ -147,7 +148,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   otpDisplayNote: {
-    color: "#6366F1",
+    color: AuthPalette.brand,
     textAlign: "center",
     fontSize: 12,
   },
@@ -155,7 +156,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: AuthPalette.brandSoft,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
@@ -167,7 +168,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     textAlign: "center",
-    color: "#6B7280",
     marginBottom: 32,
   },
   formContainer: {
@@ -189,7 +189,6 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   footerText: {
-    color: "#6B7280",
     textAlign: "center",
     fontSize: 12,
   },

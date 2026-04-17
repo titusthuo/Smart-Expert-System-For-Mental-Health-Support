@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 import { AppText } from "@/components/ui";
+import { useAuthTheme } from "@/hooks/use-auth-theme";
 
 type ImageWithFallbackProps = {
   source: ImageSourcePropType;
@@ -18,11 +19,12 @@ type ImageWithFallbackProps = {
 
 export function ImageWithFallback({ source, alt, style }: ImageWithFallbackProps) {
   const [error, setError] = useState(false);
+  const { subtle } = useAuthTheme();
 
   if (error) {
     return (
       <View className="items-center justify-center bg-muted" style={style as any}>
-        <Ionicons name="image-outline" size={28} color="#9CA3AF" />
+        <Ionicons name="image-outline" size={28} color={subtle} />
         <AppText
           unstyled
           className="text-xs text-muted-foreground text-center mt-1 px-2"

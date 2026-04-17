@@ -1,5 +1,6 @@
 import { AuthScreenShell } from "@/components/auth/auth-shell";
 import { AppText, Button, Input } from "@/components/ui";
+import { AuthPalette } from "@/constants/theme";
 import { useResetPasswordWithOtpMutation } from "@/graphql/generated/graphql";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { Ionicons } from "@expo/vector-icons";
@@ -64,7 +65,7 @@ export function NewPasswordScreen() {
         <View
           style={[
             styles.iconContainer,
-            { backgroundColor: theme.isDark ? "#1e1b4b" : "#EEF2FF" },
+            { backgroundColor: theme.isDark ? theme.brandSoft : AuthPalette.brandSoft },
           ]}
         >
           <Ionicons
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: AuthPalette.brandSoft,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",

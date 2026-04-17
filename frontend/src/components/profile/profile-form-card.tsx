@@ -1,4 +1,5 @@
 import { AppText } from "@/components/ui";
+import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { Mail, Phone, User } from "lucide-react-native";
 import React from "react";
 import { Image, TextInput, TouchableOpacity, View } from "react-native";
@@ -24,6 +25,8 @@ export function ProfileFormCard({
   onPressSave: () => void;
   loading?: boolean;
 }) {
+  const { brand, subtle } = useAuthTheme();
+
   return (
     <View className="bg-card rounded-2xl p-6 mb-6 shadow-sm border border-border">
       <View className="items-center mb-6">
@@ -42,7 +45,7 @@ export function ProfileFormCard({
             />
           ) : (
             <View className="items-center justify-center">
-              <User size={48} color="#5B21B6" />
+              <User size={48} color={brand} />
             </View>
           )}
         </TouchableOpacity>
@@ -65,7 +68,7 @@ export function ProfileFormCard({
           <View className="relative">
             <User
               size={20}
-              color="#9ca3af"
+              color={subtle}
               className="absolute left-3 top-3.5 z-10"
             />
             <TextInput
@@ -75,7 +78,7 @@ export function ProfileFormCard({
               }
               className="bg-background border border-border rounded-lg py-3 pl-11 pr-4 text-foreground"
               placeholder="Enter your name"
-              placeholderTextColor="#6b7280"
+              placeholderTextColor={subtle}
             />
           </View>
         </View>
@@ -87,7 +90,7 @@ export function ProfileFormCard({
           <View className="relative">
             <Mail
               size={20}
-              color="#9ca3af"
+              color={subtle}
               className="absolute left-3 top-3.5 z-10"
             />
             <TextInput
@@ -98,7 +101,7 @@ export function ProfileFormCard({
               keyboardType="email-address"
               className="bg-background border border-border rounded-lg py-3 pl-11 pr-4 text-foreground"
               placeholder="Enter your email"
-              placeholderTextColor="#6b7280"
+              placeholderTextColor={subtle}
             />
           </View>
         </View>
@@ -110,7 +113,7 @@ export function ProfileFormCard({
           <View className="relative">
             <Phone
               size={20}
-              color="#9ca3af"
+              color={subtle}
               className="absolute left-3 top-3.5 z-10"
             />
             <TextInput
@@ -121,7 +124,7 @@ export function ProfileFormCard({
               keyboardType="phone-pad"
               className="bg-background border border-border rounded-lg py-3 pl-11 pr-4 text-foreground"
               placeholder="Enter your phone"
-              placeholderTextColor="#6b7280"
+              placeholderTextColor={subtle}
             />
           </View>
         </View>

@@ -1,6 +1,6 @@
 import { AuthScreenShell } from "@/components/auth/auth-shell";
 import { AppText, Button, Input } from "@/components/ui";
-import { Colors } from "@/constants/theme";
+import { AuthPalette, Colors } from "@/constants/theme";
 import { useVerifySecurityAnswerMutation } from "@/graphql/generated/graphql";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -64,7 +64,7 @@ export function SecurityQuestionScreen() {
       padding: 16,
       borderRadius: 12,
       borderLeftWidth: 4,
-      borderLeftColor: "#4F46E5",
+      borderLeftColor: AuthPalette.brand,
     },
     questionText: {
       color: themeColors.foreground,
@@ -76,7 +76,7 @@ export function SecurityQuestionScreen() {
     <AuthScreenShell title="Security Question" onBack={() => router.back()}>
       <View style={styles.container}>
         <View style={styles.iconContainer}>
-          <Ionicons name="shield-checkmark-outline" size={48} color="#4F46E5" />
+          <Ionicons name="shield-checkmark-outline" size={48} color={AuthPalette.brand} />
         </View>
 
         <AppText variant="heading" style={styles.title}>
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: AuthPalette.brandSoft,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",

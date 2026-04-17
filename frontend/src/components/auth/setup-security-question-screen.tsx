@@ -1,18 +1,17 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
-import { useSetupSecurityQuestionMutation } from '@/graphql/generated/graphql';
 import { AuthScreenShell } from '@/components/auth/auth-shell';
 import { AppText, Button, Input } from '@/components/ui';
+import { AuthPalette } from '@/constants/theme';
+import { useSetupSecurityQuestionMutation } from '@/graphql/generated/graphql';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  Alert,
+  StyleSheet,
+  TouchableOpacity,
+  View
+} from 'react-native';
 
 const SECURITY_QUESTIONS = [
   { key: 'mother_maiden', label: "What is your mother's maiden name?" },
@@ -72,7 +71,7 @@ export function SetupSecurityQuestionScreen() {
     <AuthScreenShell title="Security Question" onBack={() => router.back()}>
       <View style={styles.container}>
         <View style={styles.iconContainer}>
-          <Ionicons name="shield-checkmark-outline" size={48} color="#4F46E5" />
+          <Ionicons name="shield-checkmark-outline" size={48} color={AuthPalette.brand} />
         </View>
 
         <AppText variant="heading" style={styles.title}>
@@ -99,7 +98,7 @@ export function SetupSecurityQuestionScreen() {
                 <Ionicons
                   name={selectedQuestion === q.key ? 'checkmark-circle' : 'radio-button-off'}
                   size={20}
-                  color={selectedQuestion === q.key ? '#4F46E5' : '#9CA3AF'}
+                  color={selectedQuestion === q.key ? AuthPalette.brand : '#9CA3AF'}
                 />
                 <AppText variant="body" style={styles.questionText}>
                   {q.label}
@@ -140,7 +139,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: AuthPalette.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
@@ -175,8 +174,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   selectedQuestion: {
-    backgroundColor: '#EEF2FF',
-    borderColor: '#4F46E5',
+    backgroundColor: AuthPalette.brandSoft,
+    borderColor: AuthPalette.brand,
   },
   questionText: {
     marginLeft: 12,

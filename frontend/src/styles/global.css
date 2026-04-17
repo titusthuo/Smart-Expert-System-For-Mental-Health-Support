@@ -13,8 +13,8 @@
     --ring: 0 0% 44%; /* oklch(0.708 0 0) ≈ medium gray */
 
     /* Brand + status colors (used in auth screens) */
-    --brand: 262 64% 42%; /* #5B21B6 ≈ deep violet */
-    --brand-soft: 251 92% 95%; /* #EDE9FE ≈ soft violet */
+    --brand: 220 46% 19%; /* #1B2A4A midnight blue */
+    --brand-soft: 218 40% 92%; /* #E2E8F0 */
     --success: 160 84% 39%; /* #10B981 */
     --success-soft: 152 76% 88%; /* #D1FAE5 */
     --error: 0 84% 63%; /* #EF4444 */
@@ -38,8 +38,8 @@
     --ring: 0 0% 27%; /* oklch(0.439 0 0) */
 
     /* Brand + status colors (dark variants) */
-    --brand: 262 90% 72%; /* lighter violet on dark */
-    --brand-soft: 262 40% 26%;
+    --brand: 214 55% 77%; /* #A3C4E8 lighter blue on dark */
+    --brand-soft: 220 35% 25%;
     --success: 152 76% 52%;
     --success-soft: 152 40% 20%;
     --error: 0 84% 70%;

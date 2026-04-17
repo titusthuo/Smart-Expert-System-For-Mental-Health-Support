@@ -19,11 +19,11 @@ export function useAuthTheme() {
     border,
     text,
     subtle,
-    brand: AuthPalette.brand,
+    brand: isDark ? AuthPalette.brandDark : AuthPalette.brand,
     brandAccent: isDark
       ? AuthPalette.brandAccentDark
       : AuthPalette.brandAccentLight,
-    brandSoft: isDark ? "hsl(262, 40%, 26%)" : AuthPalette.brandSoft,
+    brandSoft: isDark ? "hsl(220, 35%, 25%)" : AuthPalette.brandSoft,
     error: AuthPalette.error,
     success: AuthPalette.success,
     successSoft: isDark ? "hsl(152, 40%, 20%)" : AuthPalette.successSoft,

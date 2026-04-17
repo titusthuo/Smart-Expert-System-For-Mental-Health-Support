@@ -21,7 +21,7 @@ export default function TherapistDetailScreen() {
     reason?: string;
     from?: string;
   }>();
-  const { isDark, subtle } = useAuthTheme();
+  const { isDark, brand, subtle } = useAuthTheme();
   const { therapist, loading } = useTherapist(id);
 
   const handleBackPress = () => {
@@ -45,22 +45,22 @@ export default function TherapistDetailScreen() {
   // Show loading state while fetching to prevent "not found" flash
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50 justify-center items-center">
-        <AppText className="text-gray-600">Loading...</AppText>
+      <SafeAreaView className="flex-1 bg-background justify-center items-center">
+        <AppText className="text-muted-foreground">Loading...</AppText>
       </SafeAreaView>
     );
   }
 
   if (!therapist) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50 justify-center items-center p-6">
-        <View className="bg-white rounded-xl p-8 items-center shadow-sm">
-          <AppText className="text-gray-800 text-lg mb-4">
+      <SafeAreaView className="flex-1 bg-background justify-center items-center p-6">
+        <View className="bg-card rounded-xl p-8 items-center shadow-sm border border-border">
+          <AppText className="text-foreground text-lg mb-4">
             Therapist not found
           </AppText>
           <TouchableOpacity
             onPress={() => router.replace("/(tabs)/therapists")}
-            className="bg-purple-600 px-6 py-3 rounded-lg"
+            className="bg-brand px-6 py-3 rounded-lg"
           >
             <AppText className="text-white font-medium">
               Back to Therapists
@@ -249,7 +249,7 @@ export default function TherapistDetailScreen() {
                   <View className="flex-row flex-wrap gap-3 mt-4">
                     <TouchableOpacity
                       onPress={handleCall}
-                      className="bg-purple-600 px-4 py-3 rounded-lg"
+                      className="bg-brand px-4 py-3 rounded-lg"
                     >
                       <AppText className="text-white font-semibold">
                         Call
@@ -301,14 +301,14 @@ export default function TherapistDetailScreen() {
           {therapist.qualifications.length > 0 && (
             <View className="bg-card rounded-xl p-6 shadow-sm border border-border">
               <View className="flex-row items-center mb-4">
-                <Award size={20} color="#9333EA" className="mr-2" />
+                <Award size={20} color={brand} className="mr-2" />
                 <AppText className="text-xl font-semibold text-foreground">
                   Qualifications & Experience
                 </AppText>
               </View>
               {therapist.qualifications.map((qual: string, index: number) => (
                 <View key={index} className="flex-row items-start mb-2">
-                  <View className="w-2 h-2 bg-purple-600 rounded-full mt-2 mr-3" />
+                  <View className="w-2 h-2 bg-brand rounded-full mt-2 mr-3" />
                   <AppText className="text-foreground flex-1">{qual}</AppText>
                 </View>
               ))}
