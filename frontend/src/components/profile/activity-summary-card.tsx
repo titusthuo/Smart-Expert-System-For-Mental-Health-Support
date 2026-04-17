@@ -1,10 +1,12 @@
 import { AppText } from "@/components/ui";
+import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { useChatSessions } from "@/hooks/useChatSessions";
 import { MessageCircle } from "lucide-react-native";
 import React from "react";
 import { View } from "react-native";
 
 export function ActivitySummaryCard() {
+  const { brand } = useAuthTheme();
   const { userMessageCount, loading, error } = useChatSessions();
 
   if (loading) {
@@ -19,7 +21,7 @@ export function ActivitySummaryCard() {
         <View className="flex-row justify-center">
           <View className="bg-brandSoft flex-1 p-4 rounded-xl items-center">
             <View className="flex-row items-center mb-2">
-              <MessageCircle size={20} color="#9333ea" />
+              <MessageCircle size={20} color={brand} />
               <AppText unstyled className="text-sm text-muted-foreground ml-2">
                 Chat Sessions
               </AppText>
@@ -45,7 +47,7 @@ export function ActivitySummaryCard() {
         <View className="flex-row justify-center">
           <View className="bg-brandSoft flex-1 p-4 rounded-xl items-center">
             <View className="flex-row items-center mb-2">
-              <MessageCircle size={20} color="#9333ea" />
+              <MessageCircle size={20} color={brand} />
               <AppText unstyled className="text-sm text-muted-foreground ml-2">
                 Chat Sessions
               </AppText>
@@ -67,7 +69,7 @@ export function ActivitySummaryCard() {
       <View className="flex-row justify-center">
         <View className="bg-brandSoft flex-1 p-4 rounded-xl items-center">
           <View className="flex-row items-center mb-2">
-            <MessageCircle size={20} color="#9333ea" />
+            <MessageCircle size={20} color={brand} />
             <AppText unstyled className="text-sm text-muted-foreground ml-2">
               Chat Sessions
             </AppText>

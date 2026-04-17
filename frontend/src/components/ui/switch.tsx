@@ -11,9 +11,9 @@ interface SwitchProps extends Omit<RNSwitchProps, "trackColor" | "thumbColor"> {
 /**
  * Styled Switch component trying to match common shadcn/ui look:
  * - small rounded pill
- * - purple-ish primary when checked
+ * - brand primary when checked
  * - gray when unchecked
- * - white/purple thumb movement
+ * - white thumb movement
  */
 export function Switch({
   className,

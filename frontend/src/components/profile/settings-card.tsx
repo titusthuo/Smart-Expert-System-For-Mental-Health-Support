@@ -1,7 +1,8 @@
 import { AppText, Switch } from "@/components/ui";
+import { useAuthTheme } from "@/hooks/use-auth-theme";
+import { Bell, ChevronRight, HelpCircle, Shield } from "lucide-react-native";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
-import { Bell, ChevronRight, HelpCircle, Shield } from "lucide-react-native";
 
 function RowDivider() {
   return <View className="h-px bg-border" />;
@@ -18,6 +19,8 @@ export function SettingsCard({
   onPressPrivacy: () => void;
   onPressHelp: () => void;
 }) {
+  const { subtle } = useAuthTheme();
+
   return (
     <View className="bg-card rounded-2xl p-6 mb-6 shadow-sm border border-border">
       <AppText unstyled className="font-semibold text-foreground text-lg mb-4">
@@ -27,7 +30,7 @@ export function SettingsCard({
       <View className="space-y-5">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center flex-1">
-            <Bell size={20} color="#4b5563" />
+            <Bell size={20} color={subtle} />
             <View className="ml-3">
               <AppText unstyled className="font-medium text-foreground">
                 Notifications
@@ -49,7 +52,7 @@ export function SettingsCard({
           accessibilityLabel="Privacy and security"
         >
           <View className="flex-row items-center flex-1">
-            <Shield size={20} color="#4b5563" />
+            <Shield size={20} color={subtle} />
             <View className="ml-3">
               <AppText unstyled className="font-medium text-foreground">
                 Privacy & Security
@@ -59,7 +62,7 @@ export function SettingsCard({
               </AppText>
             </View>
           </View>
-          <ChevronRight size={20} color="#9ca3af" />
+          <ChevronRight size={20} color={subtle} />
         </TouchableOpacity>
 
         <RowDivider />
@@ -71,7 +74,7 @@ export function SettingsCard({
           accessibilityLabel="Help and support"
         >
           <View className="flex-row items-center flex-1">
-            <HelpCircle size={20} color="#4b5563" />
+            <HelpCircle size={20} color={subtle} />
             <View className="ml-3">
               <AppText unstyled className="font-medium text-foreground">
                 Help & Support
@@ -81,7 +84,7 @@ export function SettingsCard({
               </AppText>
             </View>
           </View>
-          <ChevronRight size={20} color="#9ca3af" />
+          <ChevronRight size={20} color={subtle} />
         </TouchableOpacity>
       </View>
     </View>

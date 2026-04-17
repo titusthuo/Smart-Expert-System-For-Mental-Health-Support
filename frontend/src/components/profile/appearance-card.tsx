@@ -1,7 +1,8 @@
 import { AppText } from "@/components/ui";
+import { useAuthTheme } from "@/hooks/use-auth-theme";
+import { Moon, Smartphone, Sun } from "lucide-react-native";
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
-import { Moon, Smartphone, Sun } from "lucide-react-native";
 
 export type ThemeMode = "system" | "light" | "dark";
 
@@ -53,6 +54,8 @@ export function AppearanceCard({
   mode: ThemeMode;
   onChangeMode: (mode: ThemeMode) => void;
 }) {
+  const { subtle } = useAuthTheme();
+
   return (
     <View className="bg-card rounded-2xl p-6 mb-6 shadow-sm border border-border">
       <AppText unstyled className="font-semibold text-foreground text-lg mb-4">
@@ -63,7 +66,7 @@ export function AppearanceCard({
         <ModeRow
           title="System"
           subtitle="Match your device setting"
-          icon={<Smartphone size={20} color="#4b5563" />}
+          icon={<Smartphone size={20} color={subtle} />}
           selected={mode === "system"}
           onPress={() => onChangeMode("system")}
         />
@@ -71,7 +74,7 @@ export function AppearanceCard({
         <ModeRow
           title="Light"
           subtitle="Always use light mode"
-          icon={<Sun size={20} color="#4b5563" />}
+          icon={<Sun size={20} color={subtle} />}
           selected={mode === "light"}
           onPress={() => onChangeMode("light")}
         />
@@ -79,7 +82,7 @@ export function AppearanceCard({
         <ModeRow
           title="Dark"
           subtitle="Always use dark mode"
-          icon={<Moon size={20} color="#4b5563" />}
+          icon={<Moon size={20} color={subtle} />}
           selected={mode === "dark"}
           onPress={() => onChangeMode("dark")}
         />

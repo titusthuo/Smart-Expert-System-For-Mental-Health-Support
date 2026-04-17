@@ -14,7 +14,7 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarActiveTintColor: AuthPalette.brand,
+        tabBarActiveTintColor: isDark ? AuthPalette.brandDark : AuthPalette.brand,
         tabBarInactiveTintColor: theme.mutedForeground,
         tabBarStyle: {
           backgroundColor: theme.card,

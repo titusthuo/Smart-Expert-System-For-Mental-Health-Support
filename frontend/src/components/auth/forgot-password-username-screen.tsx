@@ -1,5 +1,6 @@
 import { AuthScreenShell } from '@/components/auth/auth-shell';
 import { AppText, Button, Input } from '@/components/ui';
+import { AuthPalette } from '@/constants/theme';
 import { useGetSecurityQuestionMutation } from '@/graphql/generated/graphql';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -58,7 +59,7 @@ export function ForgotPasswordUsernameScreen() {
     <AuthScreenShell title="Forgot Password" onBack={() => router.back()}>
       <View style={styles.container}>
         <View style={styles.iconContainer}>
-          <Ionicons name="help-circle-outline" size={48} color="#4F46E5" />
+          <Ionicons name="help-circle-outline" size={48} color={AuthPalette.brand} />
         </View>
 
         <AppText variant="heading" style={styles.title}>
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: AuthPalette.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
@@ -145,7 +146,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   signInLink: {
-    color: '#4F46E5',
+    color: AuthPalette.brand,
     fontWeight: '600',
   },
 });

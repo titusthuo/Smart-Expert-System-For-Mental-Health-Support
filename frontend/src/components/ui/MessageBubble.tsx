@@ -222,7 +222,7 @@ export function MessageBubble({
                         <Ionicons
                           name="chevron-forward"
                           size={16}
-                          color={isDark ? "#9CA3AF" : "#6B7280"}
+                          color={textColor}
                         />
                       </View>
                     </TouchableOpacity>

@@ -30,10 +30,11 @@ export const Colors: Record<AppColorScheme, ThemeColors> = {
 // to tweak the visual identity in one place.
 export const AuthPalette = {
   // Brand
-  brand: "#5B21B6",
-  brandSoft: "#EDE9FE",
-  brandAccentLight: "#7C3AED",
-  brandAccentDark: "#A78BFA",
+  brand: "#1B2A4A",
+  brandDark: "#A3C4E8",
+  brandSoft: "#E2E8F0",
+  brandAccentLight: "#2A4060",
+  brandAccentDark: "#B8D4EF",
 
   // Status / feedback
   error: "#EF4444",
