@@ -3,18 +3,18 @@ import { SessionInitializer } from "@/components/core/session-initializer";
 import { Colors } from "@/constants/theme";
 import { apolloClient } from "@/graphql/client";
 import {
-  ThemePreferenceProvider,
-  useAppColorScheme,
+    ThemePreferenceProvider,
+    useAppColorScheme,
 } from "@/hooks/use-theme-preference";
 import { useAuthSession } from "@/stores/useAuthSession";
 import { ApolloProvider } from "@apollo/client";
 import {
-  Href,
-  Stack,
-  usePathname,
-  useRootNavigationState,
-  useRouter,
-  useSegments,
+    Href,
+    Stack,
+    usePathname,
+    useRootNavigationState,
+    useRouter,
+    useSegments,
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
@@ -32,6 +32,10 @@ function isInTabsGroup(segments: string[]): boolean {
   return segments.length > 0 && segments[0] === "(tabs)";
 }
 
+function isInOnboardingRoute(segments: string[]): boolean {
+  return segments.length > 0 && segments[0] === "onboarding";
+}
+
 const AuthNavigator = () => {
   const router = useRouter();
   const segments = useSegments();
@@ -47,6 +51,7 @@ const AuthNavigator = () => {
   const isHydrated = useAuthSession((s) => s.isHydrated);
   const loadingSession = useAuthSession((s) => s.loadingSession);
   const lastAuthedPath = useAuthSession((s) => s.lastAuthedPath);
+  const hasSeenOnboarding = useAuthSession((s) => s.hasSeenOnboarding);
 
   const hasRedirectedRef = useRef(false);
 
@@ -95,6 +100,7 @@ const AuthNavigator = () => {
 
     const inAuth = isInAuthGroup(segments);
     const inTabs = isInTabsGroup(segments);
+    const inOnboarding = isInOnboardingRoute(segments);
 
     if (__DEV__) {
       console.log("[AuthNavigator] checking", {
@@ -135,7 +141,22 @@ const AuthNavigator = () => {
         router.replace(target);
       }
     } else {
-      // NOT authenticated → must be in auth group (or root/empty → redirect)
+      // NOT authenticated → show onboarding first, then auth group
+      if (!hasSeenOnboarding) {
+        if (!inOnboarding) {
+          hasRedirectedRef.current = true;
+
+          if (__DEV__) {
+            console.log(
+              "[AuthNavigator] → redirecting unauthenticated to onboarding",
+            );
+          }
+
+          router.replace("/onboarding");
+        }
+        return;
+      }
+
       if (!inAuth) {
         hasRedirectedRef.current = true;
 
@@ -155,6 +176,7 @@ const AuthNavigator = () => {
     isHydrated,
     loadingSession,
     isAuthenticated,
+    hasSeenOnboarding,
     segments,
     lastAuthedPath,
     router,
@@ -162,6 +184,17 @@ const AuthNavigator = () => {
   ]);
 
   return null;
+};
+
+const SafeAuthNavigator = () => {
+  const navigationState = useRootNavigationState();
+
+  // Don't render AuthNavigator until the navigation tree is fully ready.
+  // This prevents "Couldn't find a navigation context" crashes when the
+  // system theme changes and triggers a full re-render cycle.
+  if (!navigationState?.key) return null;
+
+  return <AuthNavigator />;
 };
 
 function RootLayoutContent() {
@@ -188,10 +221,11 @@ function RootLayoutContent() {
           }}
         >
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         </Stack>
 
-        <AuthNavigator />
+        <SafeAuthNavigator />
       </View>
     </SecurityQuestionProvider>
   );
