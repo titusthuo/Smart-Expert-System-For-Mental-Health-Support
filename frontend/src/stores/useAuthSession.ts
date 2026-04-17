@@ -32,6 +32,7 @@ export type AuthSessionState = {
   isHydrated: boolean;
   lastAuthedPath: string | null;
   securityQuestionSetup: boolean;
+  hasSeenOnboarding: boolean;
 };
 
 export type AuthSessionActions = {
@@ -44,6 +45,7 @@ export type AuthSessionActions = {
   setIsAuthenticated: (authenticated: boolean) => void;
   setLastAuthedPath: (path: string | null) => void;
   setSecurityQuestionSetup: (setup: boolean) => void;
+  setHasSeenOnboarding: (hasSeen: boolean) => void;
 };
 
 export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
@@ -55,6 +57,7 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
       isHydrated: false,
       lastAuthedPath: null,
       securityQuestionSetup: false,
+      hasSeenOnboarding: false,
 
       setSession: async (updates) => {
         set((state) => {
@@ -106,6 +109,8 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
       setLastAuthedPath: (lastAuthedPath) => set({ lastAuthedPath }),
       setSecurityQuestionSetup: (securityQuestionSetup) =>
         set({ securityQuestionSetup }),
+      setHasSeenOnboarding: (hasSeenOnboarding) =>
+        set({ hasSeenOnboarding }),
     }),
     {
       name: "authSession",
@@ -125,6 +130,7 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
         session: state.session,
         lastAuthedPath: state.lastAuthedPath,
         securityQuestionSetup: state.securityQuestionSetup,
+        hasSeenOnboarding: state.hasSeenOnboarding,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
