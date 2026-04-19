@@ -44,6 +44,7 @@ class County(models.Model):
     country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='counties')
 
     class Meta:
+        verbose_name_plural = "Counties"
         unique_together = ('name', 'country')
         ordering = ['name']
 
@@ -53,6 +54,9 @@ class County(models.Model):
 
 class Specialty(models.Model):
     name = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        verbose_name_plural = "Specialties"
 
     def __str__(self):
         return self.name

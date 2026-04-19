@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { TextInput, TouchableOpacity, View } from "react-native";
-import { EdgeInsets } from "react-native-safe-area-context";
 
 import { AppText } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
@@ -12,7 +11,7 @@ type ChatInputProps = {
   onSend: () => void;
   canSend: boolean;
   isEscalated: boolean;
-  insets: EdgeInsets;
+  bottomPadding: number;
 };
 
 export function ChatInput({
@@ -21,14 +20,14 @@ export function ChatInput({
   onSend,
   canSend,
   isEscalated,
-  insets,
+  bottomPadding,
 }: ChatInputProps) {
   const { isDark } = useAuthTheme();
 
   return (
     <View
       className="border-t border-border bg-card px-4 pt-3"
-      style={{ paddingBottom: Math.max(insets.bottom, 8) }}
+      style={{ paddingBottom: bottomPadding }}
     >
       <View className="flex-row items-end">
         <TextInput

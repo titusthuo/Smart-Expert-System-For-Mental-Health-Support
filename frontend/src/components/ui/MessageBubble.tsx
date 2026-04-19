@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useMemo } from "react";
-import { Image, Platform, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useMemo } from "react";
+import { Image, Linking, Platform, TouchableOpacity, View } from "react-native";
 
 import { AppText, Button } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
@@ -44,8 +44,14 @@ export function MessageBubble({
   }, [session]);
 
   const warningColor = "#EAB308";
+  const dangerColor = "#EF4444";
 
   const isUser = sender === "user";
+
+  const placeEmergencyCall = useCallback((number: string) => {
+    const url = Platform.OS === "ios" ? `telprompt:${number}` : `tel:${number}`;
+    Linking.openURL(url).catch(() => undefined);
+  }, []);
 
   const bubbleShadow = useMemo(() => {
     if (Platform.OS === "android") {
@@ -167,12 +173,47 @@ export function MessageBubble({
               </AppText>
               <AppText
                 unstyled
+                className="text-muted-foreground text-sm leading-5 mb-3"
+              >
+                I am concerned about your safety. If you are in immediate
+                danger, please call for emergency help right away.
+              </AppText>
+
+              <View className="flex-row gap-2 mb-4">
+                <TouchableOpacity
+                  onPress={() => placeEmergencyCall("1199")}
+                  className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl"
+                  style={{ backgroundColor: dangerColor }}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Call Kenya Red Cross"
+                >
+                  <Ionicons name="call" size={16} color="#FFFFFF" />
+                  <AppText unstyled className="text-white font-semibold text-xs ml-1.5">
+                    1199 Red Cross
+                  </AppText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => placeEmergencyCall("999")}
+                  className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl"
+                  style={{ backgroundColor: dangerColor }}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Call 999 Emergency"
+                >
+                  <Ionicons name="call" size={16} color="#FFFFFF" />
+                  <AppText unstyled className="text-white font-semibold text-xs ml-1.5">
+                    999 Emergency
+                  </AppText>
+                </TouchableOpacity>
+              </View>
+
+              <AppText
+                unstyled
                 className="text-muted-foreground text-sm leading-5 mb-4"
               >
-                I am concerned about your safety. Please connect with a mental
-                health professional as soon as possible. If you are in immediate
-                danger, call 1190 (Kenya Red Cross Mental Health Hotline) or 999
-                right now.
+                Scroll below to find a therapist near you for further
+                assistance.
               </AppText>
 
               {/* Individual Therapist Recommendations */}
