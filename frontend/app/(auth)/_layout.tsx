@@ -44,14 +44,10 @@ export default function AuthLayout() {
         options={{ title: "New Password", ...modalScreen }}
       />
       <Stack.Screen
-        name="reset-password"
-        options={{ title: "Reset Password", ...modalScreen }}
-      />
-      <Stack.Screen
         name="setup-security-question"
         options={{ title: "Security Question", ...modalScreen }}
       />
-      <Stack.Screen name="[token]" options={{ title: "Token Verification" }} />
+      <Stack.Screen name="[token]" options={{ title: "Token Verification", ...modalScreen }} />
     </Stack>
   );
 }

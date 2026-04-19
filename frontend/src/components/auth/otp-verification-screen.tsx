@@ -23,7 +23,7 @@ export function OTPVerificationScreen() {
       return;
     }
 
-    router.push({
+    router.replace({
       pathname: "/(auth)/new-password",
       params: {
         username: username as string,

@@ -83,15 +83,13 @@ export function AuthScreenShell({ title, onBack, children, asModal }: AuthScreen
         <Pressable style={modalStyles.backdrop} onPress={onBack} />
 
         {/* Sheet */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        <View
           style={[
             modalStyles.sheet,
             {
               backgroundColor: isDark ? "hsl(0, 0%, 9%)" : "hsl(0, 0%, 100%)",
             },
           ]}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         >
           {/* Drag handle */}
           <View style={modalStyles.handleRow}>
@@ -105,7 +103,7 @@ export function AuthScreenShell({ title, onBack, children, asModal }: AuthScreen
 
           {header}
           {body}
-        </KeyboardAvoidingView>
+        </View>
       </View>
     );
   }
