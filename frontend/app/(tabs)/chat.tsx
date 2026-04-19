@@ -4,10 +4,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-    Keyboard,
     KeyboardAvoidingView,
     Platform,
-    ScrollView
+    ScrollView,
 } from "react-native";
 import {
     SafeAreaView,
@@ -124,20 +123,8 @@ export default function ChatScreen() {
 
   const canSend = !isEscalated && inputValue.trim().length > 0;
 
-  // ── Keyboard tracking ──────────────────────────────────────────────────
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-  useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const onShow = () => setKeyboardVisible(true);
-    const onHide = () => setKeyboardVisible(false);
-
-    const showSub = Keyboard.addListener(showEvent, onShow);
-    const hideSub = Keyboard.addListener(hideEvent, onHide);
-    return () => { showSub.remove(); hideSub.remove(); };
-  }, []);
+  // ── Stable bottom padding ─────────────────────────────────────────────
+  const bottomPadding = Math.max(insets.bottom, 8);
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -151,8 +138,8 @@ export default function ChatScreen() {
         />
 
         <KeyboardAvoidingView
-          behavior="padding"
-          className="flex-1"
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 10 : 0}
         >
           <ScrollView
@@ -215,7 +202,7 @@ export default function ChatScreen() {
             onSend={handleSendMessage}
             canSend={canSend}
             isEscalated={isEscalated}
-            bottomPadding={keyboardVisible ? 8 : Math.max(insets.bottom, 8)}
+            bottomPadding={bottomPadding}
           />
         </KeyboardAvoidingView>
       </SafeAreaView>

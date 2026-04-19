@@ -14,6 +14,7 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarButton: HapticTab,
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: isDark ? AuthPalette.brandDark : AuthPalette.brand,
         tabBarInactiveTintColor: theme.mutedForeground,
         tabBarStyle: {
@@ -44,7 +45,6 @@ export default function TabLayout() {
         name="chat"
         options={{
           title: "Chat",
-          tabBarHideOnKeyboard: true,
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="chatbubble.fill" color={color} />
           ),

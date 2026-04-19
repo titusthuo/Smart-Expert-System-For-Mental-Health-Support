@@ -5,18 +5,18 @@ import { EducationHeader } from "@/components/education/education-header";
 import { AppText, useThemedAlert } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import {
-    Article,
-    fetchMentalHealthArticles as fetchMentalHealthArticlesApi,
-    normalizeHttpUrl,
+  Article,
+  fetchMentalHealthArticles as fetchMentalHealthArticlesApi,
+  normalizeHttpUrl,
 } from "@/lib/education";
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StatusBar,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -73,7 +73,10 @@ export default function EducationScreen() {
     }
 
     try {
-      await WebBrowser.openBrowserAsync(normalized);
+      await WebBrowser.openBrowserAsync(normalized, {
+        createTask: false,
+        showInRecents: false,
+      });
     } catch {
       alert({ title: "Unable to open", message: "Please try opening this link in a browser.", variant: "error" });
     }

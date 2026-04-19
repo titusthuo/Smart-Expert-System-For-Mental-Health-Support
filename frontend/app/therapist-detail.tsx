@@ -3,6 +3,7 @@ import { AppText } from "@/components/ui/text";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { useTherapist } from "@/hooks/useTherapist";
 import { openUrlSafely } from "@/lib/links";
+import * as MailComposer from "expo-mail-composer";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Award, DollarSign, MapPin } from "lucide-react-native";
 import {
@@ -113,13 +114,23 @@ export default function TherapistDetailScreen() {
       return;
     }
 
-    const subject = encodeURIComponent(`${appName} - Session request`);
-    const body = encodeURIComponent(prefilledMessage);
-    const opened = await openUrlSafely(
-      `mailto:${therapist.email}?subject=${subject}&body=${body}`,
-    );
-    if (!opened) {
-      alert({ title: "Unable to open", message: "Please use your phone to contact this therapist.", variant: "error" });
+    const isAvailable = await MailComposer.isAvailableAsync();
+    if (isAvailable) {
+      await MailComposer.composeAsync({
+        recipients: [therapist.email],
+        subject: `${appName} - Session request`,
+        body: prefilledMessage,
+      });
+    } else {
+      // Fallback for devices without a configured mail app
+      const subject = encodeURIComponent(`${appName} - Session request`);
+      const body = encodeURIComponent(prefilledMessage);
+      const opened = await openUrlSafely(
+        `mailto:${therapist.email}?subject=${subject}&body=${body}`,
+      );
+      if (!opened) {
+        alert({ title: "Unable to open", message: "No email app found. Please contact the therapist manually.", variant: "error" });
+      }
     }
   };
 

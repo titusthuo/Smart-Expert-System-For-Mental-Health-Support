@@ -138,6 +138,9 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
         const hasJwt = Boolean(state.session?.jwt && state.session.jwt.trim());
 
         // Important: DO NOT mutate `state.*` here; call actions so Zustand updates properly.
+        if (state.lastAuthedPath?.startsWith("/therapist-detail")) {
+          state.setLastAuthedPath(null);
+        }
         state.setIsHydrated(true);
         state.setIsAuthenticated(hasJwt);
         // Don't block navigation — let the auth navigator redirect immediately.

@@ -87,14 +87,14 @@ const AuthNavigator = () => {
     setIsMounted(true);
   }, []);
 
-  // Keep lastAuthedPath in sync while user navigates inside authed areas
+  // Keep lastAuthedPath in sync while user navigates inside authed areas.
+  // Wait until the initial redirect check is done (hasRedirectedRef) so we
+  // don't overwrite the stored path with the default Home tab on restart.
   useEffect(() => {
+    if (!hasRedirectedRef.current) return;
     if (!isAuthenticated || !pathname || pathname === "/") return;
 
-    if (
-      pathname.startsWith("/(tabs)") ||
-      pathname.startsWith("/therapist-detail")
-    ) {
+    if (pathname.startsWith("/(tabs)")) {
       setLastAuthedPath(pathname);
     }
   }, [pathname, isAuthenticated, setLastAuthedPath]);
@@ -155,10 +155,32 @@ const AuthNavigator = () => {
     const inTherapistDetail = segments.length > 0 && segments[0] === "therapist-detail";
 
     if (isAuthenticated) {
-      // Already in a valid authed area → lock the redirect guard so transient
-      // segment changes during app resume never trigger a stale redirect.
-      if (inTabs || inTherapistDetail) {
+      // therapist-detail is a top-level modal; if we're there, just lock guard
+      if (inTherapistDetail) {
         hasRedirectedRef.current = true;
+        return;
+      }
+
+      if (inTabs) {
+        // First time landing in tabs after a restart → check if we need to
+        // restore a specific tab (e.g. Education instead of default Home).
+        if (!hasRedirectedRef.current) {
+          hasRedirectedRef.current = true;
+
+          if (
+            typeof lastAuthedPath === "string" &&
+            lastAuthedPath.startsWith("/(tabs)") &&
+            lastAuthedPath !== pathname
+          ) {
+            if (__DEV__) {
+              console.log(
+                "[AuthNavigator] → restoring last tab:",
+                lastAuthedPath,
+              );
+            }
+            router.replace(lastAuthedPath as Href);
+          }
+        }
         return;
       }
 
@@ -172,7 +194,8 @@ const AuthNavigator = () => {
           typeof lastAuthedPath === "string" &&
           lastAuthedPath.trim() !== "" &&
           lastAuthedPath !== "/" &&
-          !lastAuthedPath.startsWith("/(auth)")
+          !lastAuthedPath.startsWith("/(auth)") &&
+          !lastAuthedPath.startsWith("/therapist-detail")
         ) {
           target = lastAuthedPath as Href;
         }
