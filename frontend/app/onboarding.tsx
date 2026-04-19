@@ -2,13 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-  Dimensions,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Dimensions,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -80,24 +80,24 @@ export default function OnboardingScreen() {
         tone: "dark",
       },
       {
-        title: "See your patterns clearly",
+        title: "Check in with how you feel",
         description:
-          "Log your mood in seconds each day. Watch trends over time so you understand what helps and what does not.",
+          "Tap a mood on the home screen and the AI starts a supportive conversation around how you are feeling right now.",
         icon: "happy-outline",
         tone: "light",
       },
       {
         title: "Connect with real professionals",
         description:
-          "Browse verified therapists, read reviews, and book sessions that fit your schedule from one place.",
+          "Browse therapists near you and reach out directly via call, WhatsApp, or email — all from one place.",
         icon: "call",
         tone: "dark",
       },
       {
-        title: "Your privacy is sacred",
+        title: "Learn and grow",
         description:
-          "Everything you share stays with you. End-to-end encrypted, never sold, always judgment-free.",
-        icon: "shield-checkmark-outline",
+          "Read curated mental health articles in the Education tab to better understand yourself and build healthy habits.",
+        icon: "book-outline",
         tone: "light",
       },
     ],
@@ -206,8 +206,8 @@ function SplashScreen({
 
       <View style={styles.pillsRow}>
         <Pill label="Safe & private" colors={colors} />
-        <Pill label="24/7 support" colors={colors} />
-        <Pill label="Free to start" colors={colors} />
+        <Pill label="AI chat anytime" colors={colors} />
+        <Pill label="Completely free" colors={colors} />
       </View>
 
       <View style={styles.splashButtons}>

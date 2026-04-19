@@ -19,10 +19,35 @@ import {
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Platform, View } from "react-native";
 import "react-native-reanimated";
 import "../src/styles/global.css";
+
+// ── Error boundary to survive brief navigation-context loss on theme change ──
+class NavigationErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidUpdate() {
+    if (this.state.hasError) {
+      // Recover on next tick — the navigation context is restored after
+      // expo-router finishes remounting its internal NavigationContainer.
+      setTimeout(() => this.setState({ hasError: false }), 0);
+    }
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
 
 // Helpers to detect current navigation group
 function isInAuthGroup(segments: string[]): boolean {
@@ -273,7 +298,9 @@ export default function RootLayout() {
     <ThemePreferenceProvider>
       <SessionInitializer />
       <ApolloProvider client={apolloClient}>
-        <RootLayoutContent />
+        <NavigationErrorBoundary>
+          <RootLayoutContent />
+        </NavigationErrorBoundary>
       </ApolloProvider>
     </ThemePreferenceProvider>
   );
