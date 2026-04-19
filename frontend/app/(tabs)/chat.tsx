@@ -3,7 +3,12 @@ import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import {
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView
+} from "react-native";
 import {
     SafeAreaView,
     useSafeAreaInsets,
@@ -43,7 +48,6 @@ export default function ChatScreen() {
         const { status } = await Location.requestForegroundPermissionsAsync();
 
         if (status !== "granted") {
-          console.log("Location permission denied, using fallback");
           if (!isMounted) return;
           setUserCoords(null); // No location available
           setLocationPermissionGranted(false);
@@ -61,7 +65,6 @@ export default function ChatScreen() {
           lng: position.coords.longitude,
         });
         setLocationPermissionGranted(true);
-        console.log("GPS location obtained successfully");
       } catch (error) {
         console.warn("Failed to get location:", error);
         if (!isMounted) return;
@@ -120,12 +123,27 @@ export default function ChatScreen() {
 
   const canSend = !isEscalated && inputValue.trim().length > 0;
 
+  // ── Keyboard tracking ──────────────────────────────────────────────────
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const onShow = () => setKeyboardVisible(true);
+    const onHide = () => setKeyboardVisible(false);
+
+    const showSub = Keyboard.addListener(showEvent, onShow);
+    const hideSub = Keyboard.addListener(hideEvent, onHide);
+    return () => { showSub.remove(); hideSub.remove(); };
+  }, []);
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
         <ChatHeader
           mood={typeof mood === "string" ? mood : undefined}
           onPressProfile={() => router.push("/(tabs)/profile")}
@@ -141,7 +159,7 @@ export default function ChatScreen() {
         )}
 
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior="padding"
           className="flex-1"
           keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 10 : 0}
         >
@@ -205,7 +223,7 @@ export default function ChatScreen() {
             onSend={handleSendMessage}
             canSend={canSend}
             isEscalated={isEscalated}
-            insets={insets}
+            bottomPadding={keyboardVisible ? 8 : Math.max(insets.bottom, 8)}
           />
         </KeyboardAvoidingView>
       </SafeAreaView>

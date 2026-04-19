@@ -4,7 +4,6 @@ import {
 } from "@/components/auth/auth-feedback";
 import { AuthScreenShell } from "@/components/auth/auth-shell";
 import { AppText, Button, Input } from "@/components/ui";
-import { useForgotPasswordMutation } from "@/graphql/generated/graphql";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -21,8 +20,6 @@ export function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-
-  const [forgotPasswordMutation] = useForgotPasswordMutation();
 
   const trimmedEmail = email.trim();
 
