@@ -54,12 +54,25 @@ const AuthNavigator = () => {
   const lastAuthedPath = useAuthSession((s) => s.lastAuthedPath);
   const hasSeenOnboarding = useAuthSession((s) => s.hasSeenOnboarding);
 
+  const setLastAuthedPath = useAuthSession((s) => s.setLastAuthedPath);
   const hasRedirectedRef = useRef(false);
 
   // Mark component as mounted after first render
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Keep lastAuthedPath in sync while user navigates inside authed areas
+  useEffect(() => {
+    if (!isAuthenticated || !pathname || pathname === "/") return;
+
+    if (
+      pathname.startsWith("/(tabs)") ||
+      pathname.startsWith("/therapist-detail")
+    ) {
+      setLastAuthedPath(pathname);
+    }
+  }, [pathname, isAuthenticated, setLastAuthedPath]);
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -113,15 +126,19 @@ const AuthNavigator = () => {
       });
     }
 
-    // Reset redirect guard on each major change
-    hasRedirectedRef.current = false;
-
     // therapist-detail is a top-level route accessed from tabs; don't redirect away
     const inTherapistDetail = segments.length > 0 && segments[0] === "therapist-detail";
 
     if (isAuthenticated) {
-      // Authenticated → ensure we're in tabs group (or viewing a detail page)
-      if (!inTabs && !inTherapistDetail) {
+      // Already in a valid authed area → lock the redirect guard so transient
+      // segment changes during app resume never trigger a stale redirect.
+      if (inTabs || inTherapistDetail) {
+        hasRedirectedRef.current = true;
+        return;
+      }
+
+      // Authenticated but not in tabs/detail → redirect
+      if (!hasRedirectedRef.current) {
         hasRedirectedRef.current = true;
 
         let target: Href = "/(tabs)";
@@ -191,14 +208,17 @@ const AuthNavigator = () => {
 };
 
 const SafeAuthNavigator = () => {
-  const navigationState = useRootNavigationState();
-
   // Don't render AuthNavigator until the navigation tree is fully ready.
   // This prevents "Couldn't find a navigation context" crashes when the
   // system theme changes and triggers a full re-render cycle.
-  if (!navigationState?.key) return null;
-
-  return <AuthNavigator />;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const navigationState = useRootNavigationState();
+    if (!navigationState?.key) return null;
+    return <AuthNavigator />;
+  } catch {
+    return null;
+  }
 };
 
 function RootLayoutContent() {

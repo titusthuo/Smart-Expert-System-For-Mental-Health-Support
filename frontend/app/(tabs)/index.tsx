@@ -3,13 +3,13 @@ import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Dimensions,
-  Image,
-  Platform,
-  ScrollView,
-  StatusBar,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    Image,
+    Platform,
+    ScrollView,
+    StatusBar,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -210,9 +210,6 @@ export default function HomePage() {
         pathname: "/(tabs)/chat",
         params: {
           mood: mood.label,
-          // Pass the AI greeting as a param so the chat screen can use it
-          // as the very first AI message instead of the generic one.
-          aiGreeting: mood.aiGreeting,
         },
       });
     }, 300);

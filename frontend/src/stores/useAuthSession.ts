@@ -140,7 +140,10 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
         // Important: DO NOT mutate `state.*` here; call actions so Zustand updates properly.
         state.setIsHydrated(true);
         state.setIsAuthenticated(hasJwt);
-        state.setLoadingSession(hasJwt);
+        // Don't block navigation — let the auth navigator redirect immediately.
+        // SessionInitializer will verify the token in the background and clear
+        // the session only if the token is truly invalid.
+        state.setLoadingSession(false);
 
         // Keep authToken key in sync for any legacy reads.
         if (hasJwt) {
