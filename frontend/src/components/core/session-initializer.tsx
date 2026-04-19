@@ -15,26 +15,22 @@ const VERIFY_TOKEN = gql`
 export function SessionInitializer() {
   const session = useAuthSession((s) => s.session);
   const isHydrated = useAuthSession((s) => s.isHydrated);
-  const loadingSession = useAuthSession((s) => s.loadingSession);
 
-  const setLoadingSession = useAuthSession((s) => s.setLoadingSession);
   const clearSession = useAuthSession((s) => s.clearSession);
 
+  // Background token verification — runs once after hydration.
+  // Navigation is NOT blocked; the user sees the app immediately.
+  // Only clears the session if the token is genuinely invalid.
   useEffect(() => {
     if (!isHydrated) return;
-    if (!loadingSession) return;
 
     const token = session?.jwt;
     if (__DEV__) {
-       
       console.log("[SessionInitializer] start", {
         hasToken: Boolean(token && token.trim()),
       });
     }
-    if (!token || !token.trim()) {
-      setLoadingSession(false);
-      return;
-    }
+    if (!token || !token.trim()) return;
 
     let cancelled = false;
 
@@ -50,7 +46,7 @@ export function SessionInitializer() {
           },
         });
 
-        // Avoid hanging in loadingSession due to slow/offline backend.
+        // Avoid hanging due to slow/offline backend.
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => reject(new Error("verifyToken timeout")), 4000);
         });
@@ -59,15 +55,12 @@ export function SessionInitializer() {
 
         if (cancelled) return;
         if (__DEV__) {
-           
           console.log("[SessionInitializer] verifyToken success");
         }
-        setLoadingSession(false);
       } catch (err) {
         if (cancelled) return;
 
         if (__DEV__) {
-           
           console.log("[SessionInitializer] verifyToken error", err);
         }
 
@@ -101,38 +94,25 @@ export function SessionInitializer() {
           (combinedMessage.includes("jwt") &&
             combinedMessage.includes("expired"));
 
-        if (
-          isNetworkError ||
-          (!isInvalidTokenError && graphQLErrorMessages.length > 0)
-        ) {
+        // Keep session on network / transient / unknown errors
+        if (isNetworkError || !isInvalidTokenError) {
           if (__DEV__) {
-             
-            console.log("[SessionInitializer] keep session (transient error)");
+            console.log("[SessionInitializer] keep session (transient/unknown error)");
           }
-          setLoadingSession(false);
           return;
         }
 
-        if (!isInvalidTokenError) {
-          if (__DEV__) {
-             
-            console.log("[SessionInitializer] keep session (unknown error)");
-          }
-          setLoadingSession(false);
-          return;
-        }
-
+        // Token is genuinely invalid → clear session (user will be redirected to sign-in)
         try {
           if (__DEV__) {
-             
             console.log(
               "[SessionInitializer] clearing session (invalid token)",
             );
           }
           await clearSession();
           await apolloClient.resetStore();
-        } finally {
-          setLoadingSession(false);
+        } catch {
+          // ignored
         }
       }
     })();
@@ -143,9 +123,7 @@ export function SessionInitializer() {
   }, [
     clearSession,
     isHydrated,
-    loadingSession,
     session?.jwt,
-    setLoadingSession,
   ]);
 
   return null;

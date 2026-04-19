@@ -16,7 +16,6 @@ import {
 
 import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatInput } from "@/components/chat/ChatInput";
-import { MoodBanner } from "@/components/chat/MoodBanner";
 import { TypingRow } from "@/components/chat/TypingRow";
 import { MessageBubble } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
@@ -25,12 +24,11 @@ import { Coords } from "@/lib/geo";
 
 export default function ChatScreen() {
   const router = useRouter();
-  const { isDark, brandAccent } = useAuthTheme();
+  const { isDark } = useAuthTheme();
   const insets = useSafeAreaInsets();
 
-  const { mood, aiGreeting } = useLocalSearchParams<{
+  const { mood } = useLocalSearchParams<{
     mood?: string;
-    aiGreeting?: string;
   }>();
 
   // GPS Location state
@@ -88,7 +86,10 @@ export default function ChatScreen() {
     isEscalated,
     sendMessage,
     setIsEscalated,
-  } = useAIAssistant(aiGreeting, userCoords);
+  } = useAIAssistant(
+    typeof mood === "string" ? mood : undefined,
+    userCoords,
+  );
 
   // ── Scroll helpers ────────────────────────────────────────────────────────
   const scrollViewRef = useRef<ScrollView>(null);
@@ -148,15 +149,6 @@ export default function ChatScreen() {
           mood={typeof mood === "string" ? mood : undefined}
           onPressProfile={() => router.push("/(tabs)/profile")}
         />
-
-        {typeof mood === "string" && mood.length > 0 && (
-          <MoodBanner
-            mood={mood}
-            iconColor={brandAccent}
-            isDark={isDark}
-            onDismiss={() => router.setParams({ mood: undefined })}
-          />
-        )}
 
         <KeyboardAvoidingView
           behavior="padding"
