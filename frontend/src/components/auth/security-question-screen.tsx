@@ -73,7 +73,7 @@ export function SecurityQuestionScreen() {
   });
 
   return (
-    <AuthScreenShell title="Security Question" onBack={() => router.back()}>
+    <AuthScreenShell title="Security Question" onBack={() => router.back()} asModal>
       <View style={styles.container}>
         <View style={styles.iconContainer}>
           <Ionicons name="shield-checkmark-outline" size={48} color={AuthPalette.brand} />

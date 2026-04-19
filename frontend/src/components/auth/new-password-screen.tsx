@@ -60,7 +60,7 @@ export function NewPasswordScreen() {
   };
 
   return (
-    <AuthScreenShell title="New Password" onBack={() => router.back()}>
+    <AuthScreenShell title="New Password" onBack={() => router.back()} asModal>
       <View style={styles.container}>
         <View
           style={[
