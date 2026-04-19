@@ -114,7 +114,7 @@ export function AuthScreenShell({ title, onBack, children, asModal }: AuthScreen
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
         keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
