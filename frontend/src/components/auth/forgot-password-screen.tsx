@@ -1,6 +1,6 @@
 import {
-  AuthFeedbackModal,
-  useAuthFeedback,
+    AuthFeedbackModal,
+    useAuthFeedback,
 } from "@/components/auth/auth-feedback";
 import { AuthScreenShell } from "@/components/auth/auth-shell";
 import { AppText, Button, Input } from "@/components/ui";
@@ -48,7 +48,7 @@ export function ForgotPasswordScreen() {
 
   return (
     <>
-      <AuthScreenShell title={headerTitle} onBack={() => router.back()}>
+      <AuthScreenShell title={headerTitle} onBack={() => router.back()} asModal>
         <View className="items-center mb-10">
           <View
             className="w-20 h-20 rounded-2xl items-center justify-center mb-5"

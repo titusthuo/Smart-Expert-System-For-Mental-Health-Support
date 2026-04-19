@@ -56,7 +56,7 @@ export function ForgotPasswordUsernameScreen() {
   };
 
   return (
-    <AuthScreenShell title="Forgot Password" onBack={() => router.back()}>
+    <AuthScreenShell title="Forgot Password" onBack={() => router.back()} asModal>
       <View style={styles.container}>
         <View style={styles.iconContainer}>
           <Ionicons name="help-circle-outline" size={48} color={AuthPalette.brand} />

@@ -33,7 +33,7 @@ export function OTPVerificationScreen() {
   };
 
   return (
-    <AuthScreenShell title="Enter OTP" onBack={() => router.back()}>
+    <AuthScreenShell title="Enter OTP" onBack={() => router.back()} asModal>
       <View style={styles.container}>
         <View style={styles.otpDisplayBox}>
           <View style={styles.otpDisplayHeader}>

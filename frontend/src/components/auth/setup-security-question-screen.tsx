@@ -7,10 +7,10 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
-  StyleSheet,
-  TouchableOpacity,
-  View
+    Alert,
+    StyleSheet,
+    TouchableOpacity,
+    View
 } from 'react-native';
 
 const SECURITY_QUESTIONS = [
@@ -68,7 +68,7 @@ export function SetupSecurityQuestionScreen() {
   };
 
   return (
-    <AuthScreenShell title="Security Question" onBack={() => router.back()}>
+    <AuthScreenShell title="Security Question" onBack={() => router.back()} asModal>
       <View style={styles.container}>
         <View style={styles.iconContainer}>
           <Ionicons name="shield-checkmark-outline" size={48} color={AuthPalette.brand} />
