@@ -2,22 +2,21 @@ import { ArticleCard } from "@/components/education/article-card";
 import { CategoryTabs } from "@/components/education/category-tabs";
 import { EducationFooterBanner } from "@/components/education/education-footer-banner";
 import { EducationHeader } from "@/components/education/education-header";
-import { AppText } from "@/components/ui";
+import { AppText, useThemedAlert } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import {
-  Article,
-  fetchMentalHealthArticles as fetchMentalHealthArticlesApi,
-  normalizeHttpUrl,
+    Article,
+    fetchMentalHealthArticles as fetchMentalHealthArticlesApi,
+    normalizeHttpUrl,
 } from "@/lib/education";
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StatusBar,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    ScrollView,
+    StatusBar,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -64,23 +63,19 @@ export default function EducationScreen() {
     };
   }, [fetchMentalHealthArticles]);
 
+  const alert = useThemedAlert();
+
   const openUrlSafely = async (url: string) => {
     const normalized = normalizeHttpUrl(url);
     if (!normalized) {
-      Alert.alert(
-        "No link available",
-        "This article link is missing or invalid.",
-      );
+      alert({ title: "No link available", message: "This article link is missing or invalid.", variant: "warning" });
       return;
     }
 
     try {
       await WebBrowser.openBrowserAsync(normalized);
     } catch {
-      Alert.alert(
-        "Unable to open",
-        "Please try opening this link in a browser.",
-      );
+      alert({ title: "Unable to open", message: "Please try opening this link in a browser.", variant: "error" });
     }
   };
 

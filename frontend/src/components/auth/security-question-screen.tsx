@@ -1,12 +1,12 @@
 import { AuthScreenShell } from "@/components/auth/auth-shell";
-import { AppText, Button, Input } from "@/components/ui";
+import { AppText, Button, Input, useThemedAlert } from "@/components/ui";
 import { AuthPalette, Colors } from "@/constants/theme";
 import { useVerifySecurityAnswerMutation } from "@/graphql/generated/graphql";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Alert, StyleSheet, View, useColorScheme } from "react-native";
+import { StyleSheet, View, useColorScheme } from "react-native";
 
 export function SecurityQuestionScreen() {
   const router = useRouter();
@@ -17,10 +17,11 @@ export function SecurityQuestionScreen() {
   const themeColors = Colors[colorScheme || "light"];
 
   const [verifySecurityAnswer] = useVerifySecurityAnswerMutation();
+  const alert = useThemedAlert();
 
   const handleVerify = async () => {
     if (!answer.trim()) {
-      Alert.alert("Error", "Please enter your answer.");
+      alert({ title: "Error", message: "Please enter your answer.", variant: "error" });
       return;
     }
 
@@ -36,7 +37,7 @@ export function SecurityQuestionScreen() {
       });
 
       if (data?.verifySecurityAnswer?.success) {
-        router.push({
+        router.replace({
           pathname: "/(auth)/otp-verification",
           params: {
             username: username as string,
@@ -49,10 +50,11 @@ export function SecurityQuestionScreen() {
         );
       }
     } catch (error: any) {
-      Alert.alert(
-        "Error",
-        error.message || "Incorrect answer. Please try again.",
-      );
+      alert({
+        title: "Error",
+        message: error.message || "Incorrect answer. Please try again.",
+        variant: "error",
+      });
     } finally {
       setLoading(false);
     }

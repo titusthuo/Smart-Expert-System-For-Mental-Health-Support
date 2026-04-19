@@ -1,5 +1,6 @@
 import { SecurityQuestionProvider } from "@/components/auth/security-question-provider";
 import { SessionInitializer } from "@/components/core/session-initializer";
+import { ThemedAlertProvider } from "@/components/ui";
 import { Colors } from "@/constants/theme";
 import { apolloClient } from "@/graphql/client";
 import {
@@ -206,6 +207,7 @@ function RootLayoutContent() {
   const theme = Colors[isDark ? "dark" : "light"];
 
   return (
+    <ThemedAlertProvider>
     <SecurityQuestionProvider>
       <View className={isDark ? "dark" : ""} style={{ flex: 1 }}>
         <StatusBar style={isDark ? "light" : "dark"} />
@@ -236,11 +238,13 @@ function RootLayoutContent() {
               gestureDirection: "vertical",
             }}
           />
+          <Stack.Screen name="+not-found" options={{ headerShown: false }} />
         </Stack>
 
         <SafeAuthNavigator />
       </View>
     </SecurityQuestionProvider>
+    </ThemedAlertProvider>
   );
 }
 

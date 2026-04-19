@@ -38,6 +38,7 @@ export const AuthPalette = {
 
   // Status / feedback
   error: "#EF4444",
+  errorSoft: "#FEE2E2",
   success: "#10B981",
   successSoft: "#D1FAE5",
   successNoteBg: "#F0FDF4",

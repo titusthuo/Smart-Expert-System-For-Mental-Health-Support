@@ -1,3 +1,4 @@
+import { useThemedAlert } from "@/components/ui";
 import { AppText } from "@/components/ui/text";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { useTherapist } from "@/hooks/useTherapist";
@@ -5,7 +6,6 @@ import { openUrlSafely } from "@/lib/links";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Award, DollarSign, MapPin } from "lucide-react-native";
 import {
-    Alert,
     Image,
     Pressable,
     ScrollView,
@@ -24,6 +24,7 @@ export default function TherapistDetailScreen() {
   }>();
   const { isDark, brand, subtle } = useAuthTheme();
   const { therapist, loading } = useTherapist(id);
+  const alert = useThemedAlert();
 
   const handleBackPress = () => {
     if (router.canGoBack()) {
@@ -79,18 +80,12 @@ export default function TherapistDetailScreen() {
     if (!therapist) return;
     const digits = normalizePhoneDigits(therapist.phone);
     if (!digits) {
-      Alert.alert(
-        "Missing contact",
-        "No phone number is available for this therapist.",
-      );
+      alert({ title: "Missing contact", message: "No phone number is available for this therapist.", variant: "warning" });
       return;
     }
     const opened = await openUrlSafely(`tel:${digits}`);
     if (!opened) {
-      Alert.alert(
-        "Unable to open",
-        "Please use your phone to contact this therapist.",
-      );
+      alert({ title: "Unable to open", message: "Please use your phone to contact this therapist.", variant: "error" });
     }
   };
 
@@ -99,10 +94,7 @@ export default function TherapistDetailScreen() {
     const source = therapist.whatsapp ?? therapist.phone;
     const digits = normalizePhoneDigits(source);
     if (!digits) {
-      Alert.alert(
-        "Missing contact",
-        "No WhatsApp number is available for this therapist.",
-      );
+      alert({ title: "Missing contact", message: "No WhatsApp number is available for this therapist.", variant: "warning" });
       return;
     }
 
@@ -111,19 +103,13 @@ export default function TherapistDetailScreen() {
     const webUrl = `https://wa.me/${digits}?text=${text}`;
     const opened = await openUrlSafely(appUrl, { fallbackUrl: webUrl });
     if (!opened) {
-      Alert.alert(
-        "Unable to open",
-        "Please use your phone to contact this therapist.",
-      );
+      alert({ title: "Unable to open", message: "Please use your phone to contact this therapist.", variant: "error" });
     }
   };
 
   const handleEmail = async () => {
     if (!therapist?.email) {
-      Alert.alert(
-        "Missing contact",
-        "No email is available for this therapist.",
-      );
+      alert({ title: "Missing contact", message: "No email is available for this therapist.", variant: "warning" });
       return;
     }
 
@@ -133,10 +119,7 @@ export default function TherapistDetailScreen() {
       `mailto:${therapist.email}?subject=${subject}&body=${body}`,
     );
     if (!opened) {
-      Alert.alert(
-        "Unable to open",
-        "Please use your phone to contact this therapist.",
-      );
+      alert({ title: "Unable to open", message: "Please use your phone to contact this therapist.", variant: "error" });
     }
   };
 

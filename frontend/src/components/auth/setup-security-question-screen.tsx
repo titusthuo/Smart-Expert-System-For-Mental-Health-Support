@@ -1,5 +1,5 @@
 import { AuthScreenShell } from '@/components/auth/auth-shell';
-import { AppText, Button, Input } from '@/components/ui';
+import { AppText, Button, Input, useThemedAlert } from '@/components/ui';
 import { AuthPalette } from '@/constants/theme';
 import { useSetupSecurityQuestionMutation } from '@/graphql/generated/graphql';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,7 +7,6 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
     StyleSheet,
     TouchableOpacity,
     View
@@ -28,10 +27,11 @@ export function SetupSecurityQuestionScreen() {
   const [loading, setLoading] = useState(false);
 
   const [setupSecurityQuestion] = useSetupSecurityQuestionMutation();
+  const alert = useThemedAlert();
 
   const handleSetup = async () => {
     if (!selectedQuestion || !answer.trim()) {
-      Alert.alert('Error', 'Please select a question and provide an answer.');
+      alert({ title: 'Error', message: 'Please select a question and provide an answer.', variant: 'error' });
       return;
     }
 
@@ -47,21 +47,22 @@ export function SetupSecurityQuestionScreen() {
       });
 
       if (data?.setupSecurityQuestion?.success) {
-        Alert.alert(
-          'Success!',
-          'Security question has been set up successfully.',
-          [
+        alert({
+          title: 'Success!',
+          message: 'Security question has been set up successfully.',
+          variant: 'success',
+          actions: [
             {
               text: 'Continue',
               onPress: () => router.replace('/(tabs)/'),
             },
-          ]
-        );
+          ],
+        });
       } else {
         throw new Error(data?.setupSecurityQuestion?.error || 'Setup failed');
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to set up security question.');
+      alert({ title: 'Error', message: error.message || 'Failed to set up security question.', variant: 'error' });
     } finally {
       setLoading(false);
     }

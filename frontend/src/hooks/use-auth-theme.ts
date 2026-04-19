@@ -25,6 +25,7 @@ export function useAuthTheme() {
       : AuthPalette.brandAccentLight,
     brandSoft: isDark ? "hsl(220, 35%, 25%)" : AuthPalette.brandSoft,
     error: AuthPalette.error,
+    errorSoft: isDark ? "hsl(0, 40%, 20%)" : AuthPalette.errorSoft,
     success: AuthPalette.success,
     successSoft: isDark ? "hsl(152, 40%, 20%)" : AuthPalette.successSoft,
     successNoteBg: isDark ? "hsl(152, 35%, 18%)" : AuthPalette.successNoteBg,

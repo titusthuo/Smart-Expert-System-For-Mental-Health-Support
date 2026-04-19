@@ -43,7 +43,7 @@ export function ForgotPasswordScreen() {
 
   const handleSubmit = useCallback(async () => {
     // Redirect to the new username-based forgot password flow
-    router.push("/(auth)/forgot-password-username");
+    router.replace("/(auth)/forgot-password-username");
   }, [router]);
 
   return (
@@ -137,7 +137,7 @@ export function ForgotPasswordScreen() {
             <Button
               text="Enter New Password"
               rightIcon="arrow-forward"
-              onPress={() => router.push("/(auth)/reset-password")}
+              onPress={() => router.replace("/(auth)/reset-password")}
               className="h-14 mt-2"
             />
 
@@ -161,7 +161,7 @@ export function ForgotPasswordScreen() {
         )}
 
         <TouchableOpacity
-          onPress={() => router.push("/(auth)/sign-in")}
+          onPress={() => router.back()}
           className="flex-row items-center justify-center gap-2 mt-10 opacity-80 active:opacity-100"
           accessibilityRole="button"
           accessibilityLabel="Back to Sign In"
