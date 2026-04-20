@@ -5,20 +5,35 @@ import { EducationHeader } from "@/components/education/education-header";
 import { AppText, useThemedAlert } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import {
-  Article,
-  fetchMentalHealthArticles as fetchMentalHealthArticlesApi,
-  normalizeHttpUrl,
+    Article,
+    fetchMentalHealthArticles as fetchMentalHealthArticlesApi,
+    normalizeHttpUrl,
 } from "@/lib/education";
+import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  ScrollView,
-  StatusBar,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    ScrollView,
+    StatusBar,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+// Detect if WebView is available.
+// TurboModuleRegistry is not reliable here because react-native-webview may be
+// installed but not exposed as a TurboModule; prefer a direct require check.
+// In Expo Go, the native module is missing, so this throws and we fall back to
+// Chrome Custom Tab.
+let _hasWebView = false;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const rnwv = require("react-native-webview");
+  _hasWebView = Boolean(rnwv?.WebView);
+} catch {
+  _hasWebView = false;
+}
 
 // ──────────────────────────────────────────────
 // Main Screen
@@ -64,21 +79,36 @@ export default function EducationScreen() {
   }, [fetchMentalHealthArticles]);
 
   const alert = useThemedAlert();
+  const router = useRouter();
 
-  const openUrlSafely = async (url: string) => {
+  const openUrlSafely = async (url: string, title?: string) => {
     const normalized = normalizeHttpUrl(url);
     if (!normalized) {
       alert({ title: "No link available", message: "This article link is missing or invalid.", variant: "warning" });
       return;
     }
 
-    try {
-      await WebBrowser.openBrowserAsync(normalized, {
-        createTask: false,
-        showInRecents: false,
+    if (_hasWebView) {
+      // Standalone APK: use in-app WebView (no app backgrounding)
+      router.push({
+        pathname: "/article-viewer",
+        params: {
+          url: encodeURIComponent(normalized),
+          title: title ? encodeURIComponent(title) : undefined,
+        },
       });
-    } catch {
-      alert({ title: "Unable to open", message: "Please try opening this link in a browser.", variant: "error" });
+    } else {
+      // Expo Go: fall back to Chrome Custom Tab.
+      // The module-level _hasRedirected guard in AuthNavigator prevents
+      // spurious redirects when the app resumes from the browser.
+      try {
+        await WebBrowser.openBrowserAsync(normalized, {
+          createTask: false,
+          showInRecents: false,
+        });
+      } catch {
+        alert({ title: "Unable to open", message: "Please try opening this link in a browser.", variant: "error" });
+      }
     }
   };
 
@@ -167,7 +197,7 @@ export default function EducationScreen() {
                 article={article}
                 subtle={subtle}
                 brandAccent={brandAccent}
-                onPressReadMore={() => openUrlSafely(article.url)}
+                onPressReadMore={() => openUrlSafely(article.url, article.title)}
               />
             ))}
           </View>
