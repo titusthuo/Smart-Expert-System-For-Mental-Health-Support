@@ -4,18 +4,18 @@ import { ThemedAlertProvider } from "@/components/ui";
 import { Colors } from "@/constants/theme";
 import { apolloClient } from "@/graphql/client";
 import {
-    ThemePreferenceProvider,
-    useAppColorScheme,
+  ThemePreferenceProvider,
+  useAppColorScheme,
 } from "@/hooks/use-theme-preference";
 import { useAuthSession } from "@/stores/useAuthSession";
 import { ApolloProvider } from "@apollo/client";
 import {
-    Href,
-    Stack,
-    usePathname,
-    useRootNavigationState,
-    useRouter,
-    useSegments,
+  Href,
+  Stack,
+  usePathname,
+  useRootNavigationState,
+  useRouter,
+  useSegments,
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
@@ -309,7 +309,10 @@ function RootLayoutContent() {
           <Stack.Screen name="+not-found" options={{ headerShown: false }} />
         </Stack>
 
-        <SafeAuthNavigator />
+        {/* Renderless — must stay inside the NavigationContainer tree provided by Stack */}
+        <NavigationErrorBoundary>
+          <SafeAuthNavigator />
+        </NavigationErrorBoundary>
       </View>
     </SecurityQuestionProvider>
     </ThemedAlertProvider>
