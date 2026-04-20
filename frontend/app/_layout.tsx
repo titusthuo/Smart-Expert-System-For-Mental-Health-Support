@@ -20,7 +20,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import React, { useEffect, useRef, useState } from "react";
-import { Platform, View } from "react-native";
+import { AppState, Platform, View } from "react-native";
 import "react-native-reanimated";
 import "../src/styles/global.css";
 
@@ -62,6 +62,9 @@ function isInOnboardingRoute(segments: string[]): boolean {
   return segments.length > 0 && segments[0] === "onboarding";
 }
 
+// ── Module-level flag — survives component remounts caused by app resume ──
+let _hasRedirected = false;
+
 const AuthNavigator = () => {
   const router = useRouter();
   const segments = useSegments();
@@ -80,20 +83,41 @@ const AuthNavigator = () => {
   const hasSeenOnboarding = useAuthSession((s) => s.hasSeenOnboarding);
 
   const setLastAuthedPath = useAuthSession((s) => s.setLastAuthedPath);
-  const hasRedirectedRef = useRef(false);
+  // Mirror module-level flag into a ref so effect deps stay stable
+  const hasRedirectedRef = useRef(_hasRedirected);
 
-  // Mark component as mounted after first render
   useEffect(() => {
     setIsMounted(true);
+    // Sync ref from module flag on mount (handles remount-after-resume)
+    hasRedirectedRef.current = _hasRedirected;
   }, []);
 
+  // Lock the guard whenever the app comes back to the foreground so a resume
+  // from an external browser never triggers a spurious redirect.
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state: string) => {
+      if (state === "active" && _hasRedirected) {
+        hasRedirectedRef.current = true;
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  // Reset the redirect guard when auth state genuinely changes (login/logout)
+  // so that logout → sign-in redirect still fires.
+  const prevAuthRef = useRef(isAuthenticated);
+  useEffect(() => {
+    if (prevAuthRef.current !== isAuthenticated) {
+      _hasRedirected = false;
+      hasRedirectedRef.current = false;
+      prevAuthRef.current = isAuthenticated;
+    }
+  }, [isAuthenticated]);
+
   // Keep lastAuthedPath in sync while user navigates inside authed areas.
-  // Wait until the initial redirect check is done (hasRedirectedRef) so we
-  // don't overwrite the stored path with the default Home tab on restart.
   useEffect(() => {
     if (!hasRedirectedRef.current) return;
     if (!isAuthenticated || !pathname || pathname === "/") return;
-
     if (pathname.startsWith("/(tabs)")) {
       setLastAuthedPath(pathname);
     }
@@ -102,142 +126,86 @@ const AuthNavigator = () => {
   useEffect(() => {
     if (Platform.OS === "web") {
       const root = document.documentElement;
-      if (isDark) {
-        root.classList.add("dark");
-      } else {
-        root.classList.remove("dark");
-      }
+      isDark ? root.classList.add("dark") : root.classList.remove("dark");
     }
   }, [isDark]);
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
-
-    SystemUI.setBackgroundColorAsync(theme.background).catch(() => {
-      // ignored
-    });
+    SystemUI.setBackgroundColorAsync(theme.background).catch(() => {});
   }, [theme.background]);
 
   useEffect(() => {
-    // Guard: component not mounted yet
     if (!isMounted) return;
-
-    // Guard: navigation tree not ready yet
     if (!navigationState?.key) return;
+    if (!isHydrated || loadingSession) return;
 
-    if (!isHydrated || loadingSession) {
-      if (__DEV__) {
-        console.log("[AuthNavigator] still loading → waiting", {
-          isHydrated,
-          loadingSession,
-          pathname,
-          segments,
-        });
-      }
-      return;
-    }
+    // If the guard already fired (including across remounts), bail out.
+    if (hasRedirectedRef.current) return;
 
     const inAuth = isInAuthGroup(segments);
     const inTabs = isInTabsGroup(segments);
     const inOnboarding = isInOnboardingRoute(segments);
-
-    if (__DEV__) {
-      console.log("[AuthNavigator] checking", {
-        pathname,
-        segments,
-        isAuthenticated,
-        inAuth,
-        inTabs,
-      });
-    }
-
-    // therapist-detail is a top-level route accessed from tabs; don't redirect away
     const inTherapistDetail = segments.length > 0 && segments[0] === "therapist-detail";
+    const inArticleViewer = segments.length > 0 && segments[0] === "article-viewer";
 
     if (isAuthenticated) {
-      // therapist-detail is a top-level modal; if we're there, just lock guard
-      if (inTherapistDetail) {
+      if (inTherapistDetail || inArticleViewer) {
+        _hasRedirected = true;
         hasRedirectedRef.current = true;
         return;
       }
 
       if (inTabs) {
-        // First time landing in tabs after a restart → check if we need to
-        // restore a specific tab (e.g. Education instead of default Home).
-        if (!hasRedirectedRef.current) {
-          hasRedirectedRef.current = true;
+        _hasRedirected = true;
+        hasRedirectedRef.current = true;
 
-          if (
-            typeof lastAuthedPath === "string" &&
-            lastAuthedPath.startsWith("/(tabs)") &&
-            lastAuthedPath !== pathname
-          ) {
-            if (__DEV__) {
-              console.log(
-                "[AuthNavigator] → restoring last tab:",
-                lastAuthedPath,
-              );
-            }
-            router.replace(lastAuthedPath as Href);
-          }
+        if (
+          typeof lastAuthedPath === "string" &&
+          lastAuthedPath.startsWith("/(tabs)") &&
+          lastAuthedPath !== pathname
+        ) {
+          if (__DEV__) console.log("[AuthNavigator] → restoring last tab:", lastAuthedPath);
+          router.replace(lastAuthedPath as Href);
         }
         return;
       }
 
-      // Authenticated but not in tabs/detail → redirect
-      if (!hasRedirectedRef.current) {
-        hasRedirectedRef.current = true;
+      // Authenticated but not in a valid screen → redirect once
+      _hasRedirected = true;
+      hasRedirectedRef.current = true;
 
-        let target: Href = "/(tabs)";
-
-        if (
-          typeof lastAuthedPath === "string" &&
-          lastAuthedPath.trim() !== "" &&
-          lastAuthedPath !== "/" &&
-          !lastAuthedPath.startsWith("/(auth)") &&
-          !lastAuthedPath.startsWith("/therapist-detail")
-        ) {
-          target = lastAuthedPath as Href;
-        }
-
-        if (__DEV__) {
-          console.log(
-            "[AuthNavigator] → redirecting authenticated user to:",
-            target,
-          );
-        }
-
-        router.replace(target);
+      let target: Href = "/(tabs)";
+      if (
+        typeof lastAuthedPath === "string" &&
+        lastAuthedPath.trim() !== "" &&
+        lastAuthedPath !== "/" &&
+        !lastAuthedPath.startsWith("/(auth)") &&
+        !lastAuthedPath.startsWith("/therapist-detail") &&
+        !lastAuthedPath.startsWith("/article-viewer")
+      ) {
+        target = lastAuthedPath as Href;
       }
+
+      if (__DEV__) console.log("[AuthNavigator] → redirecting authenticated user to:", target);
+      router.replace(target);
     } else {
-      // NOT authenticated → show onboarding first, then auth group
       if (!hasSeenOnboarding) {
         if (!inOnboarding) {
+          _hasRedirected = true;
           hasRedirectedRef.current = true;
-
-          if (__DEV__) {
-            console.log(
-              "[AuthNavigator] → redirecting unauthenticated to onboarding",
-            );
-          }
-
+          if (__DEV__) console.log("[AuthNavigator] → redirecting to onboarding");
           router.replace("/onboarding");
         }
         return;
       }
 
       if (!inAuth) {
+        _hasRedirected = true;
         hasRedirectedRef.current = true;
-
-        if (__DEV__) {
-          console.log(
-            "[AuthNavigator] → redirecting unauthenticated to sign-in (caught root/empty/unknown path)",
-          );
-        }
-
+        if (__DEV__) console.log("[AuthNavigator] → redirecting unauthenticated to sign-in");
         router.replace("/(auth)/sign-in");
       }
-      // If already in (auth) group → do nothing (correct state)
     }
   }, [
     isMounted,
@@ -304,6 +272,13 @@ function RootLayoutContent() {
               animation: "slide_from_bottom",
               gestureEnabled: true,
               gestureDirection: "vertical",
+            }}
+          />
+          <Stack.Screen
+            name="article-viewer"
+            options={{
+              headerShown: false,
+              animation: "slide_from_right",
             }}
           />
           <Stack.Screen name="+not-found" options={{ headerShown: false }} />
