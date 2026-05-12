@@ -4,18 +4,18 @@ import { ThemedAlertProvider } from "@/components/ui";
 import { Colors } from "@/constants/theme";
 import { apolloClient } from "@/graphql/client";
 import {
-  ThemePreferenceProvider,
-  useAppColorScheme,
+    ThemePreferenceProvider,
+    useAppColorScheme,
 } from "@/hooks/use-theme-preference";
 import { useAuthSession } from "@/stores/useAuthSession";
 import { ApolloProvider } from "@apollo/client";
 import {
-  Href,
-  Stack,
-  usePathname,
-  useRootNavigationState,
-  useRouter,
-  useSegments,
+    Href,
+    Stack,
+    usePathname,
+    useRootNavigationState,
+    useRouter,
+    useSegments,
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
@@ -115,13 +115,16 @@ const AuthNavigator = () => {
   }, [isAuthenticated]);
 
   // Keep lastAuthedPath in sync while user navigates inside authed areas.
+  // NOTE: usePathname() may omit group prefixes (returns "/education" instead
+  // of "/(tabs)/education"), so we derive the canonical path from segments.
   useEffect(() => {
     if (!hasRedirectedRef.current) return;
-    if (!isAuthenticated || !pathname || pathname === "/") return;
-    if (pathname.startsWith("/(tabs)")) {
-      setLastAuthedPath(pathname);
+    if (!isAuthenticated) return;
+    if (segments.length > 1 && segments[0] === "(tabs)") {
+      const fullPath = "/(tabs)/" + segments.slice(1).join("/");
+      setLastAuthedPath(fullPath);
     }
-  }, [pathname, isAuthenticated, setLastAuthedPath]);
+  }, [pathname, segments, isAuthenticated, setLastAuthedPath]);
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -160,10 +163,17 @@ const AuthNavigator = () => {
         _hasRedirected = true;
         hasRedirectedRef.current = true;
 
+        // Build the current canonical tab path from segments so the comparison
+        // works regardless of whether usePathname() includes group prefixes.
+        const currentTabPath =
+          segments.length > 1
+            ? "/(tabs)/" + segments.slice(1).join("/")
+            : "/(tabs)";
+
         if (
           typeof lastAuthedPath === "string" &&
           lastAuthedPath.startsWith("/(tabs)") &&
-          lastAuthedPath !== pathname
+          lastAuthedPath !== currentTabPath
         ) {
           if (__DEV__) console.log("[AuthNavigator] → restoring last tab:", lastAuthedPath);
           router.replace(lastAuthedPath as Href);

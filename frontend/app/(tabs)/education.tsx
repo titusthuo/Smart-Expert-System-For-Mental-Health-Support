@@ -5,19 +5,20 @@ import { EducationHeader } from "@/components/education/education-header";
 import { AppText, useThemedAlert } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import {
-    Article,
-    fetchMentalHealthArticles as fetchMentalHealthArticlesApi,
-    normalizeHttpUrl,
+  Article,
+  fetchMentalHealthArticles as fetchMentalHealthArticlesApi,
+  normalizeHttpUrl,
 } from "@/lib/education";
+import { useAuthSession } from "@/stores/useAuthSession";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StatusBar,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -80,6 +81,7 @@ export default function EducationScreen() {
 
   const alert = useThemedAlert();
   const router = useRouter();
+  const setLastAuthedPath = useAuthSession((s) => s.setLastAuthedPath);
 
   const openUrlSafely = async (url: string, title?: string) => {
     const normalized = normalizeHttpUrl(url);
@@ -87,6 +89,10 @@ export default function EducationScreen() {
       alert({ title: "No link available", message: "This article link is missing or invalid.", variant: "warning" });
       return;
     }
+
+    // Persist the current tab so AuthNavigator can restore it if Android
+    // kills the app while the user is in the external browser / app.
+    setLastAuthedPath("/(tabs)/education");
 
     if (_hasWebView) {
       // Standalone APK: use in-app WebView (no app backgrounding)
@@ -99,8 +105,6 @@ export default function EducationScreen() {
       });
     } else {
       // Expo Go: fall back to Chrome Custom Tab.
-      // The module-level _hasRedirected guard in AuthNavigator prevents
-      // spurious redirects when the app resumes from the browser.
       try {
         await WebBrowser.openBrowserAsync(normalized, {
           createTask: false,
