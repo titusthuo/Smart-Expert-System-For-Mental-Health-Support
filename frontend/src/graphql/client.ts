@@ -3,13 +3,12 @@ import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 // @ts-expect-error — @types/apollo-upload-client exists but conflicts with package exports
 import { createUploadLink } from "apollo-upload-client";
-import Constants from "expo-constants";
 
 import { useAuthSession } from "@/stores/useAuthSession";
 
-const graphqlUri = Constants.expoConfig?.extra?.EXPO_PUBLIC_GRAPHQL_URL;
+const graphqlUri = process.env.EXPO_PUBLIC_GRAPHQL_URL;
 
-console.log("EXPO_PUBLIC_GRAPHQL_URL:", Constants.expoConfig?.extra?.EXPO_PUBLIC_GRAPHQL_URL);
+console.log("EXPO_PUBLIC_GRAPHQL_URL:", process.env.EXPO_PUBLIC_GRAPHQL_URL);
 console.log("Final graphqlUri:", graphqlUri);
 
 
