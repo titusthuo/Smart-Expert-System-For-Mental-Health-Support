@@ -1,6 +1,6 @@
 import {
-    TherapistsQuery,
-    useTherapistsQuery,
+  TherapistsQuery,
+  useTherapistsQuery,
 } from "@/graphql/generated/graphql";
 import { Therapist } from "@/lib/therapists/types";
 import { useMemo } from "react";
@@ -17,14 +17,18 @@ export function useTherapists() {
 
     return items
       .filter((therapist): therapist is NonNullable<typeof therapist> =>
-        Boolean(therapist),
+        Boolean(therapist)
       )
       .map((therapist) => ({
         id: String(therapist.id),
         name: therapist.name,
+        // ✅ Fixed: Force HTTPS for all images
         photo: therapist.photoUrl
-          ? { uri: therapist.photoUrl }
+          ? { 
+              uri: therapist.photoUrl.replace("http://", "https://") 
+            }
           : FALLBACK_THERAPIST_PHOTO,
+
         location: therapist.location,
         county: therapist.county ?? '',
         town: therapist.town,
@@ -37,7 +41,7 @@ export function useTherapists() {
             ? { lat: therapist.coords.lat, lng: therapist.coords.lng }
             : undefined,
         specialization: (therapist.specialization ?? []).filter(
-          (value): value is string => Boolean(value),
+          (value): value is string => Boolean(value)
         ),
         bio: therapist.bio,
         licenseNumber: therapist.licenseNumber ?? undefined,

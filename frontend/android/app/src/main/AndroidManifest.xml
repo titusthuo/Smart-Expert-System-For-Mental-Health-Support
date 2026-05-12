@@ -28,6 +28,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="smartexpertmentalsupportsystem"/>
+        <data android:scheme="exp+smart-expert-mental-support-system"/>
       </intent-filter>
     </activity>
   </application>
