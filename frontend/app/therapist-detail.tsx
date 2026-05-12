@@ -3,6 +3,7 @@ import { AppText } from "@/components/ui/text";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { useTherapist } from "@/hooks/useTherapist";
 import { openUrlSafely } from "@/lib/links";
+import { useAuthSession } from "@/stores/useAuthSession";
 import * as MailComposer from "expo-mail-composer";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Award, DollarSign, MapPin } from "lucide-react-native";
@@ -26,6 +27,7 @@ export default function TherapistDetailScreen() {
   const { isDark, brand, subtle } = useAuthTheme();
   const { therapist, loading } = useTherapist(id);
   const alert = useThemedAlert();
+  const setLastAuthedPath = useAuthSession((s) => s.setLastAuthedPath);
 
   const handleBackPress = () => {
     if (router.canGoBack()) {
@@ -84,6 +86,8 @@ export default function TherapistDetailScreen() {
       alert({ title: "Missing contact", message: "No phone number is available for this therapist.", variant: "warning" });
       return;
     }
+    // Persist the parent tab so AuthNavigator restores it if the app is killed.
+    setLastAuthedPath("/(tabs)/therapists");
     const opened = await openUrlSafely(`tel:${digits}`);
     if (!opened) {
       alert({ title: "Unable to open", message: "Please use your phone to contact this therapist.", variant: "error" });
@@ -102,6 +106,8 @@ export default function TherapistDetailScreen() {
     const text = encodeURIComponent(prefilledMessage);
     const appUrl = `whatsapp://send?phone=${digits}&text=${text}`;
     const webUrl = `https://wa.me/${digits}?text=${text}`;
+    // Persist the parent tab so AuthNavigator restores it if the app is killed.
+    setLastAuthedPath("/(tabs)/therapists");
     const opened = await openUrlSafely(appUrl, { fallbackUrl: webUrl });
     if (!opened) {
       alert({ title: "Unable to open", message: "Please use your phone to contact this therapist.", variant: "error" });
@@ -114,6 +120,8 @@ export default function TherapistDetailScreen() {
       return;
     }
 
+    // Persist the parent tab so AuthNavigator restores it if the app is killed.
+    setLastAuthedPath("/(tabs)/therapists");
     const isAvailable = await MailComposer.isAvailableAsync();
     if (isAvailable) {
       await MailComposer.composeAsync({
