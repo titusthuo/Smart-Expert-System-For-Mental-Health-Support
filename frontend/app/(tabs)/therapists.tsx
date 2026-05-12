@@ -185,17 +185,44 @@ export default function TherapistsScreen() {
         useLocation={useLocation}
       />
 
-      <FlatList
-        data={sortedTherapists}
-        renderItem={renderTherapist}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingVertical: 24,
-          paddingBottom: 100,
-        }}
-        ListEmptyComponent={<TherapistsEmpty />}
-      />
+      {loading ? (
+        <View className="flex-1 justify-center items-center mt-20">
+          <ActivityIndicator size="large" color={brandAccent} />
+          <AppText unstyled className="mt-4 text-muted-foreground">
+            Loading therapists...
+          </AppText>
+        </View>
+      ) : error ? (
+        <View className="mx-5 mt-10 p-8 bg-card border border-border rounded-xl items-center">
+          <AppText
+            unstyled
+            className="text-muted-foreground text-center text-base mb-4"
+          >
+            Could not load therapists. Please check your internet connection and try again.
+          </AppText>
+          <TouchableOpacity
+            onPress={handleRetry}
+            className="bg-brand px-5 py-3 rounded-lg"
+          >
+            <AppText unstyled className="text-white font-semibold">
+              Try again
+            </AppText>
+          </TouchableOpacity>
+        </View>
+      ) : sortedTherapists.length === 0 ? (
+        <TherapistsEmpty />
+      ) : (
+        <FlatList
+          data={sortedTherapists}
+          renderItem={renderTherapist}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingVertical: 24,
+            paddingBottom: 100,
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
