@@ -57,6 +57,7 @@
     "@graphql-codegen/typescript-operations": "^5.0.9",
     "@graphql-codegen/typescript-react-apollo": "^4.3.2",
     "@types/apollo-upload-client": "^19.0.0",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.1.0",
     "autoprefixer": "^10.4.24",
     "eslint": "^9.25.0",

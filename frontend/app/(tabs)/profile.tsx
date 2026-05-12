@@ -1,7 +1,7 @@
 import { ActivitySummaryCard } from "@/components/profile/activity-summary-card";
 import {
-    AppearanceCard,
-    ThemeMode,
+  AppearanceCard,
+  ThemeMode,
 } from "@/components/profile/appearance-card";
 import { EmergencyResourcesCard } from "@/components/profile/emergency-resources-card";
 import { LogoutButton } from "@/components/profile/logout-button";
@@ -11,16 +11,16 @@ import { LogoutConfirmModal } from "@/components/profile/modals/logout-confirm-m
 import { PhotoConfirmModal } from "@/components/profile/modals/photo-confirm-modal";
 import { PhotoViewerModal } from "@/components/profile/modals/photo-viewer-modal";
 import {
-    ProfileData,
-    ProfileFormCard,
+  ProfileData,
+  ProfileFormCard,
 } from "@/components/profile/profile-form-card";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { SettingsCard } from "@/components/profile/settings-card";
 import { apolloClient } from "@/graphql/client";
 import {
-    useRemoveProfilePictureMutation,
-    useUpdateProfileMutation,
-    useUploadProfilePictureMutation,
+  useRemoveProfilePictureMutation,
+  useUpdateProfileMutation,
+  useUploadProfilePictureMutation,
 } from "@/graphql/generated/graphql";
 import { useThemePreference } from "@/hooks/use-theme-preference";
 import { useAuthSession } from "@/stores/useAuthSession";
@@ -196,18 +196,19 @@ export default function ProfileScreen() {
         const photoUrl =
           result.data.uploadProfilePicture.user.profilePictureUrl;
 
-        // Update local state with backend URL
-        setProfilePhotoUri(photoUrl || null);
+        // Convert to HTTPS and update local state
+        const httpsPhotoUrl = photoUrl ? photoUrl.replace("http://", "https://") : null;
+        setProfilePhotoUri(httpsPhotoUrl);
         setPendingProfilePhotoUri(null);
         setPhotoConfirmVisible(false);
 
-        // Update session with backend photo URL
+        // Update session with HTTPS photo URL
         if (session) {
           await setSession({
             ...session,
             profile: {
               ...session.profile,
-              photoUri: photoUrl,
+              photoUri: httpsPhotoUrl,
             },
           });
         }
@@ -304,6 +305,7 @@ export default function ProfileScreen() {
     setInfoDialog({ visible: true, title, message });
   };
 
+  
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
       {/* Header */}
@@ -316,7 +318,7 @@ export default function ProfileScreen() {
         {/* Profile Card */}
         <ProfileFormCard
           profileData={profileData}
-          profilePhotoUri={profilePhotoUri}
+          profilePhotoUri={profilePhotoUri ? profilePhotoUri.replace("http://", "https://") : null}
           onPressAvatar={() => setAvatarMenuVisible(true)}
           onChangeProfileData={setProfileData}
           onPressSave={handleSaveProfile}

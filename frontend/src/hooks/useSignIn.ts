@@ -45,7 +45,9 @@ export function useSignIn() {
           typeof user.email === "string" && user.email.trim() ? user.email : "",
         phone:
           typeof user.phone === "string" && user.phone.trim() ? user.phone : "",
-        photoUri: user.profilePictureUrl || null,
+        photoUri: user.profilePictureUrl 
+          ? user.profilePictureUrl.replace("http://", "https://") 
+          : null,
       };
 
       await setSession({

@@ -26,7 +26,11 @@ export function useTherapist(id?: string) {
     return {
       id: String(item.id),
       name: item.name,
-      photo: item.photoUrl ? { uri: item.photoUrl } : FALLBACK_THERAPIST_PHOTO,
+      photo: item.photoUrl 
+        ? { 
+            uri: item.photoUrl.replace("http://", "https://") 
+          } 
+        : FALLBACK_THERAPIST_PHOTO,
       location: item.location,
       county: item.county ?? '',
       town: item.town,
