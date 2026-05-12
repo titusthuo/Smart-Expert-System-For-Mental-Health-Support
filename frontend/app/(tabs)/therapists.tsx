@@ -1,19 +1,20 @@
 import { TherapistCard } from "@/components/therapists/therapist-card";
 import { TherapistsEmpty } from "@/components/therapists/therapists-empty";
 import { TherapistsHeader } from "@/components/therapists/therapists-header";
+import { AppText } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { useTherapists } from "@/hooks/useTherapists";
 import { Coords, haversineDistanceKm } from "@/lib/geo";
 import {
-    getOptionLabel,
-    locationOptions,
-    specializationOptions,
+  getOptionLabel,
+  locationOptions,
+  specializationOptions,
 } from "@/lib/therapists/options";
 import { Therapist } from "@/lib/therapists/types";
 import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { FlatList, StatusBar } from "react-native";
+import { ActivityIndicator, FlatList, StatusBar, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const FALLBACK_COORDS: Coords = { lat: -1.176, lng: 36.756 };
@@ -26,8 +27,12 @@ export default function TherapistsScreen() {
     lng?: string;
     useLocation?: string;
   }>();
-  const { isDark } = useAuthTheme();
-  const { therapists } = useTherapists();
+  const { isDark, brandAccent } = useAuthTheme();
+  const { therapists, loading, error, refetch } = useTherapists();
+
+  const handleRetry = () => {
+    refetch();
+  };
 
   const [specializationFilter, setSpecializationFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
