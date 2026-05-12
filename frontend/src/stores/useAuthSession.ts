@@ -32,6 +32,7 @@ export type AuthSessionState = {
   isHydrated: boolean;
   lastAuthedPath: string | null;
   securityQuestionSetup: boolean;
+  hasSeenOnboarding: boolean;
 };
 
 export type AuthSessionActions = {
@@ -44,6 +45,7 @@ export type AuthSessionActions = {
   setIsAuthenticated: (authenticated: boolean) => void;
   setLastAuthedPath: (path: string | null) => void;
   setSecurityQuestionSetup: (setup: boolean) => void;
+  setHasSeenOnboarding: (hasSeen: boolean) => void;
 };
 
 export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
@@ -55,6 +57,7 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
       isHydrated: false,
       lastAuthedPath: null,
       securityQuestionSetup: false,
+      hasSeenOnboarding: false,
 
       setSession: async (updates) => {
         set((state) => {
@@ -106,6 +109,8 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
       setLastAuthedPath: (lastAuthedPath) => set({ lastAuthedPath }),
       setSecurityQuestionSetup: (securityQuestionSetup) =>
         set({ securityQuestionSetup }),
+      setHasSeenOnboarding: (hasSeenOnboarding) =>
+        set({ hasSeenOnboarding }),
     }),
     {
       name: "authSession",
@@ -125,6 +130,7 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
         session: state.session,
         lastAuthedPath: state.lastAuthedPath,
         securityQuestionSetup: state.securityQuestionSetup,
+        hasSeenOnboarding: state.hasSeenOnboarding,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
@@ -132,9 +138,15 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
         const hasJwt = Boolean(state.session?.jwt && state.session.jwt.trim());
 
         // Important: DO NOT mutate `state.*` here; call actions so Zustand updates properly.
+        if (state.lastAuthedPath?.startsWith("/therapist-detail") || state.lastAuthedPath?.startsWith("/article-viewer")) {
+          state.setLastAuthedPath(null);
+        }
         state.setIsHydrated(true);
         state.setIsAuthenticated(hasJwt);
-        state.setLoadingSession(hasJwt);
+        // Don't block navigation — let the auth navigator redirect immediately.
+        // SessionInitializer will verify the token in the background and clear
+        // the session only if the token is truly invalid.
+        state.setLoadingSession(false);
 
         // Keep authToken key in sync for any legacy reads.
         if (hasJwt) {
@@ -149,24 +161,3 @@ export const useAuthSession = create<AuthSessionState & AuthSessionActions>()(
   ),
 );
 
-export const waitForSession = async (): Promise<Session> => {
-  const store = useAuthSession.getState();
-  if (store.isHydrated && !store.loadingSession) {
-    return store.session;
-  }
-
-  return await new Promise((resolve) => {
-    const unsubscribe = useAuthSession.subscribe((state) => {
-      if (state.isHydrated && !state.loadingSession) {
-        unsubscribe();
-        resolve(state.session);
-      }
-    });
-  });
-};
-
-export const selectSession = (state: AuthSessionState & AuthSessionActions) =>
-  state.session;
-export const selectIsAuthenticated = (
-  state: AuthSessionState & AuthSessionActions,
-) => state.isAuthenticated;

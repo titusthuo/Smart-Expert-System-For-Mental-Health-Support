@@ -3,7 +3,11 @@ import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import {
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+} from "react-native";
 import {
     SafeAreaView,
     useSafeAreaInsets,
@@ -11,7 +15,6 @@ import {
 
 import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatInput } from "@/components/chat/ChatInput";
-import { MoodBanner } from "@/components/chat/MoodBanner";
 import { TypingRow } from "@/components/chat/TypingRow";
 import { MessageBubble } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
@@ -20,12 +23,11 @@ import { Coords } from "@/lib/geo";
 
 export default function ChatScreen() {
   const router = useRouter();
-  const { isDark, brandAccent } = useAuthTheme();
+  const { isDark } = useAuthTheme();
   const insets = useSafeAreaInsets();
 
-  const { mood, aiGreeting } = useLocalSearchParams<{
+  const { mood } = useLocalSearchParams<{
     mood?: string;
-    aiGreeting?: string;
   }>();
 
   // GPS Location state
@@ -43,7 +45,6 @@ export default function ChatScreen() {
         const { status } = await Location.requestForegroundPermissionsAsync();
 
         if (status !== "granted") {
-          console.log("Location permission denied, using fallback");
           if (!isMounted) return;
           setUserCoords(null); // No location available
           setLocationPermissionGranted(false);
@@ -61,7 +62,6 @@ export default function ChatScreen() {
           lng: position.coords.longitude,
         });
         setLocationPermissionGranted(true);
-        console.log("GPS location obtained successfully");
       } catch (error) {
         console.warn("Failed to get location:", error);
         if (!isMounted) return;
@@ -85,7 +85,10 @@ export default function ChatScreen() {
     isEscalated,
     sendMessage,
     setIsEscalated,
-  } = useAIAssistant(aiGreeting, userCoords);
+  } = useAIAssistant(
+    typeof mood === "string" ? mood : undefined,
+    userCoords,
+  );
 
   // ── Scroll helpers ────────────────────────────────────────────────────────
   const scrollViewRef = useRef<ScrollView>(null);
@@ -120,32 +123,24 @@ export default function ChatScreen() {
 
   const canSend = !isEscalated && inputValue.trim().length > 0;
 
+  // ── Stable bottom padding ─────────────────────────────────────────────
+  const bottomPadding = Math.max(insets.bottom, 8);
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
         <ChatHeader
           mood={typeof mood === "string" ? mood : undefined}
           onPressProfile={() => router.push("/(tabs)/profile")}
         />
 
-        {typeof mood === "string" && mood.length > 0 && (
-          <MoodBanner
-            mood={mood}
-            iconColor={brandAccent}
-            isDark={isDark}
-            onDismiss={() => router.setParams({ mood: undefined })}
-          />
-        )}
-
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1"
-          keyboardVerticalOffset={
-            Platform.OS === "ios" ? insets.bottom + 90 : insets.bottom + 24
-          }
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 10 : 0}
         >
           <ScrollView
             ref={scrollViewRef}
@@ -153,7 +148,7 @@ export default function ChatScreen() {
             contentContainerStyle={{
               paddingHorizontal: 16,
               paddingTop: 24,
-              paddingBottom: 88 + insets.bottom,
+              paddingBottom: 16,
             }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -173,11 +168,10 @@ export default function ChatScreen() {
                   if (therapistId) {
                     // Navigate to specific therapist detail page
                     router.push({
-                      pathname: "/(tabs)/therapists-detail",
+                      pathname: "/therapist-detail",
                       params: {
                         id: therapistId,
                         reason: "crisis",
-                        from: "chat",
                       },
                     });
                   } else {
@@ -208,7 +202,7 @@ export default function ChatScreen() {
             onSend={handleSendMessage}
             canSend={canSend}
             isEscalated={isEscalated}
-            insets={insets}
+            bottomPadding={bottomPadding}
           />
         </KeyboardAvoidingView>
       </SafeAreaView>

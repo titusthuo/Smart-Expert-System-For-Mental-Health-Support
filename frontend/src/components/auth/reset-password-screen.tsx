@@ -126,6 +126,7 @@ export function ResetPasswordScreen() {
       <AuthScreenShell
         title={resetSuccess ? "Success" : "New password"}
         onBack={resetSuccess ? undefined : () => router.back()}
+        asModal
       >
         {!resetSuccess ? (
           <>

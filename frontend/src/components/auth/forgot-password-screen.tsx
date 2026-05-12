@@ -1,10 +1,9 @@
 import {
-  AuthFeedbackModal,
-  useAuthFeedback,
+    AuthFeedbackModal,
+    useAuthFeedback,
 } from "@/components/auth/auth-feedback";
 import { AuthScreenShell } from "@/components/auth/auth-shell";
 import { AppText, Button, Input } from "@/components/ui";
-import { useForgotPasswordMutation } from "@/graphql/generated/graphql";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -21,8 +20,6 @@ export function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-
-  const [forgotPasswordMutation] = useForgotPasswordMutation();
 
   const trimmedEmail = email.trim();
 
@@ -43,12 +40,12 @@ export function ForgotPasswordScreen() {
 
   const handleSubmit = useCallback(async () => {
     // Redirect to the new username-based forgot password flow
-    router.push("/(auth)/forgot-password-username");
+    router.replace("/(auth)/forgot-password-username");
   }, [router]);
 
   return (
     <>
-      <AuthScreenShell title={headerTitle} onBack={() => router.back()}>
+      <AuthScreenShell title={headerTitle} onBack={() => router.back()} asModal>
         <View className="items-center mb-10">
           <View
             className="w-20 h-20 rounded-2xl items-center justify-center mb-5"
@@ -137,7 +134,7 @@ export function ForgotPasswordScreen() {
             <Button
               text="Enter New Password"
               rightIcon="arrow-forward"
-              onPress={() => router.push("/(auth)/reset-password")}
+              onPress={() => router.replace("/(auth)/reset-password")}
               className="h-14 mt-2"
             />
 
@@ -161,7 +158,7 @@ export function ForgotPasswordScreen() {
         )}
 
         <TouchableOpacity
-          onPress={() => router.push("/(auth)/sign-in")}
+          onPress={() => router.back()}
           className="flex-row items-center justify-center gap-2 mt-10 opacity-80 active:opacity-100"
           accessibilityRole="button"
           accessibilityLabel="Back to Sign In"

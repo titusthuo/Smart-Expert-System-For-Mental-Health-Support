@@ -6,8 +6,8 @@ export { MessageBubble } from "./MessageBubble";
 export { PasswordRequirements } from "./password-requirements";
 export { PasswordStrength } from "./password-strength";
 export { Switch } from "./switch";
-export { TabStrip } from "./tab";
 export { AppText } from "./text";
+export { ThemedAlertProvider, useThemedAlert } from "./themed-alert";
 export { TypingIndicator } from "./TypingIndicator";
 
 export {

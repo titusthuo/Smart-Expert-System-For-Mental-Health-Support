@@ -1,7 +1,7 @@
 import { ActivitySummaryCard } from "@/components/profile/activity-summary-card";
 import {
-  AppearanceCard,
-  ThemeMode,
+    AppearanceCard,
+    ThemeMode,
 } from "@/components/profile/appearance-card";
 import { EmergencyResourcesCard } from "@/components/profile/emergency-resources-card";
 import { LogoutButton } from "@/components/profile/logout-button";
@@ -11,32 +11,30 @@ import { LogoutConfirmModal } from "@/components/profile/modals/logout-confirm-m
 import { PhotoConfirmModal } from "@/components/profile/modals/photo-confirm-modal";
 import { PhotoViewerModal } from "@/components/profile/modals/photo-viewer-modal";
 import {
-  ProfileData,
-  ProfileFormCard,
+    ProfileData,
+    ProfileFormCard,
 } from "@/components/profile/profile-form-card";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { SettingsCard } from "@/components/profile/settings-card";
 import { apolloClient } from "@/graphql/client";
 import {
-  useRemoveProfilePictureMutation,
-  useUpdateProfileMutation,
-  useUploadProfilePictureMutation,
+    useRemoveProfilePictureMutation,
+    useUpdateProfileMutation,
+    useUploadProfilePictureMutation,
 } from "@/graphql/generated/graphql";
 import { useThemePreference } from "@/hooks/use-theme-preference";
 import { useAuthSession } from "@/stores/useAuthSession";
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router"; // ← if using expo-router
+import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // Import ReactNativeFile using require for compatibility
 const { ReactNativeFile } = require("apollo-upload-client");
-// import { useNavigation } from '@react-navigation/native'; // alternative
 
 export default function ProfileScreen() {
   const router = useRouter();
-  // const navigation = useNavigation(); // if not using expo-router
   const { mode, setMode } = useThemePreference();
   const clearSession = useAuthSession((s) => s.clearSession);
   const session = useAuthSession((s) => s.session);
@@ -248,7 +246,7 @@ export default function ProfileScreen() {
       }
     })();
     setTimeout(() => {
-      router.replace("/(auth)/sign-in"); // or navigation.reset(...)
+      router.replace("/(auth)/sign-in");
     }, 350);
   };
 

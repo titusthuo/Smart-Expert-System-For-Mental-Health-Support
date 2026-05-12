@@ -1,12 +1,13 @@
 import { AuthScreenShell } from "@/components/auth/auth-shell";
-import { AppText, Button, Input } from "@/components/ui";
+import { AppText, Button, Input, useThemedAlert } from "@/components/ui";
+import { AuthPalette } from "@/constants/theme";
 import { useResetPasswordWithOtpMutation } from "@/graphql/generated/graphql";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 export function NewPasswordScreen() {
   const router = useRouter();
@@ -18,14 +19,15 @@ export function NewPasswordScreen() {
   const theme = useAuthTheme();
 
   const [resetPasswordWithOtp] = useResetPasswordWithOtpMutation();
+  const alert = useThemedAlert();
 
   const handleReset = async () => {
     if (password !== confirm) {
-      Alert.alert("Error", "Passwords do not match.");
+      alert({ title: "Error", message: "Passwords do not match.", variant: "error" });
       return;
     }
     if (password.length < 8) {
-      Alert.alert("Error", "Password must be at least 8 characters.");
+      alert({ title: "Error", message: "Password must be at least 8 characters.", variant: "error" });
       return;
     }
 
@@ -52,19 +54,19 @@ export function NewPasswordScreen() {
         );
       }
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to reset password.");
+      alert({ title: "Error", message: error.message || "Failed to reset password.", variant: "error" });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthScreenShell title="New Password" onBack={() => router.back()}>
+    <AuthScreenShell title="New Password" onBack={() => router.back()} asModal>
       <View style={styles.container}>
         <View
           style={[
             styles.iconContainer,
-            { backgroundColor: theme.isDark ? "#1e1b4b" : "#EEF2FF" },
+            { backgroundColor: theme.isDark ? theme.brandSoft : AuthPalette.brandSoft },
           ]}
         >
           <Ionicons
@@ -142,7 +144,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: AuthPalette.brandSoft,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",

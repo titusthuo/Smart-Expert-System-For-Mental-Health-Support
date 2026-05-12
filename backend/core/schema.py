@@ -7,25 +7,16 @@ from graphene_django import DjangoObjectType
 import graphql_jwt
 from graphql_jwt.decorators import login_required
 from graphql_jwt.shortcuts import get_token
-from datetime import timedelta, datetime, time, date
+from datetime import timedelta
 from django.contrib.auth import authenticate
 from django.db import models
 from django.utils import timezone
-from decimal import Decimal
 from django.core.exceptions import ValidationError
 import uuid
 from graphene_file_upload.scalars import Upload
 
-# Import channels only if available (for notifications)
-try:
-    from channels.layers import get_channel_layer
-    from asgiref.sync import async_to_sync
-    CHANNELS_AVAILABLE = True
-except ImportError:
-    CHANNELS_AVAILABLE = False
-
 from .models import (
-    User, Country, County, Notification, 
+    User, Country, County,
     AIChatMessage, Therapist, TherapistReview,
     Specialty, PasswordReset, SecurityQuestion, PasswordResetOTP,
 )
@@ -454,8 +445,15 @@ class ResetPassword(graphene.Mutation):
                     error="Password must be at least 8 characters long"
                 )
             
-            # Update user password
+            # Reject if new password is the same as current password
             user = reset_obj.user
+            if user.check_password(new_password):
+                return ResetPassword(
+                    success=False,
+                    error="New password must be different from your current password."
+                )
+            
+            # Update user password
             user.set_password(new_password)
             user.save()
             
@@ -628,6 +626,13 @@ class ResetPasswordWithOTP(graphene.Mutation):
                 return ResetPasswordWithOTP(
                     success=False,
                     error="OTP has expired. Please start over."
+                )
+            
+            # Reject if new password is the same as current password
+            if user.check_password(new_password):
+                return ResetPasswordWithOTP(
+                    success=False,
+                    error="New password must be different from your current password."
                 )
             
             # Reset password

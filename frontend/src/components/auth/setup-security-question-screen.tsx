@@ -1,18 +1,16 @@
+import { AuthScreenShell } from '@/components/auth/auth-shell';
+import { AppText, Button, Input, useThemedAlert } from '@/components/ui';
+import { AuthPalette } from '@/constants/theme';
+import { useSetupSecurityQuestionMutation } from '@/graphql/generated/graphql';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
+    StyleSheet,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useSetupSecurityQuestionMutation } from '@/graphql/generated/graphql';
-import { AuthScreenShell } from '@/components/auth/auth-shell';
-import { AppText, Button, Input } from '@/components/ui';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 
 const SECURITY_QUESTIONS = [
   { key: 'mother_maiden', label: "What is your mother's maiden name?" },
@@ -29,10 +27,11 @@ export function SetupSecurityQuestionScreen() {
   const [loading, setLoading] = useState(false);
 
   const [setupSecurityQuestion] = useSetupSecurityQuestionMutation();
+  const alert = useThemedAlert();
 
   const handleSetup = async () => {
     if (!selectedQuestion || !answer.trim()) {
-      Alert.alert('Error', 'Please select a question and provide an answer.');
+      alert({ title: 'Error', message: 'Please select a question and provide an answer.', variant: 'error' });
       return;
     }
 
@@ -48,31 +47,32 @@ export function SetupSecurityQuestionScreen() {
       });
 
       if (data?.setupSecurityQuestion?.success) {
-        Alert.alert(
-          'Success!',
-          'Security question has been set up successfully.',
-          [
+        alert({
+          title: 'Success!',
+          message: 'Security question has been set up successfully.',
+          variant: 'success',
+          actions: [
             {
               text: 'Continue',
               onPress: () => router.replace('/(tabs)/'),
             },
-          ]
-        );
+          ],
+        });
       } else {
         throw new Error(data?.setupSecurityQuestion?.error || 'Setup failed');
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to set up security question.');
+      alert({ title: 'Error', message: error.message || 'Failed to set up security question.', variant: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthScreenShell title="Security Question" onBack={() => router.back()}>
+    <AuthScreenShell title="Security Question" onBack={() => router.back()} asModal>
       <View style={styles.container}>
         <View style={styles.iconContainer}>
-          <Ionicons name="shield-checkmark-outline" size={48} color="#4F46E5" />
+          <Ionicons name="shield-checkmark-outline" size={48} color={AuthPalette.brand} />
         </View>
 
         <AppText variant="heading" style={styles.title}>
@@ -99,7 +99,7 @@ export function SetupSecurityQuestionScreen() {
                 <Ionicons
                   name={selectedQuestion === q.key ? 'checkmark-circle' : 'radio-button-off'}
                   size={20}
-                  color={selectedQuestion === q.key ? '#4F46E5' : '#9CA3AF'}
+                  color={selectedQuestion === q.key ? AuthPalette.brand : '#9CA3AF'}
                 />
                 <AppText variant="body" style={styles.questionText}>
                   {q.label}
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: AuthPalette.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
@@ -175,8 +175,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   selectedQuestion: {
-    backgroundColor: '#EEF2FF',
-    borderColor: '#4F46E5',
+    backgroundColor: AuthPalette.brandSoft,
+    borderColor: AuthPalette.brand,
   },
   questionText: {
     marginLeft: 12,

@@ -1,12 +1,12 @@
 import { AuthScreenShell } from "@/components/auth/auth-shell";
-import { AppText, Button, Input } from "@/components/ui";
-import { Colors } from "@/constants/theme";
+import { AppText, Button, Input, useThemedAlert } from "@/components/ui";
+import { AuthPalette, Colors } from "@/constants/theme";
 import { useVerifySecurityAnswerMutation } from "@/graphql/generated/graphql";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Alert, StyleSheet, View, useColorScheme } from "react-native";
+import { StyleSheet, View, useColorScheme } from "react-native";
 
 export function SecurityQuestionScreen() {
   const router = useRouter();
@@ -17,10 +17,11 @@ export function SecurityQuestionScreen() {
   const themeColors = Colors[colorScheme || "light"];
 
   const [verifySecurityAnswer] = useVerifySecurityAnswerMutation();
+  const alert = useThemedAlert();
 
   const handleVerify = async () => {
     if (!answer.trim()) {
-      Alert.alert("Error", "Please enter your answer.");
+      alert({ title: "Error", message: "Please enter your answer.", variant: "error" });
       return;
     }
 
@@ -36,7 +37,7 @@ export function SecurityQuestionScreen() {
       });
 
       if (data?.verifySecurityAnswer?.success) {
-        router.push({
+        router.replace({
           pathname: "/(auth)/otp-verification",
           params: {
             username: username as string,
@@ -49,10 +50,11 @@ export function SecurityQuestionScreen() {
         );
       }
     } catch (error: any) {
-      Alert.alert(
-        "Error",
-        error.message || "Incorrect answer. Please try again.",
-      );
+      alert({
+        title: "Error",
+        message: error.message || "Incorrect answer. Please try again.",
+        variant: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -64,7 +66,7 @@ export function SecurityQuestionScreen() {
       padding: 16,
       borderRadius: 12,
       borderLeftWidth: 4,
-      borderLeftColor: "#4F46E5",
+      borderLeftColor: AuthPalette.brand,
     },
     questionText: {
       color: themeColors.foreground,
@@ -73,10 +75,10 @@ export function SecurityQuestionScreen() {
   });
 
   return (
-    <AuthScreenShell title="Security Question" onBack={() => router.back()}>
+    <AuthScreenShell title="Security Question" onBack={() => router.back()} asModal>
       <View style={styles.container}>
         <View style={styles.iconContainer}>
-          <Ionicons name="shield-checkmark-outline" size={48} color="#4F46E5" />
+          <Ionicons name="shield-checkmark-outline" size={48} color={AuthPalette.brand} />
         </View>
 
         <AppText variant="heading" style={styles.title}>
@@ -131,7 +133,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: AuthPalette.brandSoft,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",

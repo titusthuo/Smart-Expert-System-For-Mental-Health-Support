@@ -1,4 +1,5 @@
 import { AppText, Button } from "@/components/ui";
+import { AuthPalette } from "@/constants/theme";
 import { useSetupSecurityQuestionMutation } from "@/graphql/generated/graphql";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { Ionicons } from "@expo/vector-icons";
@@ -105,7 +106,7 @@ export function SecurityQuestionModal({
             <View
               style={[
                 styles.iconContainer,
-                { backgroundColor: theme.isDark ? "#1e1b4b" : "#EEF2FF" },
+                { backgroundColor: theme.isDark ? theme.brandSoft : AuthPalette.brandSoft },
               ]}
             >
               <Ionicons
@@ -143,7 +144,7 @@ export function SecurityQuestionModal({
                       styles.selectedQuestion,
                       {
                         borderColor: theme.brand,
-                        backgroundColor: theme.isDark ? "#1e1b4b" : "#EEF2FF",
+                        backgroundColor: theme.isDark ? theme.brandSoft : AuthPalette.brandSoft,
                       },
                     ],
                   ]}
@@ -278,7 +279,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: AuthPalette.brandSoft,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",

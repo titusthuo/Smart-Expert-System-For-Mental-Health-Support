@@ -1,12 +1,12 @@
 import { AuthScreenShell } from '@/components/auth/auth-shell';
-import { AppText, Button, Input } from '@/components/ui';
+import { AppText, Button, Input, useThemedAlert } from '@/components/ui';
+import { AuthPalette } from '@/constants/theme';
 import { useGetSecurityQuestionMutation } from '@/graphql/generated/graphql';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
     StyleSheet,
     TouchableOpacity,
     View
@@ -18,10 +18,11 @@ export function ForgotPasswordUsernameScreen() {
   const [loading, setLoading] = useState(false);
 
   const [getSecurityQuestion] = useGetSecurityQuestionMutation();
+  const alert = useThemedAlert();
 
   const handleNext = async () => {
     if (!username.trim()) {
-      Alert.alert('Error', 'Please enter your username.');
+      alert({ title: 'Error', message: 'Please enter your username.', variant: 'error' });
       return;
     }
 
@@ -36,7 +37,7 @@ export function ForgotPasswordUsernameScreen() {
       });
 
       if (data?.getSecurityQuestion?.success) {
-        router.push({
+        router.replace({
           pathname: '/(auth)/security-question',
           params: {
             username: username.trim(),
@@ -48,17 +49,17 @@ export function ForgotPasswordUsernameScreen() {
         throw new Error(data?.getSecurityQuestion?.error || 'User not found');
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'User not found or no security question set.');
+      alert({ title: 'Error', message: error.message || 'User not found or no security question set.', variant: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthScreenShell title="Forgot Password" onBack={() => router.back()}>
+    <AuthScreenShell title="Forgot Password" onBack={() => router.back()} asModal>
       <View style={styles.container}>
         <View style={styles.iconContainer}>
-          <Ionicons name="help-circle-outline" size={48} color="#4F46E5" />
+          <Ionicons name="help-circle-outline" size={48} color={AuthPalette.brand} />
         </View>
 
         <AppText variant="heading" style={styles.title}>
@@ -93,7 +94,7 @@ export function ForgotPasswordUsernameScreen() {
           <AppText variant="body" style={styles.footerText}>
             Remember your password?
           </AppText>
-          <TouchableOpacity onPress={() => router.push('/(auth)/sign-in')}>
+          <TouchableOpacity onPress={() => router.back()}>
             <AppText variant="body" style={styles.signInLink}>
               Sign In
             </AppText>
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: AuthPalette.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
@@ -145,7 +146,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   signInLink: {
-    color: '#4F46E5',
+    color: AuthPalette.brand,
     fontWeight: '600',
   },
 });

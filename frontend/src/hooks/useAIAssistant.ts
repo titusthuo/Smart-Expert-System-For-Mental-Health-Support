@@ -1,7 +1,7 @@
 // src/hooks/useAIAssistant.ts
 import { Coords, haversineDistanceKm } from "@/lib/geo";
 import { Therapist } from "@/lib/therapists/types";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildSystemPrompt, resolveKenyanCity } from "../constants/aiPrompt";
 import { useAIChatMessages, useSendAIChatMessage } from "./useAIChatMessages";
 import { useTherapists } from "./useTherapists";
@@ -21,10 +21,10 @@ export type ChatMessage = {
 };
 
 export const useAIAssistant = (
-  aiGreeting?: string,
-  userCoords?: Coords | null, // ← new param
+  moodLabel?: string,
+  userCoords?: Coords | null,
 ) => {
-  const openingMessage = aiGreeting ?? DEFAULT_GREETING;
+  const openingMessage = DEFAULT_GREETING;
 
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -110,7 +110,7 @@ export const useAIAssistant = (
     }
   }, [backendMessages, loadingHistory, openingMessage]);
 
-  // ── Send message ─────────────────────────────────────────────────────────
+  // ── Send message ─────────────────────────────────────────────────────────────
   const sendMessage = useCallback(
     async (userText: string) => {
       if (!userText.trim() || isEscalated) return;
@@ -221,6 +221,20 @@ export const useAIAssistant = (
       systemPrompt,
     ],
   );
+
+  // ── Auto-send mood as a user prompt when selected from home page ────────
+  const moodSentRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (
+      moodLabel &&
+      !loadingHistory &&
+      moodSentRef.current !== moodLabel
+    ) {
+      moodSentRef.current = moodLabel;
+      sendMessage(`I'm feeling ${moodLabel.toLowerCase()}`);
+    }
+  }, [moodLabel, loadingHistory, sendMessage]);
 
   const refreshChat = useCallback(() => refetch(), [refetch]);
 

@@ -1,10 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useMemo } from "react";
-import { Platform, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useMemo } from "react";
+import { Image, Linking, Platform, TouchableOpacity, View } from "react-native";
 
 import { AppText, Button } from "@/components/ui";
 import { useAuthTheme } from "@/hooks/use-auth-theme";
 import type { Therapist } from "@/lib/therapists/types";
+import { useAuthSession } from "@/stores/useAuthSession";
+
+const mentallyLogo = require("../../../assets/logos/brain.jpg");
 
 export type MessageBubbleProps = {
   id: string;
@@ -25,10 +28,30 @@ export function MessageBubble({
   onPressTherapist,
 }: MessageBubbleProps) {
   const { isDark, brand, border, surface, text: textColor } = useAuthTheme();
+  const session = useAuthSession((s) => s.session);
+  const profilePhotoUri = session?.profile?.photoUri ?? null;
+
+  const initials = useMemo(() => {
+    const name =
+      session?.profile?.name ||
+      session?.user?.name ||
+      session?.user?.username ||
+      "U";
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    const first = parts[0]?.[0] ?? "";
+    const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
+    return (first + last).toUpperCase() || "U";
+  }, [session]);
 
   const warningColor = "#EAB308";
+  const dangerColor = "#EF4444";
 
   const isUser = sender === "user";
+
+  const placeEmergencyCall = useCallback((number: string) => {
+    const url = Platform.OS === "ios" ? `telprompt:${number}` : `tel:${number}`;
+    Linking.openURL(url).catch(() => undefined);
+  }, []);
 
   const bubbleShadow = useMemo(() => {
     if (Platform.OS === "android") {
@@ -54,13 +77,14 @@ export function MessageBubble({
       >
         {!isUser && (
           <View
-            className="w-8 h-8 rounded-full items-center justify-center mr-2 mb-1 shrink-0"
-            style={{ backgroundColor: brand }}
+            className="w-8 h-8 rounded-full items-center justify-center mr-2 mb-1 shrink-0 overflow-hidden border border-border"
             accessibilityLabel="Assistant"
           >
-            <AppText unstyled className="text-white font-bold text-[10px]">
-              AI
-            </AppText>
+            <Image
+              source={mentallyLogo}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+            />
           </View>
         )}
 
@@ -107,17 +131,21 @@ export function MessageBubble({
 
         {isUser && (
           <View
-            className="w-8 h-8 rounded-full items-center justify-center ml-2 mb-1 shrink-0"
-            style={{
-              backgroundColor: isDark
-                ? "rgba(168,85,247,0.35)"
-                : "rgba(124,58,237,0.35)",
-            }}
+            className="w-8 h-8 rounded-full items-center justify-center ml-2 mb-1 shrink-0 overflow-hidden"
+            style={{ backgroundColor: brand }}
             accessibilityLabel="You"
           >
-            <AppText unstyled className="text-white font-bold text-[10px]">
-              You
-            </AppText>
+            {profilePhotoUri ? (
+              <Image
+                source={{ uri: profilePhotoUri }}
+                style={{ width: "100%", height: "100%" }}
+                resizeMode="cover"
+              />
+            ) : (
+              <AppText unstyled className="text-white font-bold text-[10px]">
+                {initials}
+              </AppText>
+            )}
           </View>
         )}
       </View>
@@ -145,12 +173,47 @@ export function MessageBubble({
               </AppText>
               <AppText
                 unstyled
+                className="text-muted-foreground text-sm leading-5 mb-3"
+              >
+                I am concerned about your safety. If you are in immediate
+                danger, please call for emergency help right away.
+              </AppText>
+
+              <View className="flex-row gap-2 mb-4">
+                <TouchableOpacity
+                  onPress={() => placeEmergencyCall("1199")}
+                  className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl"
+                  style={{ backgroundColor: dangerColor }}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Call Kenya Red Cross"
+                >
+                  <Ionicons name="call" size={16} color="#FFFFFF" />
+                  <AppText unstyled className="text-white font-semibold text-xs ml-1.5">
+                    1199 Red Cross
+                  </AppText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => placeEmergencyCall("999")}
+                  className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl"
+                  style={{ backgroundColor: dangerColor }}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Call 999 Emergency"
+                >
+                  <Ionicons name="call" size={16} color="#FFFFFF" />
+                  <AppText unstyled className="text-white font-semibold text-xs ml-1.5">
+                    999 Emergency
+                  </AppText>
+                </TouchableOpacity>
+              </View>
+
+              <AppText
+                unstyled
                 className="text-muted-foreground text-sm leading-5 mb-4"
               >
-                I am concerned about your safety. Please connect with a mental
-                health professional as soon as possible. If you are in immediate
-                danger, call 1190 (Kenya Red Cross Mental Health Hotline) or 999
-                right now.
+                Scroll below to find a therapist near you for further
+                assistance.
               </AppText>
 
               {/* Individual Therapist Recommendations */}
@@ -200,7 +263,7 @@ export function MessageBubble({
                         <Ionicons
                           name="chevron-forward"
                           size={16}
-                          color={isDark ? "#9CA3AF" : "#6B7280"}
+                          color={textColor}
                         />
                       </View>
                     </TouchableOpacity>

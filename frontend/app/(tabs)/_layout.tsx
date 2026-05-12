@@ -14,7 +14,8 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarActiveTintColor: AuthPalette.brand,
+        tabBarHideOnKeyboard: true,
+        tabBarActiveTintColor: isDark ? AuthPalette.brandDark : AuthPalette.brand,
         tabBarInactiveTintColor: theme.mutedForeground,
         tabBarStyle: {
           backgroundColor: theme.card,
@@ -44,7 +45,6 @@ export default function TabLayout() {
         name="chat"
         options={{
           title: "Chat",
-          tabBarHideOnKeyboard: true,
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="chatbubble.fill" color={color} />
           ),
@@ -83,12 +83,6 @@ export default function TabLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="therapists-detail"
-        options={{
-          href: null,
-        }}
-      />
     </Tabs>
   );
 }

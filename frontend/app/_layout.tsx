@@ -1,27 +1,53 @@
 import { SecurityQuestionProvider } from "@/components/auth/security-question-provider";
 import { SessionInitializer } from "@/components/core/session-initializer";
+import { ThemedAlertProvider } from "@/components/ui";
 import { Colors } from "@/constants/theme";
 import { apolloClient } from "@/graphql/client";
 import {
-  ThemePreferenceProvider,
-  useAppColorScheme,
+    ThemePreferenceProvider,
+    useAppColorScheme,
 } from "@/hooks/use-theme-preference";
 import { useAuthSession } from "@/stores/useAuthSession";
 import { ApolloProvider } from "@apollo/client";
 import {
-  Href,
-  Stack,
-  usePathname,
-  useRootNavigationState,
-  useRouter,
-  useSegments,
+    Href,
+    Stack,
+    usePathname,
+    useRootNavigationState,
+    useRouter,
+    useSegments,
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
-import { useEffect, useRef, useState } from "react";
-import { Platform, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { AppState, Platform, View } from "react-native";
 import "react-native-reanimated";
 import "../src/styles/global.css";
+
+// ── Error boundary to survive brief navigation-context loss on theme change ──
+class NavigationErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidUpdate() {
+    if (this.state.hasError) {
+      // Recover on next tick — the navigation context is restored after
+      // expo-router finishes remounting its internal NavigationContainer.
+      setTimeout(() => this.setState({ hasError: false }), 0);
+    }
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
 
 // Helpers to detect current navigation group
 function isInAuthGroup(segments: string[]): boolean {
@@ -31,6 +57,13 @@ function isInAuthGroup(segments: string[]): boolean {
 function isInTabsGroup(segments: string[]): boolean {
   return segments.length > 0 && segments[0] === "(tabs)";
 }
+
+function isInOnboardingRoute(segments: string[]): boolean {
+  return segments.length > 0 && segments[0] === "onboarding";
+}
+
+// ── Module-level flag — survives component remounts caused by app resume ──
+let _hasRedirected = false;
 
 const AuthNavigator = () => {
   const router = useRouter();
@@ -47,107 +80,142 @@ const AuthNavigator = () => {
   const isHydrated = useAuthSession((s) => s.isHydrated);
   const loadingSession = useAuthSession((s) => s.loadingSession);
   const lastAuthedPath = useAuthSession((s) => s.lastAuthedPath);
+  const hasSeenOnboarding = useAuthSession((s) => s.hasSeenOnboarding);
 
-  const hasRedirectedRef = useRef(false);
+  const setLastAuthedPath = useAuthSession((s) => s.setLastAuthedPath);
+  // Mirror module-level flag into a ref so effect deps stay stable
+  const hasRedirectedRef = useRef(_hasRedirected);
 
-  // Mark component as mounted after first render
   useEffect(() => {
     setIsMounted(true);
+    // Sync ref from module flag on mount (handles remount-after-resume)
+    hasRedirectedRef.current = _hasRedirected;
   }, []);
+
+  // Lock the guard whenever the app comes back to the foreground so a resume
+  // from an external browser never triggers a spurious redirect.
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state: string) => {
+      if (state === "active" && _hasRedirected) {
+        hasRedirectedRef.current = true;
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  // Reset the redirect guard when auth state genuinely changes (login/logout)
+  // so that logout → sign-in redirect still fires.
+  const prevAuthRef = useRef(isAuthenticated);
+  useEffect(() => {
+    if (prevAuthRef.current !== isAuthenticated) {
+      _hasRedirected = false;
+      hasRedirectedRef.current = false;
+      prevAuthRef.current = isAuthenticated;
+    }
+  }, [isAuthenticated]);
+
+  // Keep lastAuthedPath in sync while user navigates inside authed areas.
+  // NOTE: usePathname() may omit group prefixes (returns "/education" instead
+  // of "/(tabs)/education"), so we derive the canonical path from segments.
+  useEffect(() => {
+    if (!hasRedirectedRef.current) return;
+    if (!isAuthenticated) return;
+    if (segments.length > 1 && segments[0] === "(tabs)") {
+      const fullPath = "/(tabs)/" + segments.slice(1).join("/");
+      setLastAuthedPath(fullPath);
+    }
+  }, [pathname, segments, isAuthenticated, setLastAuthedPath]);
 
   useEffect(() => {
     if (Platform.OS === "web") {
       const root = document.documentElement;
-      if (isDark) {
-        root.classList.add("dark");
-      } else {
-        root.classList.remove("dark");
-      }
+      isDark ? root.classList.add("dark") : root.classList.remove("dark");
     }
   }, [isDark]);
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
-
-    SystemUI.setBackgroundColorAsync(theme.background).catch(() => {
-      // ignored
-    });
+    SystemUI.setBackgroundColorAsync(theme.background).catch(() => {});
   }, [theme.background]);
 
   useEffect(() => {
-    // Guard: component not mounted yet
     if (!isMounted) return;
-
-    // Guard: navigation tree not ready yet
     if (!navigationState?.key) return;
+    if (!isHydrated || loadingSession) return;
 
-    if (!isHydrated || loadingSession) {
-      if (__DEV__) {
-        console.log("[AuthNavigator] still loading → waiting", {
-          isHydrated,
-          loadingSession,
-          pathname,
-          segments,
-        });
-      }
-      return;
-    }
+    // If the guard already fired (including across remounts), bail out.
+    if (hasRedirectedRef.current) return;
 
     const inAuth = isInAuthGroup(segments);
     const inTabs = isInTabsGroup(segments);
-
-    if (__DEV__) {
-      console.log("[AuthNavigator] checking", {
-        pathname,
-        segments,
-        isAuthenticated,
-        inAuth,
-        inTabs,
-      });
-    }
-
-    // Reset redirect guard on each major change
-    hasRedirectedRef.current = false;
+    const inOnboarding = isInOnboardingRoute(segments);
+    const inTherapistDetail = segments.length > 0 && segments[0] === "therapist-detail";
+    const inArticleViewer = segments.length > 0 && segments[0] === "article-viewer";
 
     if (isAuthenticated) {
-      // Authenticated → ensure we're in tabs group
-      if (!inTabs) {
+      if (inTherapistDetail || inArticleViewer) {
+        _hasRedirected = true;
+        hasRedirectedRef.current = true;
+        return;
+      }
+
+      if (inTabs) {
+        _hasRedirected = true;
         hasRedirectedRef.current = true;
 
-        let target: Href = "/(tabs)";
+        // Build the current canonical tab path from segments so the comparison
+        // works regardless of whether usePathname() includes group prefixes.
+        const currentTabPath =
+          segments.length > 1
+            ? "/(tabs)/" + segments.slice(1).join("/")
+            : "/(tabs)";
 
         if (
           typeof lastAuthedPath === "string" &&
-          lastAuthedPath.trim() !== "" &&
-          lastAuthedPath !== "/" &&
-          !lastAuthedPath.startsWith("/(auth)")
+          lastAuthedPath.startsWith("/(tabs)") &&
+          lastAuthedPath !== currentTabPath
         ) {
-          target = lastAuthedPath as Href;
+          if (__DEV__) console.log("[AuthNavigator] → restoring last tab:", lastAuthedPath);
+          router.replace(lastAuthedPath as Href);
         }
-
-        if (__DEV__) {
-          console.log(
-            "[AuthNavigator] → redirecting authenticated user to:",
-            target,
-          );
-        }
-
-        router.replace(target);
+        return;
       }
+
+      // Authenticated but not in a valid screen → redirect once
+      _hasRedirected = true;
+      hasRedirectedRef.current = true;
+
+      let target: Href = "/(tabs)";
+      if (
+        typeof lastAuthedPath === "string" &&
+        lastAuthedPath.trim() !== "" &&
+        lastAuthedPath !== "/" &&
+        !lastAuthedPath.startsWith("/(auth)") &&
+        !lastAuthedPath.startsWith("/therapist-detail") &&
+        !lastAuthedPath.startsWith("/article-viewer")
+      ) {
+        target = lastAuthedPath as Href;
+      }
+
+      if (__DEV__) console.log("[AuthNavigator] → redirecting authenticated user to:", target);
+      router.replace(target);
     } else {
-      // NOT authenticated → must be in auth group (or root/empty → redirect)
-      if (!inAuth) {
-        hasRedirectedRef.current = true;
-
-        if (__DEV__) {
-          console.log(
-            "[AuthNavigator] → redirecting unauthenticated to sign-in (caught root/empty/unknown path)",
-          );
+      if (!hasSeenOnboarding) {
+        if (!inOnboarding) {
+          _hasRedirected = true;
+          hasRedirectedRef.current = true;
+          if (__DEV__) console.log("[AuthNavigator] → redirecting to onboarding");
+          router.replace("/onboarding");
         }
+        return;
+      }
 
+      if (!inAuth) {
+        _hasRedirected = true;
+        hasRedirectedRef.current = true;
+        if (__DEV__) console.log("[AuthNavigator] → redirecting unauthenticated to sign-in");
         router.replace("/(auth)/sign-in");
       }
-      // If already in (auth) group → do nothing (correct state)
     }
   }, [
     isMounted,
@@ -155,6 +223,7 @@ const AuthNavigator = () => {
     isHydrated,
     loadingSession,
     isAuthenticated,
+    hasSeenOnboarding,
     segments,
     lastAuthedPath,
     router,
@@ -164,12 +233,27 @@ const AuthNavigator = () => {
   return null;
 };
 
+const SafeAuthNavigator = () => {
+  // Don't render AuthNavigator until the navigation tree is fully ready.
+  // This prevents "Couldn't find a navigation context" crashes when the
+  // system theme changes and triggers a full re-render cycle.
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const navigationState = useRootNavigationState();
+    if (!navigationState?.key) return null;
+    return <AuthNavigator />;
+  } catch {
+    return null;
+  }
+};
+
 function RootLayoutContent() {
   const colorScheme = useAppColorScheme() ?? "light";
   const isDark = colorScheme === "dark";
   const theme = Colors[isDark ? "dark" : "light"];
 
   return (
+    <ThemedAlertProvider>
     <SecurityQuestionProvider>
       <View className={isDark ? "dark" : ""} style={{ flex: 1 }}>
         <StatusBar style={isDark ? "light" : "dark"} />
@@ -188,12 +272,35 @@ function RootLayoutContent() {
           }}
         >
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="therapist-detail"
+            options={{
+              headerShown: false,
+              presentation: "transparentModal",
+              animation: "slide_from_bottom",
+              gestureEnabled: true,
+              gestureDirection: "vertical",
+            }}
+          />
+          <Stack.Screen
+            name="article-viewer"
+            options={{
+              headerShown: false,
+              animation: "slide_from_right",
+            }}
+          />
+          <Stack.Screen name="+not-found" options={{ headerShown: false }} />
         </Stack>
 
-        <AuthNavigator />
+        {/* Renderless — must stay inside the NavigationContainer tree provided by Stack */}
+        <NavigationErrorBoundary>
+          <SafeAuthNavigator />
+        </NavigationErrorBoundary>
       </View>
     </SecurityQuestionProvider>
+    </ThemedAlertProvider>
   );
 }
 
@@ -202,7 +309,9 @@ export default function RootLayout() {
     <ThemePreferenceProvider>
       <SessionInitializer />
       <ApolloProvider client={apolloClient}>
-        <RootLayoutContent />
+        <NavigationErrorBoundary>
+          <RootLayoutContent />
+        </NavigationErrorBoundary>
       </ApolloProvider>
     </ThemePreferenceProvider>
   );

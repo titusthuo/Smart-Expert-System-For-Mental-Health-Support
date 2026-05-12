@@ -1,4 +1,5 @@
 import { AppText, Button } from "@/components/ui";
+import { useAuthTheme } from "@/hooks/use-auth-theme";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { View } from "react-native";
@@ -6,6 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function NotFoundScreen() {
   const router = useRouter();
+  const { subtle } = useAuthTheme();
 
   return (
     <>
@@ -13,7 +15,7 @@ export default function NotFoundScreen() {
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 items-center justify-center px-8">
           <View className="w-20 h-20 rounded-full bg-muted items-center justify-center mb-6">
-            <Ionicons name="alert-circle-outline" size={40} color="#9CA3AF" />
+            <Ionicons name="alert-circle-outline" size={40} color={subtle} />
           </View>
           <AppText
             variant="heading"

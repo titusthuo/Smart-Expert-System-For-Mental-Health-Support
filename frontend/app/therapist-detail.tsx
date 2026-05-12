@@ -1,0 +1,398 @@
+import { useThemedAlert } from "@/components/ui";
+import { AppText } from "@/components/ui/text";
+import { useAuthTheme } from "@/hooks/use-auth-theme";
+import { useTherapist } from "@/hooks/useTherapist";
+import { openUrlSafely } from "@/lib/links";
+import { useAuthSession } from "@/stores/useAuthSession";
+import * as MailComposer from "expo-mail-composer";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { ArrowLeft, Award, DollarSign, MapPin } from "lucide-react-native";
+import {
+    Image,
+    Pressable,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+export default function TherapistDetailScreen() {
+  const router = useRouter();
+  const { id, reason } = useLocalSearchParams<{
+    id?: string;
+    reason?: string;
+  }>();
+  const { isDark, brand, subtle } = useAuthTheme();
+  const { therapist, loading } = useTherapist(id);
+  const alert = useThemedAlert();
+  const setLastAuthedPath = useAuthSession((s) => s.setLastAuthedPath);
+
+  const handleBackPress = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace("/(tabs)/therapists");
+  };
+
+  const isCrisis = reason === "crisis";
+  const appName = "Mentally";
+  const prefilledMessage = `Hello, I found your contacts through ${appName} because I'm seeking mental health support. Can we discuss next steps for mental health support?`;
+
+  const insets = useSafeAreaInsets();
+
+  // Sheet content for loading/error/detail states
+  const renderSheetContent = () => {
+    if (loading) {
+      return (
+        <View className="flex-1 justify-center items-center py-20">
+          <AppText className="text-muted-foreground">Loading...</AppText>
+        </View>
+      );
+    }
+
+    if (!therapist) {
+      return (
+        <View className="flex-1 justify-center items-center p-6">
+          <View className="bg-card rounded-xl p-8 items-center shadow-sm border border-border">
+            <AppText className="text-foreground text-lg mb-4">
+              Therapist not found
+            </AppText>
+            <TouchableOpacity
+              onPress={handleBackPress}
+              className="bg-brand px-6 py-3 rounded-lg"
+            >
+              <AppText className="text-white font-medium">
+                Go Back
+              </AppText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    return renderDetail();
+  };
+
+  const normalizePhoneDigits = (value: string) => value.replace(/[^\d]/g, "");
+
+  const handleCall = async () => {
+    if (!therapist) return;
+    const digits = normalizePhoneDigits(therapist.phone);
+    if (!digits) {
+      alert({ title: "Missing contact", message: "No phone number is available for this therapist.", variant: "warning" });
+      return;
+    }
+    // Persist the parent tab so AuthNavigator restores it if the app is killed.
+    setLastAuthedPath("/(tabs)/therapists");
+    const opened = await openUrlSafely(`tel:${digits}`);
+    if (!opened) {
+      alert({ title: "Unable to open", message: "Please use your phone to contact this therapist.", variant: "error" });
+    }
+  };
+
+  const handleWhatsApp = async () => {
+    if (!therapist) return;
+    const source = therapist.whatsapp ?? therapist.phone;
+    const digits = normalizePhoneDigits(source);
+    if (!digits) {
+      alert({ title: "Missing contact", message: "No WhatsApp number is available for this therapist.", variant: "warning" });
+      return;
+    }
+
+    const text = encodeURIComponent(prefilledMessage);
+    const appUrl = `whatsapp://send?phone=${digits}&text=${text}`;
+    const webUrl = `https://wa.me/${digits}?text=${text}`;
+    // Persist the parent tab so AuthNavigator restores it if the app is killed.
+    setLastAuthedPath("/(tabs)/therapists");
+    const opened = await openUrlSafely(appUrl, { fallbackUrl: webUrl });
+    if (!opened) {
+      alert({ title: "Unable to open", message: "Please use your phone to contact this therapist.", variant: "error" });
+    }
+  };
+
+  const handleEmail = async () => {
+    if (!therapist?.email) {
+      alert({ title: "Missing contact", message: "No email is available for this therapist.", variant: "warning" });
+      return;
+    }
+
+    // Persist the parent tab so AuthNavigator restores it if the app is killed.
+    setLastAuthedPath("/(tabs)/therapists");
+    const isAvailable = await MailComposer.isAvailableAsync();
+    if (isAvailable) {
+      await MailComposer.composeAsync({
+        recipients: [therapist.email],
+        subject: `${appName} - Session request`,
+        body: prefilledMessage,
+      });
+    } else {
+      // Fallback for devices without a configured mail app
+      const subject = encodeURIComponent(`${appName} - Session request`);
+      const body = encodeURIComponent(prefilledMessage);
+      const opened = await openUrlSafely(
+        `mailto:${therapist.email}?subject=${subject}&body=${body}`,
+      );
+      if (!opened) {
+        alert({ title: "Unable to open", message: "No email app found. Please contact the therapist manually.", variant: "error" });
+      }
+    }
+  };
+
+  const renderDetail = () => {
+    if (!therapist) return null;
+
+    return (
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <View className="px-4 py-4 space-y-6" style={{ paddingBottom: insets.bottom + 32 }}>
+          {isCrisis && (
+            <View className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+              <AppText className="text-foreground font-semibold mb-2">
+                Immediate support
+              </AppText>
+              <AppText className="text-muted-foreground">
+                If you are in immediate danger, call 1190 (Kenya Red Cross
+                Mental Health Hotline) or 999 right now.
+              </AppText>
+            </View>
+          )}
+
+          {/* Profile Card */}
+          <View className="bg-card rounded-xl p-6 shadow-sm border border-border">
+            <View className="items-center md:items-start">
+              <Image
+                source={therapist.photo}
+                className="w-32 h-32 rounded-lg mb-5"
+                resizeMode="cover"
+              />
+
+              <View className="flex-1 w-full">
+                <View className="flex-row justify-between items-start mb-3">
+                  <View>
+                    <AppText className="text-2xl font-semibold text-foreground">
+                      {therapist.name}
+                    </AppText>
+                    <View className="flex-row items-center mt-1">
+                      <MapPin size={16} color={subtle} />
+                      <AppText className="text-muted-foreground ml-1">
+                        {therapist.location}
+                      </AppText>
+                    </View>
+                  </View>
+                </View>
+
+                <View className="flex-row flex-wrap gap-2 mb-4">
+                  {therapist.specialization.map((spec: string) => (
+                    <View
+                      key={spec}
+                      className="bg-brandSoft px-3 py-1 rounded-full"
+                    >
+                      <AppText className="text-xs text-brand font-medium">
+                        {spec}
+                      </AppText>
+                    </View>
+                  ))}
+                </View>
+
+                {(!!therapist.experience ||
+                  typeof therapist.price === "number") && (
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-center">
+                      {!!therapist.experience && (
+                        <AppText className="text-foreground">
+                          {therapist.experience}
+                        </AppText>
+                      )}
+                    </View>
+                    {typeof therapist.price === "number" && (
+                      <View className="flex-row items-center">
+                        <DollarSign
+                          size={16}
+                          color={isDark ? "#E5E7EB" : "#111827"}
+                        />
+                        <AppText className="text-foreground font-semibold ml-1.5">
+                          KES {therapist.price.toLocaleString()}/session
+                        </AppText>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                <View className="mt-5 pt-4 border-t border-border">
+                  {!!therapist.licenseNumber && (
+                    <AppText className="text-sm text-muted-foreground">
+                      License: {therapist.licenseNumber}
+                    </AppText>
+                  )}
+                  <AppText className="text-sm text-muted-foreground mt-2">
+                    Phone: {therapist.phone}
+                  </AppText>
+                  {!!therapist.email && (
+                    <AppText className="text-sm text-muted-foreground mt-2">
+                      Email: {therapist.email}
+                    </AppText>
+                  )}
+
+                  <View className="flex-row flex-wrap gap-3 mt-4">
+                    <TouchableOpacity
+                      onPress={handleCall}
+                      className="bg-brand px-4 py-3 rounded-lg"
+                    >
+                      <AppText className="text-white font-semibold">
+                        Call
+                      </AppText>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={handleWhatsApp}
+                      className="bg-green-600 px-4 py-3 rounded-lg"
+                    >
+                      <AppText className="text-white font-semibold">
+                        WhatsApp
+                      </AppText>
+                    </TouchableOpacity>
+                    {!!therapist.email && (
+                      <TouchableOpacity
+                        onPress={handleEmail}
+                        className="bg-muted px-4 py-3 rounded-lg border border-border"
+                      >
+                        <AppText className="text-foreground font-semibold">
+                          Email
+                        </AppText>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  <AppText className="text-xs text-muted-foreground mt-4 leading-5">
+                    Privacy note: When you tap Call, WhatsApp, or Email,{" "}
+                    {appName}
+                    will open another app on your device. Your message and any
+                    personal information you share will be handled by that
+                    service and the therapist.
+                  </AppText>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* About */}
+          <View className="bg-card rounded-xl p-6 shadow-sm border border-border">
+            <AppText className="text-xl font-semibold mb-3 text-foreground">
+              About
+            </AppText>
+            <AppText className="text-foreground leading-6">
+              {therapist.fullBio}
+            </AppText>
+          </View>
+
+          {/* Qualifications */}
+          {therapist.qualifications.length > 0 && (
+            <View className="bg-card rounded-xl p-6 shadow-sm border border-border">
+              <View className="flex-row items-center mb-4">
+                <Award size={20} color={brand} className="mr-2" />
+                <AppText className="text-xl font-semibold text-foreground">
+                  Qualifications & Experience
+                </AppText>
+              </View>
+              {therapist.qualifications.map((qual: string, index: number) => (
+                <View key={index} className="flex-row items-start mb-2">
+                  <View className="w-2 h-2 bg-brand rounded-full mt-2 mr-3" />
+                  <AppText className="text-foreground flex-1">{qual}</AppText>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    );
+  };
+
+  return (
+    <View style={modalStyles.container}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
+
+      {/* Backdrop — tap to dismiss */}
+      <Pressable style={modalStyles.backdrop} onPress={handleBackPress} />
+
+      {/* Sheet */}
+      <View
+        style={[
+          modalStyles.sheet,
+          {
+            backgroundColor: isDark ? "hsl(0, 0%, 9%)" : "hsl(0, 0%, 100%)",
+            paddingTop: 0,
+          },
+        ]}
+      >
+        {/* Drag handle */}
+        <View style={modalStyles.handleRow}>
+          <View
+            style={[
+              modalStyles.handle,
+              { backgroundColor: isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.2)" },
+            ]}
+          />
+        </View>
+
+        {/* Header */}
+        <View
+          style={[
+            modalStyles.header,
+            {
+              borderBottomColor: isDark ? "hsl(0, 0%, 17%)" : "hsl(0, 0%, 90%)",
+            },
+          ]}
+        >
+          <TouchableOpacity onPress={handleBackPress} hitSlop={8}>
+            <ArrowLeft size={24} color={isDark ? "#E5E7EB" : "#111827"} />
+          </TouchableOpacity>
+          <AppText className="text-xl font-semibold text-foreground ml-4">
+            Therapist Details
+          </AppText>
+        </View>
+
+        {renderSheetContent()}
+      </View>
+    </View>
+  );
+}
+
+const modalStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  sheet: {
+    flex: 1,
+    marginTop: 48,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: "hidden",
+  },
+  handleRow: {
+    alignItems: "center",
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+  },
+});
