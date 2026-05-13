@@ -1,4 +1,3 @@
-// src/hooks/useAIAssistant.ts
 import { Coords, haversineDistanceKm } from "@/lib/geo";
 import { Therapist } from "@/lib/therapists/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -24,12 +23,18 @@ export const useAIAssistant = (
   moodLabel?: string,
   userCoords?: Coords | null,
 ) => {
-  const openingMessage = DEFAULT_GREETING;
-
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isEscalated, setIsEscalated] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  // ── Refs to avoid stale closures without causing re-renders ─────────────
+  const messagesRef = useRef<ChatMessage[]>([]);
+  const systemPromptRef = useRef<string>("");
+  const nearbyTherapistsRef = useRef<Therapist[]>([]);
+
+  // Keep refs in sync
+  messagesRef.current = messages;
 
   // ── Backend chat history ─────────────────────────────────────────────────
   const {
@@ -51,7 +56,6 @@ export const useAIAssistant = (
         setLocationName("Kenya");
         return;
       }
-
       try {
         const city = await resolveKenyanCity(userCoords);
         setLocationName(city);
@@ -60,7 +64,6 @@ export const useAIAssistant = (
         setLocationName("Kenya");
       }
     };
-
     resolveLocation();
   }, [userCoords]);
 
@@ -69,23 +72,34 @@ export const useAIAssistant = (
     if (!therapists.length || !userCoords) return [];
 
     return therapists
-      .filter((t: Therapist) => t.coords) // Only therapists with coordinates
+      .filter((t: Therapist) => t.coords)
       .map((t: Therapist) => ({
         ...t,
         distanceKm: haversineDistanceKm(userCoords, t.coords!),
       }))
-      .filter((t: Therapist & { distanceKm: number }) => t.distanceKm < 50) // Within 50km
+      .filter((t: Therapist & { distanceKm: number }) => t.distanceKm < 50)
       .sort((a, b) => a.distanceKm - b.distanceKm)
-      .slice(0, 10); // Top 10 nearest
+      .slice(0, 10);
   }, [therapists, userCoords]);
 
-  // ── Rebuild system prompt when location changes ───────────────────────────
+  // ── Keep nearbyTherapists ref in sync ────────────────────────────────────
+  useEffect(() => {
+    nearbyTherapistsRef.current = nearbyTherapists;
+  }, [nearbyTherapists]);
+
+  // ── Rebuild system prompt when location or therapists change ─────────────
   const systemPrompt = useMemo(() => {
-    if (!userCoords) {
-      return buildSystemPrompt([], locationName, null);
-    }
-    return buildSystemPrompt(nearbyTherapists, locationName, userCoords);
+    const prompt = userCoords
+      ? buildSystemPrompt(nearbyTherapists, locationName, userCoords)
+      : buildSystemPrompt([], locationName, null);
+    systemPromptRef.current = prompt;
+    return prompt;
   }, [nearbyTherapists, locationName, userCoords]);
+
+  // Keep systemPrompt ref in sync
+  useEffect(() => {
+    systemPromptRef.current = systemPrompt;
+  }, [systemPrompt]);
 
   // ── Sync with backend history; fall back to welcome message ─────────────
   useEffect(() => {
@@ -102,15 +116,15 @@ export const useAIAssistant = (
       setMessages([
         {
           id: "greeting-1",
-          text: openingMessage,
+          text: DEFAULT_GREETING,
           sender: "ai",
           timestamp: new Date(),
         },
       ]);
     }
-  }, [backendMessages, loadingHistory, openingMessage]);
+  }, [backendMessages, loadingHistory]);
 
-  // ── Send message ─────────────────────────────────────────────────────────────
+  // ── Send message ─────────────────────────────────────────────────────────
   const sendMessage = useCallback(
     async (userText: string) => {
       if (!userText.trim() || isEscalated) return;
@@ -131,10 +145,17 @@ export const useAIAssistant = (
       try {
         await saveMessageToBackend(trimmedText, true);
 
-        // Build location-aware system prompt with nearby therapists injected
+        // Read from refs — no stale closure, no re-render trigger
+        const currentMessages = messagesRef.current;
+        const currentSystemPrompt = systemPromptRef.current;
+        const currentNearbyTherapists = nearbyTherapistsRef.current;
+
+        // Only send last 8 messages to keep token usage reasonable
+        const recentMessages = currentMessages.slice(-8);
+
         const contents = [
-          { role: "model", parts: [{ text: systemPrompt }] },
-          ...messages.map((msg) => ({
+          { role: "model", parts: [{ text: currentSystemPrompt }] },
+          ...recentMessages.map((msg) => ({
             role: msg.sender === "ai" ? "model" : "user",
             parts: [{ text: msg.text }],
           })),
@@ -142,7 +163,7 @@ export const useAIAssistant = (
         ];
 
         const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -154,12 +175,21 @@ export const useAIAssistant = (
         );
 
         if (!res.ok) {
+          const errorBody = await res.json().catch(() => ({}));
+          console.error("Gemini error:", res.status, JSON.stringify(errorBody));
+
           if (res.status === 503) {
-            throw new Error("The AI service is temporarily unavailable. Please try again in a moment.");
+            throw new Error(
+              "The AI service is temporarily unavailable. Please try again in a moment.",
+            );
           } else if (res.status === 429) {
-            throw new Error("Too many requests. Please wait a moment and try again.");
+            throw new Error(
+              "Too many requests. Please wait a moment and try again.",
+            );
           }
-          throw new Error("Unable to reach the AI service. Please try again later.");
+          throw new Error(
+            "Unable to reach the AI service. Please try again later.",
+          );
         }
 
         const data = await res.json();
@@ -172,19 +202,17 @@ export const useAIAssistant = (
         let showRecommendation = false;
         let recommendedTherapists: Therapist[] = [];
 
-        // Check for therapist recommendation tool tag
         const toolRegex = /\[TOOL:SHOW_THERAPISTS\][\s\S]*?(?:\[\/TOOL\]|$)/;
         const toolMatch = botText.match(toolRegex);
 
         if (toolMatch) {
           processedText = botText
             .replace(toolRegex, "")
-            .replace(/\*\*[^*]+\*\*/g, "") // strip **bold** text (therapist names)
-            .replace(/\n{3,}/g, "\n\n") // clean up extra blank lines
+            .replace(/\*\*[^*]+\*\*/g, "")
+            .replace(/\n{3,}/g, "\n\n")
             .trim();
           showRecommendation = true;
-          // Include ALL nearby therapists as recommendations
-          recommendedTherapists = nearbyTherapists; // all of them, already sorted by distance
+          recommendedTherapists = currentNearbyTherapists;
         }
 
         const aiMessage: ChatMessage = {
@@ -204,7 +232,9 @@ export const useAIAssistant = (
           ...prev,
           {
             id: (Date.now() + 1).toString(),
-            text: "Sorry, I'm having trouble connecting. Please try again.",
+            text:
+              error.message ||
+              "Sorry, I'm having trouble connecting. Please try again.",
             sender: "ai",
             timestamp: new Date(),
           },
@@ -213,24 +243,15 @@ export const useAIAssistant = (
         setIsTyping(false);
       }
     },
-    [
-      messages,
-      isEscalated,
-      saveMessageToBackend,
-      nearbyTherapists,
-      systemPrompt,
-    ],
+    // messages intentionally removed from deps — using ref to prevent mood re-fire
+    [isEscalated, saveMessageToBackend],
   );
 
-  // ── Auto-send mood as a user prompt when selected from home page ────────
+  // ── Auto-send mood — stable because sendMessage no longer recreates ──────
   const moodSentRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (
-      moodLabel &&
-      !loadingHistory &&
-      moodSentRef.current !== moodLabel
-    ) {
+    if (moodLabel && !loadingHistory && moodSentRef.current !== moodLabel) {
       moodSentRef.current = moodLabel;
       sendMessage(`I'm feeling ${moodLabel.toLowerCase()}`);
     }

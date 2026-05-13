@@ -6,11 +6,9 @@ import { createUploadLink } from "apollo-upload-client";
 
 import { useAuthSession } from "@/stores/useAuthSession";
 
-const graphqlUri = process.env.EXPO_PUBLIC_GRAPHQL_URL;
-
-console.log("EXPO_PUBLIC_GRAPHQL_URL:", process.env.EXPO_PUBLIC_GRAPHQL_URL);
-console.log("Final graphqlUri:", graphqlUri);
-
+const graphqlUri =
+  process.env.EXPO_PUBLIC_GRAPHQL_URL ??
+  "https://smart-expert-system-backend.onrender.com/graphql/";
 
 const uploadLink = createUploadLink({
   uri: graphqlUri,
@@ -37,7 +35,6 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
       }
     }
   }
-
   if (networkError && __DEV__) {
     console.warn("[Apollo Network Error]", networkError.message);
   }

@@ -64,7 +64,9 @@
       "router": {},
       "eas": {
         "projectId": "f913d40b-6605-4cd2-93a1-4e9f151b4f80"
-      }
+      },
+      "EXPO_PUBLIC_GRAPHQL_URL": "https://smart-expert-system-backend.onrender.com/graphql/",
+      "EXPO_PUBLIC_MOBILE_ORIGIN": "smart-expert-system-for-mental-health-support"
     }
   }
 }

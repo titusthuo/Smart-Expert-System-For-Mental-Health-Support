@@ -1,4 +1,3 @@
-// src/constants/aiPrompt.ts
 import { Coords, haversineDistanceKm } from "@/lib/geo";
 import { Therapist } from "@/lib/therapists/types";
 
@@ -72,7 +71,6 @@ export const buildSystemPrompt = (
 
   let therapistContext = "";
   if (nearbyTherapists.length > 0) {
-    // Create detailed therapist context for the AI
     const therapistDetails = nearbyTherapists
       .map((therapist, index) => {
         const distance =
@@ -80,13 +78,14 @@ export const buildSystemPrompt = (
             ? Math.round(haversineDistanceKm(userCoords, therapist.coords))
             : null;
 
-        return `${index + 1}. **${therapist.name}** - ${therapist.specialization.join(
-          ", ",
-        )} in ${therapist.location}${distance ? ` (${distance}km away)` : ""}`;
+        return `${index + 1}. **${therapist.name}** - ${therapist.specialization.join(", ")} in ${therapist.location}${distance ? ` (${distance}km away)` : ""}`;
       })
       .join("\n");
 
-    therapistContext = `There are ${nearbyTherapists.length} licensed therapists available near the user. 
+    therapistContext = `There are ${nearbyTherapists.length} licensed therapists available near the user.
+Here are the available therapists:
+${therapistDetails}
+
 When the user asks for therapists or professional help, respond with a brief supportive message and trigger [TOOL:SHOW_THERAPISTS] — do NOT list or name any therapists in your text. The app will display all ${nearbyTherapists.length} therapist profile cards automatically as clickable links.`;
   } else {
     therapistContext =
@@ -101,7 +100,7 @@ Remember to personalize your responses based on the user's location and availabl
 };
 
 export const resolveKenyanCity = async (coords: Coords): Promise<string> => {
-  const apiKey = process.env.EXPO_PUBLIC_OPENCAGE_API_KEY;
+  const apiKey = process.env.EXPO_PUBLIC_OPENCAGE_API_KEY || "";
 
   if (!apiKey) {
     console.warn("OpenCage API key not found, falling back to default");
@@ -122,7 +121,6 @@ export const resolveKenyanCity = async (coords: Coords): Promise<string> => {
     if (data.results && data.results.length > 0) {
       const components = data.results[0].components;
 
-      // Try to get the most specific location name and normalize it
       const rawCity =
         components.city ||
         components.town ||
@@ -131,7 +129,6 @@ export const resolveKenyanCity = async (coords: Coords): Promise<string> => {
         components.state ||
         "";
 
-      // Strip "County" suffix and normalize
       const normalizedCity = rawCity.replace(/ County$/i, "").trim();
 
       return normalizedCity || "Kenya";
